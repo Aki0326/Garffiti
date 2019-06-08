@@ -16,12 +16,17 @@
 
 package com.google.ar.core.examples.java.helloar;
 
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.Color;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.ArCoreApk;
@@ -32,6 +37,7 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.Point;
 import com.google.ar.core.Point.OrientationMode;
 import com.google.ar.core.PointCloud;
+import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
@@ -41,14 +47,16 @@ import com.google.ar.core.examples.java.common.helpers.FullScreenHelper;
 import com.google.ar.core.examples.java.common.helpers.SnackbarHelper;
 import com.google.ar.core.examples.java.common.helpers.TapHelper;
 import com.google.ar.core.examples.java.common.rendering.BackgroundRenderer;
+import com.google.ar.core.examples.java.common.rendering.GraffitiRenderer;
 import com.google.ar.core.examples.java.common.rendering.LineShaderRenderer;
 import com.google.ar.core.examples.java.common.rendering.ObjectRenderer;
 import com.google.ar.core.examples.java.common.rendering.ObjectRenderer.BlendMode;
 import com.google.ar.core.examples.java.common.rendering.PlaneObjectRenderer;
 import com.google.ar.core.examples.java.common.rendering.PlaneRenderer;
 import com.google.ar.core.examples.java.common.rendering.PointCloudRenderer;
-import com.google.ar.core.examples.java.common.rendering.RaycastRenderer;
-import com.google.ar.core.examples.java.common.rendering.test;
+import com.google.ar.core.examples.java.common.rendering.Test;
+import com.google.ar.core.examples.java.common.view.HandMotion;
+import com.google.ar.core.examples.java.common.view.PlaneDiscoveryController;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
@@ -83,9 +91,11 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
   private final PlaneRenderer planeRenderer = new PlaneRenderer();
   private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
-//  private final RaycastRenderer raycastRenderer = new RaycastRenderer();
+  //  private final RaycastRenderer raycastRenderer = new RaycastRenderer();
   private final PlaneObjectRenderer planeObjectRenderer = new PlaneObjectRenderer();
   private final LineShaderRenderer lineShaderRenderer = new LineShaderRenderer();
+  private final Test testRenderer = new Test();
+  private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
 
   // Temporary matrix allocated here to reduce number of allocations for each frame.
   private final float[] anchorMatrix = new float[16];
@@ -103,6 +113,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   }
 
   private final ArrayList<ColoredAnchor> anchors = new ArrayList<>();
+  private PlaneDiscoveryController planeDiscoveryController;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +135,12 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     surfaceView.setWillNotDraw(false);
 
     installRequested = false;
+
+    // Set up the HandMotion View.
+    LayoutInflater inflater = LayoutInflater.from(this);
+    FrameLayout handmotion = findViewById(R.id.plane_discovery_view);
+    FrameLayout instructionsView = (FrameLayout)inflater.inflate(R.layout.view_plane_discovery, handmotion, true);
+    planeDiscoveryController = new PlaneDiscoveryController(instructionsView);
   }
 
   @Override
@@ -153,7 +170,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
         session = new Session(/* context= */ this);
 
       } catch (UnavailableArcoreNotInstalledException
-          | UnavailableUserDeclinedInstallationException e) {
+              | UnavailableUserDeclinedInstallationException e) {
         message = "Please install ARCore";
         exception = e;
       } catch (UnavailableApkTooOldException e) {
@@ -192,7 +209,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     surfaceView.onResume();
     displayRotationHelper.onResume();
 
-    messageSnackbarHelper.showMessage(this, "Searching for surfaces...");
+//    messageSnackbarHelper.showMessage(this, "Searching for surfaces...");
+    planeDiscoveryController.show();
   }
 
   @Override
@@ -212,7 +230,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
     if (!CameraPermissionHelper.hasCameraPermission(this)) {
       Toast.makeText(this, "Camera permission is needed to run this application", Toast.LENGTH_LONG)
-          .show();
+              .show();
       if (!CameraPermissionHelper.shouldShowRequestPermissionRationale(this)) {
         // Permission denied with checking "Do not ask again".
         CameraPermissionHelper.launchPermissionSettings(this);
@@ -247,6 +265,9 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 //      raycastRenderer.createOnGlThread(this);
       planeObjectRenderer.createOnGlThread(this,"models/nambo.png");
       lineShaderRenderer.createOnGlThread(/*context=*/ this,"models/linecap.png");
+
+      testRenderer.createOnGlThread(this,"models/nambo.png");
+      graffitiRenderer.createOnGlThread(this,"models/plane_test.png");
 
     } catch (IOException e) {
       Log.e(TAG, "Failed to read an asset file", e);
@@ -315,20 +336,24 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       pointCloud.release();
 
       // Check if we detected at least one plane. If so, hide the loading message.
-      if (messageSnackbarHelper.isShowing()) {
-        for (Plane plane : session.getAllTrackables(Plane.class)) {
-          if (plane.getTrackingState() == TrackingState.TRACKING) {
-            messageSnackbarHelper.hide(this);
-            break;
-          }
+//      if (messageSnackbarHelper.isShowing()) {
+      for (Plane plane : session.getAllTrackables(Plane.class)) {
+        if (plane.getTrackingState() == TrackingState.TRACKING) {
+//            messageSnackbarHelper.hide(this);
+          planeDiscoveryController.hide();
+          break;
         }
       }
+//      }
 
       // Visualize planes.
 //      planeRenderer.drawPlanes(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projmtx);
 
+//      planeObjectRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
+//      testRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
+      graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
+
 //      raycastRenderer.draw(viewmtx,projmtx);
-      planeObjectRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
       // Visualize anchors created by touch.
       float scaleFactor = 1.0f;
@@ -346,7 +371,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 //        virtualObject.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color);
 //        virtualObjectShadow.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color);
         lineShaderRenderer.updateModelMatrix(anchorMatrix, scaleFactor);
-        lineShaderRenderer.draw(viewmtx, projmtx);
+//        lineShaderRenderer.draw(viewmtx, projmtx);
       }
 
     } catch (Throwable t) {
@@ -362,17 +387,25 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       for (HitResult hit : frame.hitTest(tap)) {
         // Check if any plane was hit, and if it was hit inside the plane polygon
         Trackable trackable = hit.getTrackable();
+        Pose centerPose = ((Plane) trackable).getCenterPose();
         // Creates an anchor if a plane or an oriented point was hit.
         if ((trackable instanceof Plane
                 && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
                 && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0))
-            || (trackable instanceof Point
+                || (trackable instanceof Point
                 && ((Point) trackable).getOrientationMode()
-                    == OrientationMode.ESTIMATED_SURFACE_NORMAL)) {
+                == OrientationMode.ESTIMATED_SURFACE_NORMAL)) {
+          float hitMinusCenterX = hit.getHitPose().tx() - centerPose.tx();
+          float hitMinusCenterY = hit.getHitPose().ty() - centerPose.ty();
+          float hitMinusCenterZ = hit.getHitPose().tz() - centerPose.tz();
+          float hitOnPlaneCoordX = centerPose.getXAxis()[0] * hitMinusCenterX + centerPose.getXAxis()[1] * hitMinusCenterY + centerPose.getXAxis()[2] * hitMinusCenterZ;
+          float hitOnPlaneCoordZ = centerPose.getZAxis()[0] * hitMinusCenterX + centerPose.getZAxis()[1] * hitMinusCenterY + centerPose.getZAxis()[2] * hitMinusCenterZ;
+          graffitiRenderer.setPixel(hitOnPlaneCoordX, -hitOnPlaneCoordZ, Color.BLUE);
+
           // Hits are sorted by depth. Consider only closest hit on a plane or oriented point.
           // Cap the number of objects created. This avoids overloading both the
           // rendering system and ARCore.
-          if (anchors.size() >= 20) {
+          if (anchors.size() >= 100) {
             anchors.get(0).anchor.detach();
             anchors.remove(0);
           }
