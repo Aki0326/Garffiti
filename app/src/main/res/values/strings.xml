@@ -16,4 +16,14 @@
 -->
 <resources>
   <string name="app_name">HelloAR Java</string>
+
+  <!-- Image and ImageButton Content Descriptions for Accessibility-->
+  <string name="content_description_white_brush">White Brush</string>
+
+  <!-- Searching for surfaces -->
+  <string name="tracking_indicator_text_looking">Looking for a place for your line</string>
+  <string name="tracking_indicator_text_cant_find">Can\'t find a place for your line</string>
+  <string name="tracking_indicator_text_anchor_not_tracking">Hmm… We can\'t find your\ndrawings.
+        Try going back to\nwhere you started.</string>
+
 </resources>
