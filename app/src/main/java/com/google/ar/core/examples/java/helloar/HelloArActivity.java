@@ -391,7 +391,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
         // Creates an anchor if a plane or an oriented point was hit.
         if ((trackable instanceof Plane
                 && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
-                && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0))
+                && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0)
+                && ((Plane) trackable).getSubsumedBy() == null)
                 || (trackable instanceof Point
                 && ((Point) trackable).getOrientationMode()
                 == OrientationMode.ESTIMATED_SURFACE_NORMAL)) {
