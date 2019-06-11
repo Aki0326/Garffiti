@@ -69,8 +69,6 @@ public class GraffitiRenderer {
 
     private int planeobjectXZPositionAlphaAttribute;
 
-    private int planeobjectModelUniform;
-    private int planeobjectNormalUniform;
     private int planeobjectModelViewProjectionUniform;
     private int textureUniform;
     private int lineColorUniform;
@@ -144,8 +142,6 @@ public class GraffitiRenderer {
 
         planeobjectXZPositionAlphaAttribute = GLES20.glGetAttribLocation(planeobjectProgram, "a_XZPositionAlpha");
 
-        planeobjectModelUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_Model");
-        planeobjectNormalUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_Normal");
         planeobjectModelViewProjectionUniform =
                 GLES20.glGetUniformLocation(planeobjectProgram, "u_ModelViewProjection");
         textureUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_Texture");
@@ -251,15 +247,8 @@ public class GraffitiRenderer {
             int pixelY = (int)(y * DOTS_PER_METER * h);
             pixelX = Math.floorMod(pixelX, w);
             pixelY = Math.floorMod(pixelY, h);
-            int pixelXMin = Math.floorMod(pixelX + 60, w);
-            int pixelXMax = Math.floorMod(pixelX + 100, w);
-            int pixelYMin = Math.floorMod(pixelY - 70, h);
-            int pixelYMax = Math.floorMod(pixelY - 30, h);
 
-            textureBitmap.setPixel(pixelXMin, pixelY, color);
-//            textureBitmap.setPixel(pixelXMax, pixelY, Color.RED);
-//            textureBitmap.setPixel(pixelX, pixelYMin, color);
-//            textureBitmap.setPixel(pixelX, pixelYMax, Color.YELLOW);
+            textureBitmap.setPixel(pixelX, pixelY, color);
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
@@ -285,8 +274,6 @@ public class GraffitiRenderer {
                 vertexBuffer);
 
         // Set the Model and ModelViewProjection matrices in the shader.
-        GLES20.glUniformMatrix4fv(planeobjectModelUniform, 1, false, modelMatrix, 0);
-        GLES20.glUniform3f(planeobjectNormalUniform, planeNormal[0], planeNormal[1], planeNormal[2]);
         GLES20.glUniformMatrix4fv(
                 planeobjectModelViewProjectionUniform, 1, false, modelViewProjectionMatrix, 0);
 
@@ -405,7 +392,7 @@ public class GraffitiRenderer {
 
             // Each plane will have its own angle offset from others, to make them easier to
             // distinguish. Compute a 2x2 rotation matrix from the angle.
-            float angleRadians = planeobjectIndex * 0.1f/*44*/;
+            float angleRadians = 0.0f;   //planeobjectIndex * 0.1f/*44*/;
             float uScale = DOTS_PER_METER;
             float vScale = DOTS_PER_METER /* EQUILATERAL_TRIANGLE_SCALE*/;
             planeobjectAngleUvMatrix[0] = +(float) Math.cos(angleRadians) * uScale;
