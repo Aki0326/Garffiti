@@ -12,6 +12,7 @@ import android.opengl.Matrix;
 import com.google.ar.core.Camera;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
+import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
 
 import java.io.IOException;
@@ -65,7 +66,6 @@ public class GraffitiRenderer {
     private static final float[] GRID_CONTROL = {0.2f, 0.4f, 2.0f, 1.5f};
 
     private int planeobjectProgram;
-    private final int[] textures = new int[1];
 
     private int planeobjectXZPositionAlphaAttribute;
 
@@ -95,6 +95,11 @@ public class GraffitiRenderer {
 
     private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
     private Bitmap textureBitmap = null;
+    private ArrayList<Integer> textures = new ArrayList<Integer>(); //テキスチャID
+
+    private ArrayList<Bitmap> textureBitmaps = new ArrayList<Bitmap>();
+
+    private HashMap<Plane, Integer> textureNo = new HashMap<Plane, Integer>();
 
     public GraffitiRenderer() {}
 
@@ -124,19 +129,6 @@ public class GraffitiRenderer {
 
         // Read the texture.
         textureBitmap = BitmapFactory.decodeStream(context.getAssets().open(gridDistanceTextureName));
-        textureBitmap = textureBitmap.copy(textureBitmap.getConfig(), true);
-
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glGenTextures(textures.length, textures, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
-
-        GLES20.glTexParameteri(
-                GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmap, 0);
-        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
 
         ShaderUtil.checkGLError(TAG, "Texture loading");
 
@@ -239,20 +231,22 @@ public class GraffitiRenderer {
 //        }
     }
 
-    public void setPixel(float x, float y, int color) {
+    public void setPixel(float x, float y, int color, Trackable trackable) {
         if (textureBitmap != null) {
-            int w = textureBitmap.getWidth();
-            int h = textureBitmap.getHeight();
+            Integer hitplaneobjectTextureNo = textureNo.get(trackable);
+
+            int w = textureBitmaps.get(hitplaneobjectTextureNo).getWidth();
+            int h = textureBitmaps.get(hitplaneobjectTextureNo).getHeight();
             int pixelX = (int)(x * DOTS_PER_METER * w);
             int pixelY = (int)(y * DOTS_PER_METER * h);
             pixelX = Math.floorMod(pixelX, w);
             pixelY = Math.floorMod(pixelY, h);
 
-            textureBitmap.setPixel(pixelX, pixelY, color);
+            textureBitmaps.get(hitplaneobjectTextureNo).setPixel(pixelX, pixelY, color);
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmap, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmaps.get(hitplaneobjectTextureNo), 0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         }
     }
@@ -352,11 +346,6 @@ public class GraffitiRenderer {
 
 //        setPixel((int)(Math.random() * textureBitmap.getWidth()), (int)(Math.random() * textureBitmap.getHeight()), Color.BLUE);
 
-        // Attach the texture.
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
-        GLES20.glUniform1i(textureUniform, 0);
-
         // Shared fragment uniforms.
         GLES20.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
 
@@ -382,7 +371,27 @@ public class GraffitiRenderer {
             if (planeobjectIndex == null) {
                 planeobjectIndex = planeobjectIndexMap.size();
                 planeobjectIndexMap.put(plane, planeobjectIndex);
+
+                textureNo.put(plane, planeobjectIndex);
+                GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+                int textureArray[] = new int[1];
+                GLES20.glGenTextures(textureArray.length, textureArray, 0);
+                textures.add(textureArray[0]);
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(planeobjectIndex));
+                GLES20.glTexParameteri(
+                        GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+
+                textureBitmaps.add(textureBitmap.copy(textureBitmap.getConfig(), true));
+                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmaps.get(planeobjectIndex), 0);
+                GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
+                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
             }
+
+            // Attach the texture.
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(planeobjectIndex));
+            GLES20.glUniform1i(textureUniform, 0);
 
             // Set plane color. Computed deterministically from the Plane index.
             int colorIndex = planeobjectIndex % PLANE_COLORS_RGBA.length;
