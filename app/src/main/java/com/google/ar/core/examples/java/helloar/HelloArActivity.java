@@ -401,7 +401,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
           float hitMinusCenterZ = hit.getHitPose().tz() - centerPose.tz();
           float hitOnPlaneCoordX = centerPose.getXAxis()[0] * hitMinusCenterX + centerPose.getXAxis()[1] * hitMinusCenterY + centerPose.getXAxis()[2] * hitMinusCenterZ;
           float hitOnPlaneCoordZ = centerPose.getZAxis()[0] * hitMinusCenterX + centerPose.getZAxis()[1] * hitMinusCenterY + centerPose.getZAxis()[2] * hitMinusCenterZ;
-          graffitiRenderer.setPixel(hitOnPlaneCoordX, -hitOnPlaneCoordZ, Color.BLUE);
+          graffitiRenderer.setPixel(hitOnPlaneCoordX, -hitOnPlaneCoordZ, Color.BLUE, trackable);
 
           // Hits are sorted by depth. Consider only closest hit on a plane or oriented point.
           // Cap the number of objects created. This avoids overloading both the
