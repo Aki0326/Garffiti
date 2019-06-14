@@ -232,14 +232,14 @@ public class GraffitiRenderer {
 //        }
     }
 
-    public void setPixel(float x, float y, int color, Trackable trackable) {
+    public void drawCircle(float x, float y, int color, Trackable trackable) {
         if (textureBitmap != null) {
             Integer hitplaneobjectTextureNo = textureNo.get(trackable);
 
             int w = textureBitmaps.get(hitplaneobjectTextureNo).getWidth();
             int h = textureBitmaps.get(hitplaneobjectTextureNo).getHeight();
-            int pixelX = (int)(x * DOTS_PER_METER * w);
-            int pixelY = (int)(y * DOTS_PER_METER * h);
+            int pixelX = (int)((x * DOTS_PER_METER + 0.5) * w);
+            int pixelY = (int)((y * DOTS_PER_METER + 0.5) * h);
             pixelX = Math.floorMod(pixelX, w);
             pixelY = Math.floorMod(pixelY, h);
 
@@ -356,7 +356,7 @@ public class GraffitiRenderer {
         // Set up the shader.
         GLES20.glUseProgram(planeobjectProgram);
 
-//        setPixel((int)(Math.random() * textureBitmap.getWidth()), (int)(Math.random() * textureBitmap.getHeight()), Color.BLUE);
+//        drawCircle((int)(Math.random() * textureBitmap.getWidth()), (int)(Math.random() * textureBitmap.getHeight()), Color.BLUE);
 
         // Shared fragment uniforms.
         GLES20.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
