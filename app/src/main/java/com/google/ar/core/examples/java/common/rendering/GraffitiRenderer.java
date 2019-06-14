@@ -3,7 +3,9 @@ package com.google.ar.core.examples.java.common.rendering;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
@@ -94,11 +96,10 @@ public class GraffitiRenderer {
             new float[4]; // 2x2 rotation matrix applied to uv coords.
 
     private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
+
     private Bitmap textureBitmap = null;
-    private ArrayList<Integer> textures = new ArrayList<Integer>(); //テキスチャID
-
     private ArrayList<Bitmap> textureBitmaps = new ArrayList<Bitmap>();
-
+    private ArrayList<Integer> textures = new ArrayList<Integer>(); //テキスチャID
     private HashMap<Plane, Integer> textureNo = new HashMap<Plane, Integer>();
 
     public GraffitiRenderer() {}
@@ -242,11 +243,20 @@ public class GraffitiRenderer {
             pixelX = Math.floorMod(pixelX, w);
             pixelY = Math.floorMod(pixelY, h);
 
-            textureBitmaps.get(hitplaneobjectTextureNo).setPixel(pixelX, pixelY, color);
+            Bitmap bitmap = textureBitmaps.get(hitplaneobjectTextureNo);
+            Canvas canvas = new Canvas(bitmap);
+            Paint paint = new Paint();
+
+            paint.setColor(color);
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(pixelX, pixelY, 20, paint);
+
+            Bitmap miniBitmap = Bitmap.createBitmap(bitmap, pixelX - 20, pixelY - 20, 40, 40);
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmaps.get(hitplaneobjectTextureNo), 0);
+            GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, pixelX - 20, pixelY - 20, miniBitmap, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         }
     }
@@ -337,9 +347,11 @@ public class GraffitiRenderer {
 
         // Additive blending, masked by alpha channel, clearing alpha channel.
         GLES20.glEnable(GLES20.GL_BLEND);
-        GLES20.glBlendFuncSeparate(
-                GLES20.GL_DST_ALPHA, GLES20.GL_ONE, // RGB (src, dest)
-                GLES20.GL_ZERO, GLES20.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
+//        GLES20.glBlendFuncSeparate(
+//                GLES20.GL_DST_ALPHA, GLES20.GL_ONE, // RGB (src, dest)
+//                GLES20.GL_ZERO, GLES20.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
 
         // Set up the shader.
         GLES20.glUseProgram(planeobjectProgram);
@@ -373,13 +385,15 @@ public class GraffitiRenderer {
                 planeobjectIndexMap.put(plane, planeobjectIndex);
 
                 textureNo.put(plane, planeobjectIndex);
+
                 GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+
                 int textureArray[] = new int[1];
+
                 GLES20.glGenTextures(textureArray.length, textureArray, 0);
                 textures.add(textureArray[0]);
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(planeobjectIndex));
-                GLES20.glTexParameteri(
-                        GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
+                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
                 GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
                 textureBitmaps.add(textureBitmap.copy(textureBitmap.getConfig(), true));
