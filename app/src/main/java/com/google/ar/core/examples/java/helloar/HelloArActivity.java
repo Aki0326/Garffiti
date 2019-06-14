@@ -55,6 +55,7 @@ import com.google.ar.core.examples.java.common.rendering.PlaneObjectRenderer;
 import com.google.ar.core.examples.java.common.rendering.PlaneRenderer;
 import com.google.ar.core.examples.java.common.rendering.PointCloudRenderer;
 import com.google.ar.core.examples.java.common.rendering.Test;
+import com.google.ar.core.examples.java.common.view.ColorSelector;
 import com.google.ar.core.examples.java.common.view.HandMotion;
 import com.google.ar.core.examples.java.common.view.PlaneDiscoveryController;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
@@ -113,7 +114,10 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   }
 
   private final ArrayList<ColoredAnchor> anchors = new ArrayList<>();
+
   private PlaneDiscoveryController planeDiscoveryController;
+
+  private ColorSelector colorSelector;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -141,6 +145,10 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     FrameLayout handmotion = findViewById(R.id.plane_discovery_view);
     FrameLayout instructionsView = (FrameLayout)inflater.inflate(R.layout.view_plane_discovery, handmotion, true);
     planeDiscoveryController = new PlaneDiscoveryController(instructionsView);
+
+    // Set up the ColorSelector View.
+    colorSelector = findViewById(R.id.color_selector_view);
+
   }
 
   @Override
@@ -401,7 +409,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
           float hitMinusCenterZ = hit.getHitPose().tz() - centerPose.tz();
           float hitOnPlaneCoordX = centerPose.getXAxis()[0] * hitMinusCenterX + centerPose.getXAxis()[1] * hitMinusCenterY + centerPose.getXAxis()[2] * hitMinusCenterZ;
           float hitOnPlaneCoordZ = centerPose.getZAxis()[0] * hitMinusCenterX + centerPose.getZAxis()[1] * hitMinusCenterY + centerPose.getZAxis()[2] * hitMinusCenterZ;
-          graffitiRenderer.setPixel(hitOnPlaneCoordX, -hitOnPlaneCoordZ, Color.BLUE, trackable);
+          graffitiRenderer.setPixel(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor().getColor(), trackable);
 
           // Hits are sorted by depth. Consider only closest hit on a plane or oriented point.
           // Cap the number of objects created. This avoids overloading both the
