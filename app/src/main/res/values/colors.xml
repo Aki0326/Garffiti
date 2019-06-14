@@ -4,6 +4,11 @@
 
     <!-- The color white, equivalent to 0xffffffff -->
     <color name="white">#FFFFFF</color>
+    <color name="blue">#0000ee</color>
     <color name="yellow">#FAFA70</color>
+    <color name="red">#ffcc0000</color>
+    <color name="green">#ff22f033</color><!-- Green -->
+    <color name="black">#ff000000</color><!-- Black -->
     <color name="black_30">#4D000000</color>
+
 </resources>
