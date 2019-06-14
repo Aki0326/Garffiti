@@ -2,7 +2,8 @@
 <resources>
     <dimen name="brush_input_width">28dp</dimen>
     <dimen name="brush_input_height">28dp</dimen>
-    <dimen name="brush_input_frame">32dp</dimen>
+    <dimen name="brush_input_bg">32dp</dimen>
+    <dimen name="brush_input_frame">50dp</dimen>
 
     <dimen name="brush_size_indicator_padding_top">0dp</dimen>
     <dimen name="brush_size_indicator_padding_right">0dp</dimen>
