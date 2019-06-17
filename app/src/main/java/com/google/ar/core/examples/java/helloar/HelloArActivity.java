@@ -16,9 +16,6 @@
 
 package com.google.ar.core.examples.java.helloar;
 
-import android.app.Activity;
-import android.content.Context;
-import android.graphics.Color;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
@@ -56,7 +53,6 @@ import com.google.ar.core.examples.java.common.rendering.PlaneRenderer;
 import com.google.ar.core.examples.java.common.rendering.PointCloudRenderer;
 import com.google.ar.core.examples.java.common.rendering.Test;
 import com.google.ar.core.examples.java.common.view.ColorSelector;
-import com.google.ar.core.examples.java.common.view.HandMotion;
 import com.google.ar.core.examples.java.common.view.PlaneDiscoveryController;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
@@ -395,47 +391,18 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       for (HitResult hit : frame.hitTest(tap)) {
         // Check if any plane was hit, and if it was hit inside the plane polygon
         Trackable trackable = hit.getTrackable();
-        Pose centerPose = ((Plane) trackable).getCenterPose();
         // Creates an anchor if a plane or an oriented point was hit.
-        if ((trackable instanceof Plane
+        if (trackable instanceof Plane
                 && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
                 && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0)
-                && ((Plane) trackable).getSubsumedBy() == null)
-                || (trackable instanceof Point
-                && ((Point) trackable).getOrientationMode()
-                == OrientationMode.ESTIMATED_SURFACE_NORMAL)) {
-          float hitMinusCenterX = hit.getHitPose().tx() - centerPose.tx();
-          float hitMinusCenterY = hit.getHitPose().ty() - centerPose.ty();
-          float hitMinusCenterZ = hit.getHitPose().tz() - centerPose.tz();
-          float hitOnPlaneCoordX = centerPose.getXAxis()[0] * hitMinusCenterX + centerPose.getXAxis()[1] * hitMinusCenterY + centerPose.getXAxis()[2] * hitMinusCenterZ;
-          float hitOnPlaneCoordZ = centerPose.getZAxis()[0] * hitMinusCenterX + centerPose.getZAxis()[1] * hitMinusCenterY + centerPose.getZAxis()[2] * hitMinusCenterZ;
-          graffitiRenderer.setPixel(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor().getColor(), trackable);
-
-          // Hits are sorted by depth. Consider only closest hit on a plane or oriented point.
-          // Cap the number of objects created. This avoids overloading both the
-          // rendering system and ARCore.
-          if (anchors.size() >= 100) {
-            anchors.get(0).anchor.detach();
-            anchors.remove(0);
-          }
-
-          // Assign a color to the object for rendering based on the trackable type
-          // this anchor attached to. For AR_TRACKABLE_POINT, it's blue color, and
-          // for AR_TRACKABLE_PLANE, it's green color.
-          float[] objColor;
-          if (trackable instanceof Point) {
-            objColor = new float[] {66.0f, 133.0f, 244.0f, 0.0f};
-          } else if (trackable instanceof Plane) {
-            objColor = new float[] {255.0f, 255.0f, 0.0f, 0.0f};
-          } else {
-            objColor = DEFAULT_COLOR;
-          }
-
-          // Adding an Anchor tells ARCore that it should track this position in
-          // space. This anchor is created on the Plane to place the 3D model
-          // in the correct position relative both to the world and to the plane.
-          anchors.add(new ColoredAnchor(hit.createAnchor(), objColor));
-          break;
+                && ((Plane) trackable).getSubsumedBy() == null) {
+          Pose planePose = ((Plane) trackable).getCenterPose();
+          float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
+          float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
+          float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
+          float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
+          float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
+          graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor().getColor(), trackable);
         }
       }
     }
