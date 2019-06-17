@@ -10,5 +10,6 @@
     <color name="green">#ff22f033</color><!-- Green -->
     <color name="black">#ff000000</color><!-- Black -->
     <color name="black_30">#4D000000</color>
+    <color name="disable">#cccccc</color>
 
 </resources>
