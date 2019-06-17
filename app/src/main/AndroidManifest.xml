@@ -33,7 +33,7 @@
       tools:ignore="GoogleAppIndexingWarning">
 
     <activity
-        android:name="com.google.ar.core.examples.java.helloar.HelloArActivity"
+        android:name="com.google.ar.core.examples.java.helloar.ModeSelectActivity"
         android:configChanges="orientation|screenSize"
         android:exported="true"
         android:theme="@style/Theme.AppCompat.NoActionBar"
@@ -42,6 +42,20 @@
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
+    </activity>
+    <activity
+        android:name="com.google.ar.core.examples.java.helloar.HelloArActivity"
+        android:configChanges="orientation|screenSize"
+        android:exported="true"
+        android:theme="@style/Theme.AppCompat.NoActionBar"
+        android:screenOrientation="locked">
+    </activity>
+    <activity
+        android:name="com.google.ar.core.examples.java.helloar.PhotoGalleryActivity"
+        android:configChanges="orientation|screenSize"
+        android:exported="true"
+        android:theme="@style/Theme.AppCompat.NoActionBar"
+        android:screenOrientation="locked">
     </activity>
     <!-- This tag indicates that this application requires ARCore.  This results in the Google Play
          Store downloading and installing ARCore along with the application. -->
