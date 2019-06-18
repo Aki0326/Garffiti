@@ -12,31 +12,13 @@ import com.google.ar.core.examples.java.helloar.R;
 public class ColorSelector extends RelativeLayout implements View.OnClickListener{
     private static final String TAG = ColorSelector.class.getSimpleName();
 
-    private LineColor selectedLineColor = LineColor.BLUE;
+    private int selectedLineColor = Color.BLUE;
 
     private FrameLayout greenButton;
     private FrameLayout blackButton;
     private FrameLayout blueButton;
     private FrameLayout yellowButton;
     private FrameLayout redButton;
-
-    public enum LineColor {
-        BLUE(Color.BLUE),
-        YELLOW(Color.YELLOW),
-        RED(Color.RED),
-        GREEN(Color.GREEN),
-        BLACK(Color.BLACK);
-
-        private final int color;
-
-        LineColor(int color) {
-            this.color = color;
-        }
-
-        public int getColor() {
-            return color;
-        }
-    }
 
     public ColorSelector(Context context) {
         super(context);
@@ -70,7 +52,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
 
         switch (view.getId()) {
             case R.id.blue_color_button:
-                selectedLineColor = LineColor.BLUE;
+                selectedLineColor = Color.BLUE;
                 blueButton.setScaleX(1.5f);
                 blueButton.setScaleY(1.5f);
                 yellowButton.setScaleX(1.0f);
@@ -83,7 +65,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 blackButton.setScaleY(1.0f);
                 break;
             case R.id.yellow_color_button:
-                selectedLineColor = LineColor.YELLOW;
+                selectedLineColor = Color.YELLOW;
                 blueButton.setScaleX(1.0f);
                 blueButton.setScaleY(1.0f);
                 yellowButton.setScaleX(1.5f);
@@ -97,7 +79,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
 
                 break;
             case R.id.red_color_button:
-                selectedLineColor = LineColor.RED;
+                selectedLineColor = Color.RED;
                 blueButton.setScaleX(1.0f);
                 blueButton.setScaleY(1.0f);
                 yellowButton.setScaleX(1.0f);
@@ -111,7 +93,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 break;
 
             case R.id.green_color_button:
-                selectedLineColor = LineColor.GREEN;
+                selectedLineColor = Color.GREEN;
                 blueButton.setScaleX(1.0f);
                 blueButton.setScaleY(1.0f);
                 yellowButton.setScaleX(1.0f);
@@ -125,7 +107,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 break;
 
             case R.id.black_color_button:
-                selectedLineColor = LineColor.BLACK;
+                selectedLineColor = Color.BLACK;
                 blueButton.setScaleX(1.0f);
                 blueButton.setScaleY(1.0f);
                 yellowButton.setScaleX(1.0f);
@@ -140,7 +122,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
         }
     }
 
-    public LineColor getSelectedLineColor() {
+    public int getSelectedLineColor() {
         return selectedLineColor;
     }
 
