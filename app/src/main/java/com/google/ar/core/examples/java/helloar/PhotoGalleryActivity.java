@@ -31,7 +31,6 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("image/*");
         startActivityForResult(intent, RESULT_PICK_IMAGEFILE);
-        if(imagePhoto == null) finish();
     }
 
     @Override
