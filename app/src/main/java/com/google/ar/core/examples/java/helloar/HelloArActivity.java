@@ -571,6 +571,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
 //      planeObjectRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
 //      testRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
+
+      graffitiRenderer.adjustTextureAxis(frame, camera);
       graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
 //      raycastRenderer.draw(viewmtx,projmtx);
