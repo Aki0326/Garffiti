@@ -1,6 +1,5 @@
-package com.google.ar.core.examples.java.helloar;
+package com.google.ar.core.examples.java.graffiti;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;

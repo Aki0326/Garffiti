@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.CountDownTimer;
 
-import com.google.ar.core.examples.java.helloar.ModeSelectActivity;
+import com.google.ar.core.examples.java.graffiti.ModeSelectActivity;
 
 public class TimeoutHelper {
     private static long START_TIME = 600000; // 10m

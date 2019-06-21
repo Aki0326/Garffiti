@@ -1,4 +1,4 @@
-package com.google.ar.core.examples.java.helloar;
+package com.google.ar.core.examples.java.graffiti;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -21,7 +21,6 @@ import com.google.ar.core.examples.java.common.view.GridAdapter;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 
 public class PhotoGalleryActivity extends AppCompatActivity {

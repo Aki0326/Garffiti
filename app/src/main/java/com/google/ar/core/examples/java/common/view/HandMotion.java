@@ -7,7 +7,7 @@ import android.util.AttributeSet;
 import android.view.animation.Animation;
 import android.widget.FrameLayout;
 
-import com.google.ar.core.examples.java.helloar.R;
+import com.google.ar.core.examples.java.graffiti.R;
 
 /** This view contains the hand motion instructions with animation. */
 public class HandMotion  extends AppCompatImageView {
