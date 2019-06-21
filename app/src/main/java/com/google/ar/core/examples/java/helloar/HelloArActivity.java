@@ -492,7 +492,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       lineShaderRenderer.createOnGlThread(/*context=*/ this,"models/linecap.png");
 
       testRenderer.createOnGlThread(this,"models/nambo.png");
-      graffitiRenderer.createOnGlThread(this,"models/plane_test.png");
+      graffitiRenderer.createOnGlThread(this,"models/plane.png");
 
     } catch (IOException e) {
       Log.e(TAG, "Failed to read an asset file", e);
@@ -625,7 +625,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
           float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
           float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
           float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
-          graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), trackable);
+          graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 4, trackable);
         }
       }
     }
