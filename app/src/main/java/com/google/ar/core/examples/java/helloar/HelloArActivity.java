@@ -61,6 +61,7 @@ import com.google.ar.core.examples.java.common.helpers.DisplayRotationHelper;
 import com.google.ar.core.examples.java.common.helpers.FullScreenHelper;
 import com.google.ar.core.examples.java.common.helpers.SnackbarHelper;
 import com.google.ar.core.examples.java.common.helpers.TapHelper;
+import com.google.ar.core.examples.java.common.helpers.TimeoutHelper;
 import com.google.ar.core.examples.java.common.rendering.BackgroundRenderer;
 import com.google.ar.core.examples.java.common.rendering.GraffitiRenderer;
 import com.google.ar.core.examples.java.common.rendering.LineShaderRenderer;
@@ -165,7 +166,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     displayRotationHelper = new DisplayRotationHelper(/*context=*/ this);
 
     // Set up tap listener.
-    tapHelper = new TapHelper(/*context=*/ this);
+    tapHelper = new TapHelper(/*context=*/ this, HelloArActivity.this);
     surfaceView.setOnTouchListener(tapHelper);
 
     // Set up renderer.
@@ -274,6 +275,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
         Log.e(TAG, "Exception creating session", exception);
         return;
       }
+
     }
 
     // Note that order matters - see the note in onPause(), the reverse applies here.
@@ -293,6 +295,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
 //    messageSnackbarHelper.showMessage(this, "Searching for surfaces...");
     planeDiscoveryController.show();
+
+    TimeoutHelper.startTimer(HelloArActivity.this);
   }
 
   @Override
@@ -306,6 +310,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       surfaceView.onPause();
       session.pause();
     }
+    TimeoutHelper.resetTimer();
   }
 
   @Override

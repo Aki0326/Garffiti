@@ -14,6 +14,7 @@
  */
 package com.google.ar.core.examples.java.common.helpers;
 
+import android.app.Activity;
 import android.content.Context;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -29,13 +30,14 @@ import java.util.concurrent.BlockingQueue;
 public final class TapHelper implements OnTouchListener {
     private final GestureDetector gestureDetector;
     private final BlockingQueue<MotionEvent> queuedSingleTaps = new ArrayBlockingQueue<>(16);
+    private static Activity activity;
 
     /**
      * Creates the tap helper.
      *
      * @param context the application's context.
      */
-    public TapHelper(Context context) {
+    public TapHelper(Context context, Activity activity) {
         gestureDetector =
                 new GestureDetector(
                         context,
@@ -51,6 +53,7 @@ public final class TapHelper implements OnTouchListener {
                                 return true;
                             }
                         });
+        this.activity = activity;
     }
 
     /**
@@ -65,8 +68,10 @@ public final class TapHelper implements OnTouchListener {
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
         if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
+            TimeoutHelper.resetTimer();
             queuedSingleTaps.offer(motionEvent);
         } else {
+            TimeoutHelper.startTimer(activity);
             queuedSingleTaps.clear();
         }
         return gestureDetector.onTouchEvent(motionEvent);
