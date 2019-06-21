@@ -62,7 +62,7 @@ public class GraffitiRenderer {
 
     // texture size
 //    private static final float DOTS_PER_METER = 20.0f;
-    private static final float DOTS_PER_METER = 0.5f;
+    private static final float DOTS_PER_METER = 0.2f;
 
     // Using the "signed distance field" approach to render sharp lines and circles.
     // {dotThreshold, lineThreshold, lineFadeSpeed, occlusionScale}
@@ -101,7 +101,7 @@ public class GraffitiRenderer {
 
     private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
 
-    private final int backgroundColor = Color.WHITE;      // テクスチャ背景色
+    private final int backgroundColor = Color.TRANSPARENT;      // テクスチャ背景色
     private Bitmap textureBitmap = null;
     private Bitmap textureBitmapToRecycle = null;
     private ArrayList<Bitmap> textureBitmaps = new ArrayList<Bitmap>();
@@ -138,6 +138,7 @@ public class GraffitiRenderer {
         // Read the texture.
         textureBitmap = BitmapFactory.decodeStream(context.getAssets().open(gridDistanceTextureName));
         textureBitmapToRecycle = textureBitmap.copy(textureBitmap.getConfig(),true);
+        textureBitmapToRecycle.eraseColor(backgroundColor);
 
         ShaderUtil.checkGLError(TAG, "Texture loading");
 
@@ -240,7 +241,7 @@ public class GraffitiRenderer {
 //        }
     }
 
-    public void drawCircle(float x, float y, int color, Trackable trackable) {
+    public void drawCircle(float x, float y, int color, int r, Trackable trackable) {
         if (textureBitmap != null) {
             Integer hitplaneobjectTextureNo = planeNo.get(trackable);
 
@@ -256,22 +257,22 @@ public class GraffitiRenderer {
             Paint paint = new Paint();
             Bitmap miniBitmap;
 
-            if(color == Color.WHITE) {
+            if(color == Color.TRANSPARENT) {
 //                paint.setColor(Color.TRANSPARENT);
                 paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
                 paint.setStyle(Paint.Style.FILL);
-                canvas.drawCircle(pixelX, pixelY, 20, paint);
-                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - 20, pixelY - 20, 40, 40);
+                canvas.drawCircle(pixelX, pixelY, r, paint);
+                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
             } else {
                 paint.setColor(color);
                 paint.setStyle(Paint.Style.FILL);
-                canvas.drawCircle(pixelX, pixelY, 20, paint);
-                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - 20, pixelY - 20, 40, 40);
+                canvas.drawCircle(pixelX, pixelY, r, paint);
+                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
             }
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
-            GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, pixelX - 20, pixelY - 20, miniBitmap, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE);
+            GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, pixelX - r, pixelY - r, miniBitmap, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         }
     }
@@ -466,7 +467,9 @@ public class GraffitiRenderer {
                 GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
                 GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
 
-                textureBitmaps.add(textureBitmap.copy(textureBitmap.getConfig(), true));
+                Bitmap tmp = textureBitmap.copy(textureBitmap.getConfig(), true);
+                tmp.eraseColor(backgroundColor);
+                textureBitmaps.add(tmp);
                 GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmaps.get(planeobjectIndex), 0);
                 GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
                 GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
