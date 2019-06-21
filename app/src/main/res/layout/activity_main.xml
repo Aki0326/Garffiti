@@ -44,8 +44,8 @@
         android:id="@+id/camera_image"
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:layout_marginStart="285dp"
-        android:layout_marginTop="660dp"
+        android:layout_marginStart="305dp"
+        android:layout_marginTop="680dp"
         app:srcCompat="@android:drawable/ic_menu_camera" />
 
     <ImageView

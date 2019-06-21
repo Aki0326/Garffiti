@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
@@ -252,12 +254,20 @@ public class GraffitiRenderer {
             Bitmap bitmap = textureBitmaps.get(hitplaneobjectTextureNo);
             Canvas canvas = new Canvas(bitmap);
             Paint paint = new Paint();
+            Bitmap miniBitmap;
 
-            paint.setColor(color);
-            paint.setStyle(Paint.Style.FILL);
-            canvas.drawCircle(pixelX, pixelY, 20, paint);
-
-            Bitmap miniBitmap = Bitmap.createBitmap(bitmap, pixelX - 20, pixelY - 20, 40, 40);
+            if(color == Color.WHITE) {
+//                paint.setColor(Color.TRANSPARENT);
+                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(pixelX, pixelY, 20, paint);
+                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - 20, pixelY - 20, 40, 40);
+            } else {
+                paint.setColor(color);
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(pixelX, pixelY, 20, paint);
+                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - 20, pixelY - 20, 40, 40);
+            }
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
