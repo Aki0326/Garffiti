@@ -135,7 +135,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 break;
 
             case R.id.eraser_button:
-                selectedLineColor = Color.WHITE;
+                selectedLineColor = Color.TRANSPARENT;
                 blueButton.setScaleX(1.0f);
                 blueButton.setScaleY(1.0f);
                 yellowButton.setScaleX(1.0f);
