@@ -1,6 +1,5 @@
 package com.google.ar.core.examples.java.common.view;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -11,8 +10,8 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 
-import com.google.ar.core.examples.java.helloar.Graffiti;
-import com.google.ar.core.examples.java.helloar.ShowPhotoActivity;
+import com.google.ar.core.examples.java.graffiti.Graffiti;
+import com.google.ar.core.examples.java.graffiti.ShowPhotoActivity;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;

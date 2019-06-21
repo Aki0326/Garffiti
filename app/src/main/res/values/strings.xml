@@ -15,7 +15,7 @@
    limitations under the License.
 -->
 <resources>
-  <string name="app_name">HelloAR Java</string>
+  <string name="app_name">Graffiti</string>
 
   <!-- Image and ImageButton Content Descriptions for Accessibility-->
   <string name="content_description_white_brush">White Brush</string>

@@ -7,7 +7,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
-import com.google.ar.core.examples.java.helloar.R;
+import com.google.ar.core.examples.java.graffiti.R;
 
 public class ColorSelector extends RelativeLayout implements View.OnClickListener{
     private static final String TAG = ColorSelector.class.getSimpleName();

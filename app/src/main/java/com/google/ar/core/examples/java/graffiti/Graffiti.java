@@ -1,4 +1,4 @@
-package com.google.ar.core.examples.java.helloar;
+package com.google.ar.core.examples.java.graffiti;
 
 import android.app.Activity;
 import android.app.Application;
