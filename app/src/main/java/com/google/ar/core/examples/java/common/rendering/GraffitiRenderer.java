@@ -10,7 +10,6 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.util.Log;
 
 import com.google.ar.core.Camera;
 import com.google.ar.core.Frame;
@@ -18,6 +17,7 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+import com.google.ar.core.examples.java.common.geometry.Vector;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -99,6 +99,7 @@ public class GraffitiRenderer {
 
     private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
 
+    private final int backgroundColor = Color.WHITE;      // テクスチャ背景色
     private Bitmap textureBitmap = null;
     private Bitmap textureBitmapToRecycle = null;
     private ArrayList<Bitmap> textureBitmaps = new ArrayList<Bitmap>();
@@ -266,7 +267,6 @@ public class GraffitiRenderer {
     }
 
     public void adjustTextureAxis(Frame frame, Camera camera) {
-//        android.graphics.Matrix convTolinerCombinationOfNewAxes = new android.graphics.Matrix();
         Pose cameraPose = camera.getPose();
         Pose worldToCameraLocal = cameraPose.inverse();
 //        Log.d("pose","camera:" + cameraPose.tx() + "," + cameraPose.ty() + "," + cameraPose.tz() + ","
@@ -281,8 +281,9 @@ public class GraffitiRenderer {
 //                    + newPose.getXAxis()[0] +","  + newPose.getXAxis()[1] +","  + newPose.getXAxis()[2] +","
 //                    + newPose.getYAxis()[0] +","  + newPose.getYAxis()[1] +","  + newPose.getYAxis()[2]);
 
+            // 1. テクスチャを平面上で回転＆移動させるための行列の作成
             Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
-            textureBitmapToRecycle.eraseColor(Color.WHITE);
+            textureBitmapToRecycle.eraseColor(backgroundColor);
             Canvas canvas = new Canvas(textureBitmapToRecycle);
 
             //  回転成分
@@ -291,53 +292,20 @@ public class GraffitiRenderer {
             float[] newAxisY = newPose.getYAxis();
             float[] newAxisZ = newPose.getZAxis();
             float[] oldAxisX = oldPose.getXAxis();
-            float cosTheta = dot(newAxisX, oldAxisX);
-            float sinTheta = dot(newAxisY, cross(newAxisX, oldAxisX));
+            float cosTheta = Vector.dot(newAxisX, oldAxisX);
+            float sinTheta = Vector.dot(newAxisY, Vector.cross(newAxisX, oldAxisX));
             float theta = (float) (Math.atan2(sinTheta, cosTheta) / Math.PI * 180.0);
             adjustMatrix.setRotate(theta, 0.5f * bitmap.getWidth(), 0.5f * bitmap.getHeight());
 
             // 並行移動成分
-            float[] newToOld = minus(oldPose.getTranslation(), newPose.getTranslation());
-            float pixelTransX = (dot(newToOld, newAxisX) * DOTS_PER_METER) * bitmap.getWidth();
-            float pixelTransY = (-dot(newToOld, newAxisZ) * DOTS_PER_METER) * bitmap.getHeight();
+            float[] newToOld = Vector.minus(oldPose.getTranslation(), newPose.getTranslation());
+            float pixelTransX = (Vector.dot(newToOld, newAxisX) * DOTS_PER_METER) * bitmap.getWidth();
+            float pixelTransY = (-Vector.dot(newToOld, newAxisZ) * DOTS_PER_METER) * bitmap.getHeight();
             adjustMatrix.postTranslate(pixelTransX, pixelTransY);
 
 //            Log.d("pose","adjust:" + theta + "," + pixelTransX + "," + pixelTransY);
 
-//            // 1. cameraPoseから見て、newPoseがoldPoseに重なるようにテクスチャを変形(アフィン変換)
-//            float[] projectedNewAxisX = worldToCameraLocal.rotateVector(newPose.getXAxis());
-//            float[] projectedNewAxisZ = worldToCameraLocal.rotateVector(newPose.getZAxis());
-//            float[] projectedOldAxisX = worldToCameraLocal.rotateVector(oldPose.getXAxis());
-//            float[] projectedOldAxisZ = worldToCameraLocal.rotateVector(oldPose.getZAxis());
-//            float[] newAxisX = new float[]{projectedNewAxisX[0], projectedNewAxisX[1]};
-//            float[] newAxisZ = new float[]{-projectedNewAxisZ[0], -projectedNewAxisZ[1]};
-//            float[] oldAxisX = new float[]{projectedOldAxisX[0], projectedOldAxisX[1]};
-//            float[] oldAxisZ = new float[]{-projectedOldAxisZ[0], -projectedOldAxisZ[1]};
-//
-//            // 1.1 カメラに平行投影した更新後のテクスチャ座標系で表現するための行列
-//            calcLinearCombinationConvMatrix(convTolinerCombinationOfNewAxes, newAxisX, newAxisZ);
-//            convTolinerCombinationOfNewAxes.mapVectors(oldAxisX);
-//            convTolinerCombinationOfNewAxes.mapVectors(oldAxisZ);
-//
-//            // 1.2 更新後のテクスチャ座標系上での並行移動成分の計算
-//            float[] cameraToNew = minus(newPose.getTranslation(), cameraPose.getTranslation());
-//            float[] cameraToOld = minus(oldPose.getTranslation(), cameraPose.getTranslation());
-//            float[] cameraToOldUnit = normalize(cameraToOld);
-//            float cosTheta = dot(cameraToOldUnit, normalize(newPose.getYAxis()));
-//            float distanceToNewPlane = dot(cameraToNew, normalize(newPose.getYAxis()));
-//            float[] oldPosOnNewPlane = add(cameraPose.getTranslation(), scale(cameraToOldUnit, distanceToNewPlane / cosTheta));
-//            oldPosOnNewPlane = newPose.inverse().transformPoint(oldPosOnNewPlane);
-//            float pixelTransX = (oldPosOnNewPlane[0] * DOTS_PER_METER) * bitmap.getWidth();
-//            float pixelTransY = (-oldPosOnNewPlane[2] * DOTS_PER_METER) * bitmap.getHeight();
-//
-//            // 1.3 変形行列の作成
-//            adjustMatrix.setValues(new float[]{
-//                    oldAxisX[0],   oldAxisZ[0],   pixelTransX,
-//                    oldAxisX[1],   oldAxisZ[1],   pixelTransY,
-//                    0.0f,   0.0f,   1.0f
-//            });
-
-            // 2. 変形
+            // 2. 適用
             canvas.drawBitmap(bitmap, adjustMatrix, new Paint());
 
             // 3. 転送
@@ -347,84 +315,9 @@ public class GraffitiRenderer {
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
 
             textureBitmaps.set(planeNo.get(p), textureBitmapToRecycle);
-            textureBitmapToRecycle = bitmap;
+            textureBitmapToRecycle = bitmap;        //  リサイクルに回す
             planePose.put(p, newPose);
         }
-    }
-
-//    public static void calcLinearCombinationConvMatrix(android.graphics.Matrix toLinearCombinationMat, float[] basisX, float[] basisY) {
-//        float squareX = squareLength(basisX);
-//        float squareY = squareLength(basisY);
-//        float xDotY = dot(basisX, basisY);
-//        float a = 1.0f / (squareX * squareY - xDotY * xDotY);
-//        toLinearCombinationMat.setValues(new float[]{
-//                a * (squareY * basisX[0] - xDotY * basisY[0]),    a * (squareY * basisX[1] - xDotY * basisY[1]),    0.0f,
-//                a * (-xDotY * basisX[0] + squareX * basisY[0]),   a * (-xDotY * basisX[1] + squareX * basisY[1]),   0.0f,
-//                0.0f,   0.0f,   1.0f
-//        });
-//    }
-
-    public static float dot(float[] vec1, float[] vec2) {
-        if (vec1.length == 2 && vec2.length == 2) {
-            return vec1[0] * vec2[0] + vec1[1] * vec2[1];
-        } else if (vec1.length == 3 && vec2.length == 3) {
-            return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
-        }
-        return 0.0f;
-    }
-
-    public static float[] cross(float[] vec1, float[] vec2) {
-        if (vec1.length == 2 && vec2.length == 2) {
-            return new float[]{vec1[0] * vec2[1] - vec1[1] * vec2[0]};
-        } else if (vec1.length == 3 && vec2.length == 3) {
-            return new float[]{vec1[1] * vec2[2] - vec1[2] * vec2[1], vec1[2] * vec2[0] - vec1[0] * vec2[2], vec1[0] * vec2[1] - vec1[1] * vec2[0]};
-        }
-        return null;
-    }
-
-    public static float[] add(float[] vec1, float[] vec2) {
-        if (vec1.length == 2 && vec2.length == 2) {
-            return new float[]{vec1[0] + vec2[0], vec1[1] + vec2[1]};
-        } else if (vec1.length == 3 && vec2.length == 3) {
-            return new float[]{vec1[0] + vec2[0], vec1[1] + vec2[1], vec1[2] + vec2[2]};
-        }
-        return null;
-    }
-
-    public static float[] minus(float[] vec1, float[] vec2) {
-        if (vec1.length == 2 && vec2.length == 2) {
-            return new float[]{vec1[0] - vec2[0], vec1[1] - vec2[1]};
-        } else if (vec1.length == 3 && vec2.length == 3) {
-            return new float[]{vec1[0] - vec2[0], vec1[1] - vec2[1], vec1[2] - vec2[2]};
-        }
-        return null;
-    }
-
-    public static float squareLength(float[] vec) {
-        if (vec.length == 2) {
-            return vec[0] * vec[0] + vec[1] * vec[1];
-        } else if (vec.length == 3) {
-            return vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
-        }
-        return 0.0f;
-    }
-
-    public static float length(float[] vec) {
-        return (float)Math.sqrt(squareLength(vec));
-    }
-
-    public static float[] normalize(float[] vec) {
-        float l = length(vec);
-        return scale(vec, 1.0f / l);
-    }
-
-    public static float[] scale(float[] vec, float s) {
-        if (vec.length == 2) {
-            return new float[]{vec[0] * s, vec[1] * s};
-        } else if (vec.length == 3) {
-            return new float[]{vec[0] * s, vec[1] * s, vec[2] * s};
-        }
-        return null;
     }
 
     private void draw(float[] cameraView, float[] cameraPerspective, float[] planeNormal) {
