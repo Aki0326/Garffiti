@@ -1,71 +1,202 @@
 package com.google.ar.core.examples.java.helloar;
 
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.ParcelFileDescriptor;
+import android.os.Environment;
+import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.ImageView;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.GridView;
+import android.widget.Toast;
 
-import java.io.FileDescriptor;
-import java.io.IOException;
+import com.google.ar.core.examples.java.common.helpers.TimeoutHelper;
+import com.google.ar.core.examples.java.common.view.GridAdapter;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public class PhotoGalleryActivity extends AppCompatActivity {
     private static final String TAG = PhotoGalleryActivity.class.getSimpleName();
+    private static final int PERMISSON_REQUEST_CODE = 2;
+    private GridView gridViewPhotos;
+    private ArrayList<String> photoPathList;
+//    private View surface;
 
-    private static final int RESULT_PICK_IMAGEFILE = 1000;
-    private ImageView imagePhoto;
-    private boolean setImage = false; // false():Imageが選択されずfinish()、true:Imageが選択されて続行
+    @SuppressLint("ClickableViewAccessibility")
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void requestReadStorage() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            }
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSON_REQUEST_CODE);
+        } else {
+            // ここに許可済みの時の動作を書く
+            // 許可された時の動作
+            photoPathList = getLocalPhotos(Environment.DIRECTORY_PICTURES + File.separator + "AR/");
+            gridViewPhotos = findViewById(R.id.gridView_photos);
+            Collections.reverse(photoPathList);
+
+            final GridAdapter adapter = new GridAdapter(this, photoPathList);
+            gridViewPhotos.setAdapter(adapter);
+            gridViewPhotos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    TimeoutHelper.resetTimer();
+                    adapter.isSelected(view);
+                }
+            });
+
+//            gridViewPhotos.setOnTouchListener(new View.OnTouchListener() {
+//                @Override
+//                public boolean onTouch(View view, MotionEvent motionEvent) {
+//                    float currentXPosition = motionEvent.getX();
+//                    float currentYPosition = motionEvent.getY();
+//                    int position = gridViewPhotos.pointToPosition((int) currentXPosition, (int) currentYPosition);
+//                    if(motionEvent.getAction() == MotionEvent.ACTION_SCROLL) {
+//                        TimeoutHelper.resetTimer();
+//                        return true;
+//                    }
+//                    if (motionEvent.getAction() != MotionEvent.ACTION_UP || motionEvent.getAction() != MotionEvent.ACTION_SCROLL) {
+//                        adapter.isSelected(gridViewPhotos.getChildAt(position), PhotoGalleryActivity.this);
+//                        TimeoutHelper.resetTimer();
+//                        return true;
+//                    } else {
+//                        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
+//                        return false;
+//                    }
+//                }
+
+//                public boolean onClick(View v, MotionEvent motionEvent) {
+//                    float currentXPosition = motionEvent.getX();
+//                    float currentYPosition = motionEvent.getY();
+//                    int position = gridViewPhotos.pointToPosition((int) currentXPosition, (int) currentYPosition);
+//                    if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
+//                        TimeoutHelper.resetTimer();
+//                        return true;
+//                    } else {
+//                        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
+//                        return false;
+//                    }
+//                }
+//            });
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_gallery);
+        requestReadStorage();
 
-        imagePhoto = findViewById(R.id.image_photo);
-        setImage = true;
-
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("image/*");
-        startActivityForResult(intent, RESULT_PICK_IMAGEFILE);
+//        surface = findViewById(R.id.view_photogallery);
+//        surface.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View view, MotionEvent motionEvent) {
+//                if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
+//                    TimeoutHelper.resetTimer();
+//                    return true;
+//                } else {
+//                    TimeoutHelper.startTimer(PhotoGalleryActivity.this);
+//                    return false;
+//                }
+//            }
+//        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if(setImage) { //OnCreate()された直後、または、Imageが選択された場合
-            setImage = false;
-        } else { //Imageが選択されなかった場合
-            finish();
-        }
+        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
-        if (requestCode == RESULT_PICK_IMAGEFILE && resultCode == RESULT_OK) {
-            Uri uri = null;
-            if (resultData != null) {
-                uri = resultData.getData();
-                try {
-                    Bitmap bmp = getBitmapFromUri(uri);
-                    imagePhoto.setImageBitmap(bmp);
-                    setImage = true; //Imageが選択された
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+    protected void onPause() {
+        super.onPause();
+        TimeoutHelper.resetTimer();
+    }
+
+//    @Override
+//    public boolean dispatchTouchEvent(MotionEvent motionEvent) {
+//        AdapterView.OnItemClickListener item = gridViewPhotos.getOnItemClickListener();
+//        if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
+//            TimeoutHelper.resetTimer();
+//            return true;
+//        } else {
+//            TimeoutHelper.startTimer(PhotoGalleryActivity.this);
+//            return false;
+//        }
+//    }
+
+    private ArrayList<String> getLocalPhotos(String directoryName)  {
+        String fullpath = "";
+        String filename = "";
+        String fileExtension = "";
+        int lastDotPosition = 0;
+        ArrayList<String> photoFilePaths = new ArrayList<String>() ;
+
+        File dir = Environment.getExternalStoragePublicDirectory(directoryName);
+
+        if(!dir.exists()){
+            Toast.makeText(this, directoryName+ "は存在しません", Toast.LENGTH_LONG).show();
+            return null;
+        }
+
+        File[] files = dir.listFiles();
+
+        for(int fileCount = 0; fileCount < files.length; fileCount++){
+            fullpath = String.valueOf(files[fileCount]);
+            filename = String.valueOf(files[fileCount].getName());
+
+            if(files[fileCount].isDirectory()){
+                // ディレクトリのため対象外
+                continue;
+            }
+
+            // 拡張子取得
+            fileExtension = "";
+            lastDotPosition = filename.lastIndexOf(".");
+            if (lastDotPosition != -1) {
+                fileExtension = filename.substring(lastDotPosition + 1);
+            }
+            if (fullpath.contains(fileExtension)) {
+                photoFilePaths.add(fullpath);
+            }
+
+        }
+        return photoFilePaths;
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
+        if(requestCode == PERMISSON_REQUEST_CODE){
+            if(grantResults.length != 1 || grantResults[0] != PackageManager.PERMISSION_GRANTED){
+                //拒否された時の動作
+                Toast.makeText(this, "Camera permission is needed to run this application", Toast.LENGTH_LONG).show();
+            }else{
+                // 許可された時の動作
+                photoPathList = getLocalPhotos(Environment.DIRECTORY_DOWNLOADS);
+                Collections.reverse(photoPathList);
+                gridViewPhotos = findViewById(R.id.gridView_photos);
+
+                final GridAdapter adapter = new GridAdapter(this, photoPathList);
+                gridViewPhotos.setAdapter(adapter);
+                gridViewPhotos.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+                    @Override
+                    public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+                        adapter.isSelected(view);
+                    }
+                });
             }
         }
     }
-
-    private Bitmap getBitmapFromUri(Uri uri) throws IOException {
-        ParcelFileDescriptor parcelFileDescriptor = getContentResolver().openFileDescriptor(uri, "r");
-        FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
-        Bitmap image = BitmapFactory.decodeFileDescriptor(fileDescriptor);
-        parcelFileDescriptor.close();
-        return image;
-    }
-
 }
