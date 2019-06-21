@@ -55,39 +55,18 @@ public class PhotoGalleryActivity extends AppCompatActivity {
                 }
             });
 
-//            gridViewPhotos.setOnTouchListener(new View.OnTouchListener() {
-//                @Override
-//                public boolean onTouch(View view, MotionEvent motionEvent) {
-//                    float currentXPosition = motionEvent.getX();
-//                    float currentYPosition = motionEvent.getY();
-//                    int position = gridViewPhotos.pointToPosition((int) currentXPosition, (int) currentYPosition);
-//                    if(motionEvent.getAction() == MotionEvent.ACTION_SCROLL) {
-//                        TimeoutHelper.resetTimer();
-//                        return true;
-//                    }
-//                    if (motionEvent.getAction() != MotionEvent.ACTION_UP || motionEvent.getAction() != MotionEvent.ACTION_SCROLL) {
-//                        adapter.isSelected(gridViewPhotos.getChildAt(position), PhotoGalleryActivity.this);
-//                        TimeoutHelper.resetTimer();
-//                        return true;
-//                    } else {
-//                        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
-//                        return false;
-//                    }
-//                }
-
-//                public boolean onClick(View v, MotionEvent motionEvent) {
-//                    float currentXPosition = motionEvent.getX();
-//                    float currentYPosition = motionEvent.getY();
-//                    int position = gridViewPhotos.pointToPosition((int) currentXPosition, (int) currentYPosition);
-//                    if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
-//                        TimeoutHelper.resetTimer();
-//                        return true;
-//                    } else {
-//                        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
-//                        return false;
-//                    }
-//                }
-//            });
+            gridViewPhotos.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View view, MotionEvent motionEvent) {
+                    if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
+                        TimeoutHelper.resetTimer();
+                        return false;
+                    } else {
+                        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
+                        return false;
+                    }
+                }
+            });
         }
     }
 
@@ -96,20 +75,6 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_gallery);
         requestReadStorage();
-
-//        surface = findViewById(R.id.view_photogallery);
-//        surface.setOnTouchListener(new View.OnTouchListener() {
-//            @Override
-//            public boolean onTouch(View view, MotionEvent motionEvent) {
-//                if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
-//                    TimeoutHelper.resetTimer();
-//                    return true;
-//                } else {
-//                    TimeoutHelper.startTimer(PhotoGalleryActivity.this);
-//                    return false;
-//                }
-//            }
-//        });
     }
 
     @Override
@@ -123,18 +88,6 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         super.onPause();
         TimeoutHelper.resetTimer();
     }
-
-//    @Override
-//    public boolean dispatchTouchEvent(MotionEvent motionEvent) {
-//        AdapterView.OnItemClickListener item = gridViewPhotos.getOnItemClickListener();
-//        if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
-//            TimeoutHelper.resetTimer();
-//            return true;
-//        } else {
-//            TimeoutHelper.startTimer(PhotoGalleryActivity.this);
-//            return false;
-//        }
-//    }
 
     private ArrayList<String> getLocalPhotos(String directoryName)  {
         String fullpath = "";
