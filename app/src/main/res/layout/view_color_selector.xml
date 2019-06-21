@@ -127,5 +127,38 @@
                 android:src="@drawable/ic_brush_black" />
 
         </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/eraser_button"
+            android:layout_width="@dimen/brush_input_frame"
+            android:layout_height="@dimen/brush_input_frame"
+            android:layout_marginBottom="8dp"
+            android:clickable="true">
+
+            <ImageView
+                android:layout_width="@dimen/brush_input_bg"
+                android:layout_height="@dimen/brush_input_bg"
+                android:layout_gravity="center"
+                android:src="@drawable/brush_option_bg" />
+
+            <ImageView
+                android:layout_width="@dimen/brush_input_width"
+                android:layout_height="@dimen/brush_input_height"
+                android:layout_gravity="center"
+                android:paddingStart="@dimen/brush_size_indicator_padding_left"
+                android:paddingTop="@dimen/brush_size_indicator_padding_top"
+                android:paddingEnd="@dimen/brush_size_indicator_padding_right"
+                android:src="@drawable/ic_brush_white" />
+
+            <ImageView
+                android:layout_width="@dimen/brush_input_width"
+                android:layout_height="@dimen/brush_input_height"
+                android:layout_gravity="center"
+                android:paddingStart="@dimen/brush_size_indicator_padding_left"
+                android:paddingTop="@dimen/brush_size_indicator_padding_top"
+                android:paddingEnd="@dimen/brush_size_indicator_padding_right"
+                android:src="@drawable/eraser" />
+
+        </FrameLayout>
     </LinearLayout>
 </merge>
