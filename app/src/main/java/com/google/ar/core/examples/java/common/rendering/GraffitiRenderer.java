@@ -12,10 +12,12 @@ import android.opengl.GLUtils;
 import android.opengl.Matrix;
 
 import com.google.ar.core.Camera;
+import com.google.ar.core.Frame;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+import com.google.ar.core.examples.java.common.geometry.Vector;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -97,10 +99,13 @@ public class GraffitiRenderer {
 
     private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
 
+    private final int backgroundColor = Color.WHITE;      // テクスチャ背景色
     private Bitmap textureBitmap = null;
+    private Bitmap textureBitmapToRecycle = null;
     private ArrayList<Bitmap> textureBitmaps = new ArrayList<Bitmap>();
     private ArrayList<Integer> textures = new ArrayList<Integer>(); //テキスチャID
-    private HashMap<Plane, Integer> textureNo = new HashMap<Plane, Integer>();
+    private HashMap<Plane, Integer> planeNo = new HashMap<Plane, Integer>();
+    private HashMap<Plane, Pose> planePose = new HashMap<>();
 
     public GraffitiRenderer() {}
 
@@ -130,6 +135,7 @@ public class GraffitiRenderer {
 
         // Read the texture.
         textureBitmap = BitmapFactory.decodeStream(context.getAssets().open(gridDistanceTextureName));
+        textureBitmapToRecycle = textureBitmap.copy(textureBitmap.getConfig(),true);
 
         ShaderUtil.checkGLError(TAG, "Texture loading");
 
@@ -234,7 +240,7 @@ public class GraffitiRenderer {
 
     public void drawCircle(float x, float y, int color, Trackable trackable) {
         if (textureBitmap != null) {
-            Integer hitplaneobjectTextureNo = textureNo.get(trackable);
+            Integer hitplaneobjectTextureNo = planeNo.get(trackable);
 
             int w = textureBitmaps.get(hitplaneobjectTextureNo).getWidth();
             int h = textureBitmaps.get(hitplaneobjectTextureNo).getHeight();
@@ -255,9 +261,62 @@ public class GraffitiRenderer {
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmaps.get(hitplaneobjectTextureNo), 0);
             GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, pixelX - 20, pixelY - 20, miniBitmap, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        }
+    }
+
+    public void adjustTextureAxis(Frame frame, Camera camera) {
+        Pose cameraPose = camera.getPose();
+        Pose worldToCameraLocal = cameraPose.inverse();
+//        Log.d("pose","camera:" + cameraPose.tx() + "," + cameraPose.ty() + "," + cameraPose.tz() + ","
+//                + cameraPose.getXAxis()[0] +","  + cameraPose.getXAxis()[1] +","  + cameraPose.getXAxis()[2] +","
+//                + cameraPose.getYAxis()[0] +","  + cameraPose.getYAxis()[1] +","  + cameraPose.getYAxis()[2]);
+
+        for (Plane p: frame.getUpdatedTrackables(Plane.class)) {
+            Pose newPose = p.getCenterPose();
+            Pose oldPose = planePose.get(p);
+
+//            Log.d("pose","plane:" + p + "," + newPose.tx() + "," + newPose.ty() + "," + newPose.tz() + ","
+//                    + newPose.getXAxis()[0] +","  + newPose.getXAxis()[1] +","  + newPose.getXAxis()[2] +","
+//                    + newPose.getYAxis()[0] +","  + newPose.getYAxis()[1] +","  + newPose.getYAxis()[2]);
+
+            // 1. テクスチャを平面上で回転＆移動させるための行列の作成
+            Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
+            textureBitmapToRecycle.eraseColor(backgroundColor);
+            Canvas canvas = new Canvas(textureBitmapToRecycle);
+
+            //  回転成分
+            android.graphics.Matrix adjustMatrix = new android.graphics.Matrix();
+            float[] newAxisX = newPose.getXAxis();
+            float[] newAxisY = newPose.getYAxis();
+            float[] newAxisZ = newPose.getZAxis();
+            float[] oldAxisX = oldPose.getXAxis();
+            float cosTheta = Vector.dot(newAxisX, oldAxisX);
+            float sinTheta = Vector.dot(newAxisY, Vector.cross(newAxisX, oldAxisX));
+            float theta = (float) (Math.atan2(sinTheta, cosTheta) / Math.PI * 180.0);
+            adjustMatrix.setRotate(theta, 0.5f * bitmap.getWidth(), 0.5f * bitmap.getHeight());
+
+            // 並行移動成分
+            float[] newToOld = Vector.minus(oldPose.getTranslation(), newPose.getTranslation());
+            float pixelTransX = (Vector.dot(newToOld, newAxisX) * DOTS_PER_METER) * bitmap.getWidth();
+            float pixelTransY = (-Vector.dot(newToOld, newAxisZ) * DOTS_PER_METER) * bitmap.getHeight();
+            adjustMatrix.postTranslate(pixelTransX, pixelTransY);
+
+//            Log.d("pose","adjust:" + theta + "," + pixelTransX + "," + pixelTransY);
+
+            // 2. 適用
+            canvas.drawBitmap(bitmap, adjustMatrix, new Paint());
+
+            // 3. 転送
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(planeNo.get(p)));
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmapToRecycle, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+
+            textureBitmaps.set(planeNo.get(p), textureBitmapToRecycle);
+            textureBitmapToRecycle = bitmap;        //  リサイクルに回す
+            planePose.put(p, newPose);
         }
     }
 
@@ -384,7 +443,8 @@ public class GraffitiRenderer {
                 planeobjectIndex = planeobjectIndexMap.size();
                 planeobjectIndexMap.put(plane, planeobjectIndex);
 
-                textureNo.put(plane, planeobjectIndex);
+                planeNo.put(plane, planeobjectIndex);
+                planePose.put(plane, plane.getCenterPose());
 
                 GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
 
