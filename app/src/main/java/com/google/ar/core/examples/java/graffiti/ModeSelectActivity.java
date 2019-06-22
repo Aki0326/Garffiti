@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 
@@ -64,5 +65,16 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
                 break;
 
         }
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if(event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch(event.getKeyCode()) {
+                case KeyEvent.KEYCODE_BACK:
+                    return true;
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 }
