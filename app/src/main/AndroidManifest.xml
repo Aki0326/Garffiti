@@ -19,14 +19,16 @@
     package="com.google.ar.core.examples.java.graffiti">
 
   <uses-permission android:name="android.permission.CAMERA"/>
-  <!-- This tag indicates that this application requires ARCore.  This results in the application
-       only being visible in the Google Play Store on devices that support ARCore. -->
-  <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
-
   <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
   <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <!-- 注意：「起動完了」のBroadcastを受信するには、パーミッションが必要 -->
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+  <!-- This tag indicates that this application requires ARCore.  This results in the application
+       only being visible in the Google Play Store on devices that support ARCore. -->
+  <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
   <uses-feature android:glEsVersion="0x00020000" android:required="true" />
 
   <application
@@ -73,5 +75,14 @@
     <!-- This tag indicates that this application requires ARCore.  This results in the Google Play
          Store downloading and installing ARCore along with the application. -->
     <meta-data android:name="com.google.ar.core" android:value="required" />
+    <!-- BroadcastReceiverの登録 -->
+    <receiver
+        android:name="com.google.ar.core.examples.java.common.helpers.ReceiverHelper">
+      <!-- 受信するBroadcastIntentの種類を設定 -->
+      <intent-filter>
+        <!-- 端末の起動処理終了時に発生するBoradcast -->
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+      </intent-filter>
+    </receiver>
   </application>
 </manifest>
