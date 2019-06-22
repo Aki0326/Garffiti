@@ -62,6 +62,7 @@ import com.google.ar.core.TrackingState;
 import com.google.ar.core.examples.java.common.helpers.CameraPermissionHelper;
 import com.google.ar.core.examples.java.common.helpers.DisplayRotationHelper;
 import com.google.ar.core.examples.java.common.helpers.FullScreenHelper;
+import com.google.ar.core.examples.java.common.helpers.MusicPlayerHelper;
 import com.google.ar.core.examples.java.common.helpers.SnackbarHelper;
 import com.google.ar.core.examples.java.common.helpers.TapHelper;
 import com.google.ar.core.examples.java.common.helpers.TimeoutHelper;
@@ -166,6 +167,9 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   private long timeLeftInMillis = START_TIME;
   private  boolean timerRunning = false;
 
+  private MusicPlayerHelper helloArClickSE = new MusicPlayerHelper();
+  private boolean isLoop = false;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -215,6 +219,12 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     cameraButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
+        try {
+          isLoop = false;
+          helloArClickSE.musicPlay(HelloArActivity.this, "musics/se/camera-shutter.mp3", isLoop);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
         getScreenshot();
       }
     });
