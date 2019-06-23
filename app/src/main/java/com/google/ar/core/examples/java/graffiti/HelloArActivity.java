@@ -165,7 +165,6 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   private CountDownTimer countDownTimer;
   private static final long START_TIME = 10000;
   private long timeLeftInMillis = START_TIME;
-  private  boolean timerRunning = false;
 
   private MusicPlayerHelper helloArClickSE = new MusicPlayerHelper();
   private boolean isLoop = false;
@@ -212,8 +211,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
         imageView.setImageBitmap(null);
       }
     });
-
     imageView.setClickable(false);
+
     cameraButton = findViewById(R.id.camera_image);
     // ボタンタップでスクリーンショットを撮る
     cameraButton.setOnClickListener(new View.OnClickListener() {
@@ -242,6 +241,13 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       startActivityForResult(mpManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
     }
 
+  }
+
+  @Override
+  protected void onRestart() {
+    super.onRestart();
+    resetTimer();
+    cameraButton.setClickable(true);
   }
 
   @Override
@@ -328,6 +334,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       surfaceView.onPause();
       session.pause();
     }
+    resetTimer();
     TimeoutHelper.resetTimer();
   }
 
@@ -628,12 +635,11 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     imageView.setImageBitmap(bitmap);
     imageView.setClickable(true);
     resetTimer();
-
     startTimer();
   }
 
   private void startTimer(){
-    countDownTimer = new CountDownTimer(timeLeftInMillis,1000) {
+    countDownTimer = new CountDownTimer(timeLeftInMillis,START_TIME) {
       @Override
       public void onTick(long millisUntilFinished) {
         timeLeftInMillis = millisUntilFinished;
@@ -641,18 +647,18 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
       @Override
       public void onFinish() {
-        timerRunning = false;
         imageView.setClickable(false);
         cameraButton.setClickable(true);
         imageView.setImageBitmap(null);
       }
     }.start();
-
-    timerRunning = true;
   }
 
   private void resetTimer(){
-    timeLeftInMillis = START_TIME;
+      if(countDownTimer != null) {
+          countDownTimer.cancel();
+          timeLeftInMillis = START_TIME;
+      }
   }
 
   private interface IGLDrawListener {
