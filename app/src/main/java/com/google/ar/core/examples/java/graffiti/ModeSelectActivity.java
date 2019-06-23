@@ -17,7 +17,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
 
     private MusicPlayerHelper modeSelectBGM = new MusicPlayerHelper();
     private MusicPlayerHelper modeSelectClickSE = new MusicPlayerHelper();
-    private Boolean isLoop = true;
+    private Boolean isLoop;
 
     private Button graffityModeButton;
     private Button coloringbattleModeButton;
@@ -63,6 +63,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         }
 
         try {
+            isLoop = true;
             modeSelectBGM.musicPlay(this, "musics/bgm/title.ogg", isLoop);
         } catch (IOException e) {
             e.printStackTrace();
