@@ -42,12 +42,22 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
     }
 
     @Override
+    protected void onRestart() {
+        super.onRestart();
+
+        if(modeSelectClickSE != null) {
+            modeSelectClickSE.musicStop();
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
-        if(wakeLock!=null){
+
+        if (wakeLock != null) {
             wakeLock.acquire();
-        }else{
-            PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
+        } else {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
             wakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, ":tag");
             wakeLock.acquire();
         }
@@ -57,7 +67,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         } catch (IOException e) {
             e.printStackTrace();
         }
-}
+    }
 
     @Override
     protected void onPause() {

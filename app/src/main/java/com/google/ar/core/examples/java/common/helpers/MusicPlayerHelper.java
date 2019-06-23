@@ -71,13 +71,15 @@ public class MusicPlayerHelper {
     }
 
     public void musicStop() {
-        // 再生終了
-        mediaPlayer.stop();
-        // リセット
-        mediaPlayer.reset();
-        // リソースの解放
-        mediaPlayer.release();
+        if(mediaPlayer != null) {
+            // 再生終了
+            mediaPlayer.stop();
+            // リセット
+            mediaPlayer.reset();
+            // リソースの解放
+            mediaPlayer.release();
 
-        mediaPlayer = null;
+            mediaPlayer = null;
+        }
     }
 }
