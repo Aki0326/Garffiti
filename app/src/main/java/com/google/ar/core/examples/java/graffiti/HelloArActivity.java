@@ -21,6 +21,9 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
@@ -33,6 +36,8 @@ import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
@@ -84,9 +89,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Queue;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -123,6 +131,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   // Temporary matrix allocated here to reduce number of allocations for each frame.
   private final float[] anchorMatrix = new float[16];
   private static final float[] DEFAULT_COLOR = new float[] {0f, 0f, 0f, 0f};
+  private Queue<IGLDrawListener> glDrawListenerQueue = new ArrayDeque<>();
+  private Handler glHandler = null;
 
   // Anchors created from taps used for object placing with a given color.
   private static class ColoredAnchor {
@@ -364,105 +374,6 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
             imageReader.getSurface(), null, null);
   }
 
-  private String generateFilename() {
-    String date =
-            new SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.getDefault()).format(new Date());
-    return Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_PICTURES) + File.separator + "AR/" + date + "_screenshot.jpg";
-  }
-
-  @SuppressLint("WrongThread")
-  private void saveBitmapToDisk(Bitmap bitmap, String filename) throws IOException {
-
-    File out = new File(filename);
-    if (!out.getParentFile().exists()) {
-      out.getParentFile().mkdirs();
-    }
-    try (FileOutputStream outputStream = new FileOutputStream(filename);
-         ByteArrayOutputStream outputData = new ByteArrayOutputStream()) {
-      bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputData);
-      outputData.writeTo(outputStream);
-      outputStream.flush();
-      outputStream.close();
-      registerDatabase(filename);
-    } catch (IOException ex) {
-      throw new IOException("Failed to save bitmap to disk", ex);
-    }
-  }
-
-  // アンドロイドのデータベースへ登録する
-  private void registerDatabase(String file) {
-    ContentValues contentValues = new ContentValues();
-    ContentResolver contentResolver = HelloArActivity.this.getContentResolver();
-    contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-    contentValues.put("_data", file);
-    contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues);
-  }
-
-  private void getScreenshot() {
-    final String filename = generateFilename();
-
-    // ImageReaderから画面を取り出す
-    Log.d("debug", "getScreenshot");
-    Image image = imageReader.acquireLatestImage();
-
-    Image.Plane[] planes = image.getPlanes();
-    ByteBuffer buffer = planes[0].getBuffer();
-
-    int pixelStride = planes[0].getPixelStride();
-    int rowStride = planes[0].getRowStride();
-    int rowPadding = rowStride - pixelStride * displayWidth;
-
-    // バッファからBitmapを生成
-    Bitmap bitmap = Bitmap.createBitmap(
-            displayWidth + rowPadding / pixelStride, displayHeight,
-            Bitmap.Config.ARGB_8888);
-    bitmap.copyPixelsFromBuffer(buffer);
-    try {
-      saveBitmapToDisk(bitmap, filename);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    image.close();
-
-    setImageView(bitmap);
-
-  }
-
-  public void setImageView(Bitmap bitmap) {
-    cameraButton.setClickable(false);
-    imageView.setImageBitmap(bitmap);
-    imageView.setClickable(true);
-    resetTimer();
-
-    startTimer();
-  }
-
-  private void startTimer(){
-    countDownTimer = new CountDownTimer(timeLeftInMillis,1000) {
-      @Override
-      public void onTick(long millisUntilFinished) {
-        timeLeftInMillis = millisUntilFinished;
-      }
-
-      @Override
-      public void onFinish() {
-        timerRunning = false;
-        imageView.setClickable(false);
-        cameraButton.setClickable(true);
-        imageView.setImageBitmap(null);
-      }
-    }.start();
-
-    timerRunning = true;
-  }
-
-  private void resetTimer(){
-    timeLeftInMillis = START_TIME;
-  }
-
-
   @Override
   protected void onDestroy() {
     if (virtualDisplay != null) {
@@ -515,6 +426,9 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
   @Override
   public void onDrawFrame(GL10 gl) {
+    IGLDrawListener l = glDrawListenerQueue.poll();
+    if (l != null) l.onDraw(gl);
+
     // Clear screen to notify driver it should not load any pixels from previous frame.
     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
@@ -637,5 +551,111 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
         }
       }
     }
+  }
+
+  private void getScreenshot() {
+    glDrawListenerQueue.offer(new IGLDrawListener() {
+      @Override
+      public void onDraw(GL10 gl) {
+        final String filename = generateFilename();
+        // バッファからBitmapを生成
+        int[] viewportDim = new int[4];
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, IntBuffer.wrap(viewportDim));
+        int width = viewportDim[2];
+        int height = viewportDim[3];
+        ByteBuffer buffer = ByteBuffer.allocate(width * height * 4);
+        buffer.position(0);
+        GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buffer);
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        bitmap.copyPixelsFromBuffer(buffer);
+        Matrix mat = new Matrix();
+        mat.preScale(1.0f, -1.0f);
+        Bitmap bitmap2 = Bitmap.createBitmap(bitmap, 0, 0, width, height, mat, false);
+        try {
+          saveBitmapToDisk(bitmap2, filename);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+          @Override
+          public void run() {
+            setImageView(bitmap2);
+          }
+        });
+      }
+    });
+  }
+
+  private String generateFilename() {
+    String date =
+            new SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.getDefault()).format(new Date());
+    return Environment.getExternalStoragePublicDirectory(
+            Environment.DIRECTORY_PICTURES) + File.separator + "AR/" + date + "_screenshot.jpg";
+  }
+
+  @SuppressLint("WrongThread")
+  private void saveBitmapToDisk(Bitmap bitmap, String filename) throws IOException {
+
+    File out = new File(filename);
+    if (!out.getParentFile().exists()) {
+      out.getParentFile().mkdirs();
+    }
+    try (FileOutputStream outputStream = new FileOutputStream(filename);
+         ByteArrayOutputStream outputData = new ByteArrayOutputStream()) {
+      bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputData);
+      outputData.writeTo(outputStream);
+      outputStream.flush();
+      outputStream.close();
+      registerDatabase(filename);
+    } catch (IOException ex) {
+      throw new IOException("Failed to save bitmap to disk", ex);
+    }
+  }
+
+  // アンドロイドのデータベースへ登録する
+  private void registerDatabase(String file) {
+    ContentValues contentValues = new ContentValues();
+    ContentResolver contentResolver = HelloArActivity.this.getContentResolver();
+    contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+    contentValues.put("_data", file);
+    contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            contentValues);
+  }
+
+  public void setImageView(Bitmap bitmap) {
+    cameraButton.setClickable(false);
+    imageView.setImageBitmap(bitmap);
+    imageView.setClickable(true);
+    resetTimer();
+
+    startTimer();
+  }
+
+  private void startTimer(){
+    countDownTimer = new CountDownTimer(timeLeftInMillis,1000) {
+      @Override
+      public void onTick(long millisUntilFinished) {
+        timeLeftInMillis = millisUntilFinished;
+      }
+
+      @Override
+      public void onFinish() {
+        timerRunning = false;
+        imageView.setClickable(false);
+        cameraButton.setClickable(true);
+        imageView.setImageBitmap(null);
+      }
+    }.start();
+
+    timerRunning = true;
+  }
+
+  private void resetTimer(){
+    timeLeftInMillis = START_TIME;
+  }
+
+  private interface IGLDrawListener {
+    public void onDraw(GL10 gl);
   }
 }
