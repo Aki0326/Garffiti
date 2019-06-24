@@ -5,15 +5,22 @@ import android.app.Application;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 
+import com.google.ar.core.examples.java.common.helpers.WriteLogThreadHelpers;
+
 public class Graffiti extends Application {
     private final String TAG = Graffiti.class.getSimpleName();
     private Bitmap bitmap;
+    private WriteLogThreadHelpers writeLogThread = null;
 
     public Graffiti() {
 
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle bundle) {
+                if (writeLogThread == null) {
+                    writeLogThread = new WriteLogThreadHelpers(activity.getApplicationContext());
+                    writeLogThread.start();
+                }
             }
 
             @Override
@@ -52,6 +59,10 @@ public class Graffiti extends Application {
 
     public void clearBitmap(){
         bitmap = null;
+    }
+
+    public void outputLine(String line) {
+        writeLogThread.outputLine(line);
     }
 
 }
