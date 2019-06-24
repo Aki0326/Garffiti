@@ -16,7 +16,7 @@
         android:background="@drawable/button_bg_red"
         android:fontFamily="@font/mplus_rounded1c_bold"
         android:text="　らくがき　"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textSize="36sp" />
 
     <Button
@@ -26,10 +26,9 @@
         android:layout_gravity="center"
         android:layout_marginTop="50dp"
         android:background="@drawable/button_bg_disable"
-        android:enabled="false"
         android:fontFamily="@font/mplus_rounded1c_bold"
         android:text="　ぬりえバトル　"
-        android:textColor="@color/black"
+        android:textColor="@color/disable"
         android:textSize="36sp" />
 
     <Button
@@ -41,7 +40,7 @@
         android:background="@drawable/button_bg_blue"
         android:fontFamily="@font/mplus_rounded1c_bold"
         android:text="　写真ギャラリー　"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textSize="36sp" />
 
 
