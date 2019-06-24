@@ -21,6 +21,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
@@ -551,7 +552,11 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
           float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
           float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
           float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
-          graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 4, trackable);
+          if(colorSelector.getSelectedLineColor() == Color.TRANSPARENT) {
+            graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 9, trackable);
+          } else {
+            graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 4, trackable);
+          }
         }
       }
     }
