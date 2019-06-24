@@ -7,10 +7,16 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
+import com.google.ar.core.examples.java.common.helpers.MusicPlayerHelper;
 import com.google.ar.core.examples.java.graffiti.R;
+
+import java.io.IOException;
 
 public class ColorSelector extends RelativeLayout implements View.OnClickListener{
     private static final String TAG = ColorSelector.class.getSimpleName();
+
+    private MusicPlayerHelper colorSelectClickSE = new MusicPlayerHelper();
+    private Boolean isLoop = false;
 
     private int selectedLineColor = Color.BLUE;
 
@@ -52,6 +58,12 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onClick(View view) {
+        colorSelectClickSE.musicStop();
+        try {
+            colorSelectClickSE.musicPlay(getContext(), "musics/se/color-click-sound.mp3", isLoop);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         switch (view.getId()) {
             case R.id.blue_color_button:

@@ -14,6 +14,7 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.google.ar.core.examples.java.common.helpers.MusicPlayerHelper;
+import com.google.ar.core.examples.java.common.helpers.WriteLogThreadHelpers;
 
 import java.io.IOException;
 
@@ -97,10 +98,12 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                ((Graffiti) getApplication()).outputLine("Graffiti mode Clicked.");
                 startActivity(new Intent(ModeSelectActivity.this, HelloArActivity.class));
                 break;
             case R.id.coloringbattle_mode_button:
                 Toast.makeText(this, "すみません。ただいま工事中です。", Toast.LENGTH_SHORT).show();
+                ((Graffiti) getApplication()).outputLine("Cloring battle mode Clicked.");
                 break;
             case R.id.photogallery_button:
                 modeSelectBGM.musicStop();
@@ -110,6 +113,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                ((Graffiti) getApplication()).outputLine("Photo gallery mode Clicked.");
                 startActivity(new Intent(ModeSelectActivity.this, PhotoGalleryActivity.class));
                 break;
         }
