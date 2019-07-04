@@ -20,7 +20,7 @@
     android:id="@+id/content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.google.ar.core.examples.java.graffiti.HelloArActivity">
+    tools:context="org.ntlab.graffiti.graffiti.HelloArActivity">
 
   <android.opengl.GLSurfaceView
       android:id="@+id/surfaceview"
@@ -33,7 +33,7 @@
       android:layout_width="match_parent"
       android:layout_height="match_parent">
 
-    <com.google.ar.core.examples.java.common.view.ColorSelector
+    <org.ntlab.graffiti.common.view.ColorSelector
         android:id="@+id/color_selector_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
