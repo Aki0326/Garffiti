@@ -316,6 +316,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     displayRotationHelper.onResume();
 
 //    messageSnackbarHelper.showMessage(this, "Searching for surfaces...");
+    messageSnackbarHelper.showMessage(this, "端末を持ち上げて、カメラに映った壁や床にタッチしてらくがきして下さい。");
     planeDiscoveryController.show();
 
     TimeoutHelper.startTimer(HelloArActivity.this);
@@ -488,15 +489,15 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       pointCloud.release();
 
       // Check if we detected at least one plane. If so, hide the loading message.
-//      if (messageSnackbarHelper.isShowing()) {
-      for (Plane plane : session.getAllTrackables(Plane.class)) {
-        if (plane.getTrackingState() == TrackingState.TRACKING) {
-//            messageSnackbarHelper.hide(this);
-          planeDiscoveryController.hide();
-          break;
+      if (messageSnackbarHelper.isShowing()) {
+        for (Plane plane : session.getAllTrackables(Plane.class)) {
+          if (plane.getTrackingState() == TrackingState.TRACKING) {
+            messageSnackbarHelper.hide(this);
+            planeDiscoveryController.hide();
+            break;
+          }
         }
       }
-//      }
 
       // Visualize planes.
 //      planeRenderer.drawPlanes(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projmtx);
