@@ -26,4 +26,10 @@
   <string name="tracking_indicator_text_anchor_not_tracking">Hmm… We can\'t find your\ndrawings.
         Try going back to\nwhere you started.</string>
 
+  <!-- Image and ImageButton Content Descriptions for Accessibility-->
+  <string name="content_description_select_brush">Change Brush Size</string>
+  <string name="content_description_large_brush">Large Brush</string>
+  <string name="content_description_medium_brush">Medium Brush</string>
+  <string name="content_description_small_brush">Small Brush</string>
+
 </resources>

@@ -73,6 +73,7 @@ import com.google.ar.core.examples.java.common.rendering.PlaneObjectRenderer;
 import com.google.ar.core.examples.java.common.rendering.PlaneRenderer;
 import com.google.ar.core.examples.java.common.rendering.PointCloudRenderer;
 import com.google.ar.core.examples.java.common.rendering.Test;
+import com.google.ar.core.examples.java.common.view.BrushSizeSelector;
 import com.google.ar.core.examples.java.common.view.ColorSelector;
 import com.google.ar.core.examples.java.common.view.PlaneDiscoveryController;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
@@ -149,6 +150,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
   private ColorSelector colorSelector;
 
+  private BrushSizeSelector brushSizeSelector;
+
   private MediaProjectionManager mpManager;
   private MediaProjection mProjection;
   private static final int REQUEST_MEDIA_PROJECTION = 1001;
@@ -196,6 +199,9 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
     // Set up the ColorSelector View.
     colorSelector = findViewById(R.id.color_selector_view);
+
+    // Set up the brushSizeSelector View.
+    brushSizeSelector = findViewById(R.id.brush_size_selector);
 
     // Set up the Screen Shot View.
     // 撮影したスクリーンを表示するImageView
@@ -414,7 +420,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
 //      raycastRenderer.createOnGlThread(this);
       planeObjectRenderer.createOnGlThread(this,"models/nambo.png");
-      lineShaderRenderer.createOnGlThread(/*context=*/ this,"models/linecap.png");
+//      lineShaderRenderer.createOnGlThread(/*context=*/ this,"models/linecap.png");
 
       testRenderer.createOnGlThread(this,"models/nambo.png");
       graffitiRenderer.createOnGlThread(this,"models/plane.png");
@@ -556,7 +562,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
           if(colorSelector.getSelectedLineColor() == Color.TRANSPARENT) {
             graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 9, trackable);
           } else {
-            graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 4, trackable);
+            graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), brushSizeSelector.getSelectedLineWidth(), trackable);
           }
         }
       }
