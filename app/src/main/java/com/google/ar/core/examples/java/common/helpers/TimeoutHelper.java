@@ -32,8 +32,10 @@ public class TimeoutHelper {
     }
 
     public static void resetTimer(){
-        countDownTimer.cancel();
-        timeLeftInMillis = START_TIME;
+        if(countDownTimer != null) {
+            countDownTimer.cancel();
+            timeLeftInMillis = START_TIME;
+        }
     }
 
 }

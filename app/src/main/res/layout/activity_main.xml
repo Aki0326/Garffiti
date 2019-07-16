@@ -28,32 +28,58 @@
       android:layout_height="fill_parent"
       android:layout_gravity="top" />
 
-  <RelativeLayout
+  <android.support.constraint.ConstraintLayout
       android:id="@+id/draw_container"
       android:layout_width="match_parent"
-      android:layout_height="match_parent">
+      android:layout_height="match_parent"
+      android:layout_marginStart="15dp"
+      android:layout_marginBottom="20dp">
+
+    <com.google.ar.core.examples.java.common.view.BrushSizeSelector
+        android:id="@+id/brush_size_selector"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <com.google.ar.core.examples.java.common.view.ColorSelector
         android:id="@+id/color_selector_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="710dp" />
+        android:layout_marginStart="55dp"
+        android:layout_marginEnd="110dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/plane_discovery_view"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
         android:id="@+id/camera_image"
         android:layout_width="80dp"
         android:layout_height="80dp"
-        android:layout_marginStart="305dp"
-        android:layout_marginTop="680dp"
+        android:layout_marginStart="295dp"
+        android:layout_marginEnd="15dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/plane_discovery_view"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
         app:srcCompat="@android:drawable/ic_menu_camera" />
 
     <ImageView
         android:id="@+id/image_view"
         android:layout_width="130dp"
         android:layout_height="150dp"
-        android:layout_marginStart="300dp"
-        android:layout_marginTop="640dp" />
+        android:layout_marginStart="270dp"
+        android:layout_marginEnd="267dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <!--<com.google.ar.core.examples.java.common.view.CameraButton
         android:id="@+id/camera_button"
@@ -65,8 +91,10 @@
     <FrameLayout
         android:id="@+id/plane_discovery_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></FrameLayout>
+        android:layout_height="match_parent"
+        tools:layout_editor_absoluteX="-16dp"
+        tools:layout_editor_absoluteY="0dp"></FrameLayout>
 
-  </RelativeLayout>
+  </android.support.constraint.ConstraintLayout>
 
 </RelativeLayout>
