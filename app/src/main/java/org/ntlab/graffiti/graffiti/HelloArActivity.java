@@ -320,7 +320,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 //    messageSnackbarHelper.showMessage(this, "Searching for surfaces...");
     planeDiscoveryController.show();
 
-    TimeoutHelper.startTimer(HelloArActivity.this);
+//    TimeoutHelper.startTimer(HelloArActivity.this);
   }
 
   @Override
@@ -335,7 +335,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       session.pause();
     }
     resetTimer();
-    TimeoutHelper.resetTimer();
+//    TimeoutHelper.resetTimer();
   }
 
   @Override

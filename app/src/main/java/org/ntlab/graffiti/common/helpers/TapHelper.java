@@ -68,10 +68,10 @@ public final class TapHelper implements OnTouchListener {
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
         if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
-            TimeoutHelper.resetTimer();
+//            TimeoutHelper.resetTimer();
             queuedSingleTaps.offer(motionEvent);
         } else {
-            TimeoutHelper.startTimer(activity);
+//            TimeoutHelper.startTimer(activity);
             queuedSingleTaps.clear();
         }
         return gestureDetector.onTouchEvent(motionEvent);

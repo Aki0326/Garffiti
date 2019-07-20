@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -84,6 +85,13 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
     }
 
     @Override
+    protected void onDestroy() {
+        modeSelectBGM.musicStop();
+
+        super.onDestroy();
+    }
+
+    @Override
     public void onClick(View view) {
         modeSelectClickSE.musicStop();
         switch (view.getId()) {
@@ -116,16 +124,16 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         }
     }
 
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        if(event.getAction() == KeyEvent.ACTION_DOWN) {
-            switch(event.getKeyCode()) {
-                case KeyEvent.KEYCODE_BACK:
-                    return true;
-            }
-        }
-        return super.dispatchKeyEvent(event);
-    }
+//    @Override
+//    public boolean dispatchKeyEvent(KeyEvent event) {
+//        if(event.getAction() == KeyEvent.ACTION_DOWN) {
+//            switch(event.getKeyCode()) {
+//                case KeyEvent.KEYCODE_BACK:
+//                    return true;
+//            }
+//        }
+//        return super.dispatchKeyEvent(event);
+//    }
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {

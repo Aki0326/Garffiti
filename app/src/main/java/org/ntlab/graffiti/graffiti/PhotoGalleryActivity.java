@@ -50,7 +50,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             gridViewPhotos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    TimeoutHelper.resetTimer();
+//                    TimeoutHelper.resetTimer();
                     adapter.isSelected(view);
                 }
             });
@@ -59,10 +59,10 @@ public class PhotoGalleryActivity extends AppCompatActivity {
                 @Override
                 public boolean onTouch(View view, MotionEvent motionEvent) {
                     if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
-                        TimeoutHelper.resetTimer();
+//                        TimeoutHelper.resetTimer();
                         return false;
                     } else {
-                        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
+//                        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
                         return false;
                     }
                 }
@@ -80,13 +80,13 @@ public class PhotoGalleryActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
+//        TimeoutHelper.startTimer(PhotoGalleryActivity.this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        TimeoutHelper.resetTimer();
+//        TimeoutHelper.resetTimer();
     }
 
     private ArrayList<String> getLocalPhotos(String directoryName)  {

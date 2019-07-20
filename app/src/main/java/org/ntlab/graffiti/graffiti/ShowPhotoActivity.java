@@ -30,22 +30,22 @@ public class ShowPhotoActivity  extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        TimeoutHelper.startTimer(ShowPhotoActivity.this);
+//        TimeoutHelper.startTimer(ShowPhotoActivity.this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        TimeoutHelper.resetTimer();
+//        TimeoutHelper.resetTimer();
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
         if (motionEvent.getAction() != MotionEvent.ACTION_UP) {
-            TimeoutHelper.resetTimer();
+//            TimeoutHelper.resetTimer();
             return true;
         } else {
-            TimeoutHelper.startTimer(ShowPhotoActivity.this);
+//            TimeoutHelper.startTimer(ShowPhotoActivity.this);
             return false;
         }
     }

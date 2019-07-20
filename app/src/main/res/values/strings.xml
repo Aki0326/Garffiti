@@ -26,4 +26,11 @@
   <string name="tracking_indicator_text_anchor_not_tracking">Hmm… We can\'t find your\ndrawings.
         Try going back to\nwhere you started.</string>
 
+  <!-- Families Policy -->
+  <string name="be_careful_around_indicator_text">危険がないか周りをよく見て、\n注意しながらプレイしてください。</string>
+  <string name="families_policy_indicator_text">お子様がプレイされるときは、\nご家族の方が付き添ってください。</string>
+
+  <!-- urls -->
+  <string name="privacy_policy_url">https://photos.app.goo.gl/3HR5E2rffET9aUCj8</string>
+
 </resources>
