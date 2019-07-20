@@ -30,6 +30,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
     private FrameLayout lightsteelblueButton;
     private FrameLayout cyanButton;
     private FrameLayout purpleButton;
+    private FrameLayout orangeButton;
     private FrameLayout eraserButton;
 
     public ColorSelector(Context context) {
@@ -64,6 +65,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
         cyanButton.setOnClickListener(this);
         purpleButton = findViewById(R.id.purple_color_button);
         purpleButton.setOnClickListener(this);
+        orangeButton = findViewById(R.id.orange_color_button);
+        orangeButton.setOnClickListener(this);
         eraserButton = findViewById(R.id.eraser_button);
         eraserButton.setOnClickListener(this);
 
@@ -103,6 +106,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -129,6 +134,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -155,6 +162,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -181,6 +190,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -207,6 +218,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -233,6 +246,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -259,6 +274,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -285,6 +302,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -311,6 +330,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.5f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -337,6 +358,37 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.5f);
                 purpleButton.setScaleY(1.5f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
+                eraserButton.setScaleX(1.0f);
+                eraserButton.setScaleY(1.0f);
+                break;
+
+
+            case R.id.orange_color_button:
+                selectedLineColor = Color.HSVToColor(new float[]{30f, 1.0f, 0.93f});
+                blueButton.setScaleX(1.0f);
+                blueButton.setScaleY(1.0f);
+                yellowButton.setScaleX(1.0f);
+                yellowButton.setScaleY(1.0f);
+                redButton.setScaleX(1.0f);
+                redButton.setScaleY(1.0f);
+                greenButton.setScaleX(1.0f);
+                greenButton.setScaleY(1.0f);
+                blackButton.setScaleX(1.0f);
+                blackButton.setScaleY(1.0f);
+                whiteButton.setScaleX(1.0f);
+                whiteButton.setScaleY(1.0f);
+                pinkButton.setScaleX(1.0f);
+                pinkButton.setScaleY(1.0f);
+                lightsteelblueButton.setScaleX(1.0f);
+                lightsteelblueButton.setScaleY(1.0f);
+                cyanButton.setScaleX(1.0f);
+                cyanButton.setScaleY(1.0f);
+                purpleButton.setScaleX(1.0f);
+                purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.5f);
+                orangeButton.setScaleY(1.5f);
                 eraserButton.setScaleX(1.0f);
                 eraserButton.setScaleY(1.0f);
                 break;
@@ -363,6 +415,8 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
                 cyanButton.setScaleY(1.0f);
                 purpleButton.setScaleX(1.0f);
                 purpleButton.setScaleY(1.0f);
+                orangeButton.setScaleX(1.0f);
+                orangeButton.setScaleY(1.0f);
                 eraserButton.setScaleX(1.5f);
                 eraserButton.setScaleY(1.5f);
                 break;
