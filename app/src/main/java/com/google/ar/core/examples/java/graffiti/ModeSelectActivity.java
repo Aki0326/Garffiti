@@ -84,6 +84,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         super.onPause();
 
         wakeLock.release();
+        modeSelectBGM.musicStop();
     }
 
     @Override

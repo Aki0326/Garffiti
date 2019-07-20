@@ -29,7 +29,10 @@ import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.google.ar.core.examples.java.common.helpers.MusicPlayerHelper;
 import com.google.ar.core.examples.java.graffiti.R;
+
+import java.io.IOException;
 
 public class BrushSizeSelector extends RelativeLayout implements View.OnClickListener {
 
@@ -74,6 +77,9 @@ public class BrushSizeSelector extends RelativeLayout implements View.OnClickLis
     private int mediumButtonLoc[] = new int[2];
     private int largeButtonLoc[] = new int[2];
 
+    private MusicPlayerHelper brushSizeSelectClickSE = new MusicPlayerHelper();
+    private Boolean isLoop = false;
+
     public BrushSizeSelector(Context context) {
         super(context);
         init();
@@ -111,6 +117,12 @@ public class BrushSizeSelector extends RelativeLayout implements View.OnClickLis
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                     performClick();
+                    brushSizeSelectClickSE.musicStop();
+                    try {
+                        brushSizeSelectClickSE.musicPlay(getContext(), "musics/se/color-click-sound.mp3", isLoop);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 } else if (motionEvent.getAction() == MotionEvent.ACTION_MOVE && isOpen) {
                     //get the point where we let go
                     float yloc = motionEvent.getRawY();
@@ -169,6 +181,13 @@ public class BrushSizeSelector extends RelativeLayout implements View.OnClickLis
     public void onClick(View view) {
 
         LineWidth lineWidth = null;
+
+        brushSizeSelectClickSE.musicStop();
+        try {
+            brushSizeSelectClickSE.musicPlay(getContext(), "musics/se/color-click-sound.mp3", isLoop);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         switch (view.getId()) {
             case R.id.brush_button:
                 toggleBrushSelectorVisibility();
