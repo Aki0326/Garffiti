@@ -8,6 +8,9 @@ import android.widget.ImageView;
 
 import com.google.ar.core.examples.java.common.helpers.TimeoutHelper;
 
+/**
+ * This ShowPhotoActivity shows the selected picture.
+ */
 public class ShowPhotoActivity  extends AppCompatActivity {
     private static final String TAG = ShowPhotoActivity.class.getSimpleName();
     private ImageView imagePhoto;

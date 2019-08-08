@@ -26,6 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class renders plane object. Not currently using.
+ */
 public class PlaneObjectRenderer {
     private static final String TAG = PlaneObjectRenderer.class.getSimpleName();
 

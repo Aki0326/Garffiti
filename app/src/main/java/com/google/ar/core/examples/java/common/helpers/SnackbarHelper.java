@@ -80,10 +80,7 @@ public final class SnackbarHelper {
           @Override
           public void run() {
             messageSnackbar =
-                Snackbar.make(
-                    activity.findViewById(android.R.id.content),
-                    message,
-                    Snackbar.LENGTH_INDEFINITE);
+                Snackbar.make(activity.findViewById(android.R.id.content), message, Snackbar.LENGTH_INDEFINITE);
             messageSnackbar.getView().setBackgroundColor(BACKGROUND_COLOR);
             if (dismissBehavior != DismissBehavior.HIDE) {
               messageSnackbar.setAction(
@@ -105,11 +102,7 @@ public final class SnackbarHelper {
                     });
               }
             }
-            ((TextView)
-                    messageSnackbar
-                        .getView()
-                        .findViewById(android.support.design.R.id.snackbar_text))
-                .setMaxLines(maxLines);
+            ((TextView) messageSnackbar.getView().findViewById(android.support.design.R.id.snackbar_text)).setMaxLines(maxLines);
             messageSnackbar.show();
           }
         });

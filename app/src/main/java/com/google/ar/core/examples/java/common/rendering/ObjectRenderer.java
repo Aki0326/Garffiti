@@ -32,7 +32,9 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
-/** Renders an object loaded from an OBJ file in OpenGL. */
+/**
+ * Renders an object loaded from an OBJ file in OpenGL. Not currently using.
+ */
 public class ObjectRenderer {
   private static final String TAG = ObjectRenderer.class.getSimpleName();
 

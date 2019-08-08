@@ -7,6 +7,9 @@ import android.os.Bundle;
 
 import com.google.ar.core.examples.java.common.helpers.WriteLogThreadHelpers;
 
+/**
+ * This class is main application of graffiti.
+ */
 public class Graffiti extends Application {
     private final String TAG = Graffiti.class.getSimpleName();
     private Bitmap bitmap;

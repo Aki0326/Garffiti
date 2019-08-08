@@ -18,6 +18,9 @@ import com.google.ar.core.examples.java.common.helpers.WriteLogThreadHelpers;
 
 import java.io.IOException;
 
+/**
+ * This ModeSelectActivity selects mode.
+ */
 public class ModeSelectActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener {
     public static final String TAG = ModeSelectActivity.class.getSimpleName();
 

@@ -26,6 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class renders the enclosure of plane. Not currently using.
+ */
 public class Test {
     private static final String TAG = Test.class.getSimpleName();
 

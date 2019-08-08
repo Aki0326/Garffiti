@@ -34,6 +34,9 @@ import com.google.ar.core.examples.java.graffiti.R;
 
 import java.io.IOException;
 
+/**
+ * This class selects brush size.
+ */
 public class BrushSizeSelector extends RelativeLayout implements View.OnClickListener {
 
     private static final String TAG = BrushSizeSelector.class.getSimpleName();
@@ -321,14 +324,14 @@ public class BrushSizeSelector extends RelativeLayout implements View.OnClickLis
         return selectedLineWidth.getWidth();
     }
 
-    public boolean isOpen() {
-        return isOpen;
-    }
-
-    public void close() {
-        if (isOpen) {
-            toggleBrushSelectorVisibility();
-        }
-    }
+//    public boolean isOpen() {
+//        return isOpen;
+//    }
+//
+//    public void close() {
+//        if (isOpen) {
+//            toggleBrushSelectorVisibility();
+//        }
+//    }
 
 }

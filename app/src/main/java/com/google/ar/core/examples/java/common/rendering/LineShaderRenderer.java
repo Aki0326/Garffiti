@@ -642,6 +642,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+/**
+ * This class renders the line shader like just a line. Not currently using.
+ */
 public class LineShaderRenderer {
     private static final String TAG = LineShaderRenderer.class.getSimpleName();
 

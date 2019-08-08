@@ -11,7 +11,9 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-
+/**
+ * Helper to write log thread.
+ */
 public class WriteLogThreadHelpers extends Thread{
     private Context context;
 
@@ -19,6 +21,10 @@ public class WriteLogThreadHelpers extends Thread{
         this.context = context;
     }
 
+    /**
+     * Output the line log.
+     * @param line
+     */
     public void outputLine(String line) {
         PrintWriter writer = null;
         try {
@@ -35,4 +41,5 @@ public class WriteLogThreadHelpers extends Thread{
             }
         }
     }
+
 }
