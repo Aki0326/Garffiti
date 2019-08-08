@@ -34,6 +34,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class renders the AR Graffiti.
+ */
 public class GraffitiRenderer {
     private static final String TAG = GraffitiRenderer.class.getSimpleName();
 
@@ -49,8 +52,7 @@ public class GraffitiRenderer {
     private static final int INDICES_PER_BOUNDARY_VERT = 3;
     private static final int INITIAL_BUFFER_BOUNDARY_VERTS = 64;
 
-    private static final int INITIAL_VERTEX_BUFFER_SIZE_BYTES =
-            BYTES_PER_FLOAT * COORDS_PER_VERTEX * VERTS_PER_BOUNDARY_VERT * INITIAL_BUFFER_BOUNDARY_VERTS;
+    private static final int INITIAL_VERTEX_BUFFER_SIZE_BYTES = BYTES_PER_FLOAT * COORDS_PER_VERTEX * VERTS_PER_BOUNDARY_VERT * INITIAL_BUFFER_BOUNDARY_VERTS;
 
     private static final int INITIAL_INDEX_BUFFER_SIZE_BYTES =
             BYTES_PER_SHORT
@@ -96,8 +98,7 @@ public class GraffitiRenderer {
     private final float[] modelViewMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
     private final float[] planeobjectColor = new float[4];
-    private final float[] planeobjectAngleUvMatrix =
-            new float[4]; // 2x2 rotation matrix applied to uv coords.
+    private final float[] planeobjectAngleUvMatrix = new float[4]; // 2x2 rotation matrix applied to uv coords.
 
     private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
 
@@ -241,6 +242,15 @@ public class GraffitiRenderer {
 //        }
     }
 
+    /**
+     * Draws the circle Garffiti.
+     *
+     * @param x
+     * @param y
+     * @param color
+     * @param r
+     * @param trackable
+     */
     public void drawCircle(float x, float y, int color, int r, Trackable trackable) {
         if (textureBitmap != null) {
             Integer hitplaneobjectTextureNo = planeNo.get(trackable);
@@ -277,6 +287,12 @@ public class GraffitiRenderer {
         }
     }
 
+    /**
+     * Adjust thet texture axis.
+     *
+     * @param frame
+     * @param camera
+     */
     public void adjustTextureAxis(Frame frame, Camera camera) {
         Pose cameraPose = camera.getPose();
         Pose worldToCameraLocal = cameraPose.inverse();
@@ -331,6 +347,13 @@ public class GraffitiRenderer {
         }
     }
 
+    /**
+     * Draw the Garffiti.
+     *
+     * @param cameraView
+     * @param cameraPerspective
+     * @param planeNormal
+     */
     private void draw(float[] cameraView, float[] cameraPerspective, float[] planeNormal) {
         // Build the ModelView and ModelViewProjection matrices
         // for calculating cube position and light.

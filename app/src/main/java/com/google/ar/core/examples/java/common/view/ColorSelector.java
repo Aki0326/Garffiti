@@ -12,6 +12,9 @@ import com.google.ar.core.examples.java.graffiti.R;
 
 import java.io.IOException;
 
+/**
+ * This class selects the color of brush.
+ */
 public class ColorSelector extends RelativeLayout implements View.OnClickListener{
     private static final String TAG = ColorSelector.class.getSimpleName();
 

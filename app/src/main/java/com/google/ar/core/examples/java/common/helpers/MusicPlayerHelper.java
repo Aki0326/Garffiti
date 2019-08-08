@@ -9,9 +9,19 @@ import android.widget.Toast;
 
 import java.io.IOException;
 
+/**
+ * Helper to play the music.
+ */
 public class MusicPlayerHelper {
     private MediaPlayer mediaPlayer;
 
+    /**
+     * Set up the music.
+     *
+     * @param context the application's context.
+     * @param filePath the filepath of music.
+     * @param isLoop is loop or is not loop.
+     */
     private boolean musicSetup(Context context, String filePath, Boolean isLoop) throws IOException {
         boolean fileCheck = false;
 
@@ -32,12 +42,18 @@ public class MusicPlayerHelper {
             mediaPlayer.setVolume((float) AudioManager.STREAM_MUSIC,(float)AudioManager.STREAM_MUSIC);
             mediaPlayer.prepare();
             fileCheck = true;
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return fileCheck;
     }
 
+    /** Play the music.
+     *
+     * @param context the application's context.
+     * @param filePath the filepath of music.
+     * @param isLoop is loop or is not loop.
+     */
     public void musicPlay(Context context, String filePath, Boolean isLoop) throws IOException {
 
         if (mediaPlayer == null) {
@@ -70,6 +86,7 @@ public class MusicPlayerHelper {
         });
     }
 
+    /** Stop the music. */
     public void musicStop() {
         if(mediaPlayer != null) {
             // 再生終了
