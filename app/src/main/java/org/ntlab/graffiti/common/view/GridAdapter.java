@@ -12,6 +12,8 @@ import android.widget.ImageView;
 
 import org.ntlab.graffiti.graffiti.Graffiti;
 import org.ntlab.graffiti.graffiti.ShowPhotoActivity;
+
+import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -58,7 +60,19 @@ public class GridAdapter extends BaseAdapter {
         }
 
         // ImageViewに画像ファイルを設定(Picassoを使って画像を表示)
-        Picasso.with(context).load("file://" + photoPaths.get(i)).into(imagePhoto);
+        Picasso.with(context).load("file://" + photoPaths.get(i)).into(imagePhoto, new Callback() {
+            @Override
+            public void onSuccess() {
+            }
+
+            @Override
+            public void onError() {
+                if(i != photoPaths.size()-1) {
+                    photoPaths.remove(i);
+                    getView(i, view, viewGroup);
+                }
+            }
+        });
         return imagePhoto;
     }
 

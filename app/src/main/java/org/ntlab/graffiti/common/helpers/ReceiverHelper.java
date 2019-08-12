@@ -14,7 +14,7 @@ public class ReceiverHelper extends BroadcastReceiver {
         // Context を使って、別の画面を起動する
         Intent nextIntent = new Intent(context, ModeSelectActivity.class);
         nextIntent.addFlags( Intent.FLAG_ACTIVITY_NEW_TASK );
-        context.startActivity(nextIntent);
+//        context.startActivity(nextIntent);
 
     }
 }

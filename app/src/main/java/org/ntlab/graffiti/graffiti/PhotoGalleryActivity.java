@@ -41,8 +41,15 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         } else {
             // ここに許可済みの時の動作を書く
             // 許可された時の動作
-            photoPathList = getLocalPhotos(Environment.DIRECTORY_PICTURES + File.separator + "AR/");
+            String dirname = Environment.DIRECTORY_PICTURES + File.separator + "AR/";
+            String filename = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "AR/";
+            File file = new File(filename);
+            if(!file.exists()) {
+                file.mkdirs();
+            }
+            photoPathList = getLocalPhotos(dirname);
             gridViewPhotos = findViewById(R.id.gridView_photos);
+            Collections.sort(photoPathList);
             Collections.reverse(photoPathList);
 
             final GridAdapter adapter = new GridAdapter(this, photoPathList);
@@ -138,6 +145,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             }else{
                 // 許可された時の動作
                 photoPathList = getLocalPhotos(Environment.DIRECTORY_DOWNLOADS);
+                Collections.sort(photoPathList);
                 Collections.reverse(photoPathList);
                 gridViewPhotos = findViewById(R.id.gridView_photos);
 

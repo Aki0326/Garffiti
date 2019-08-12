@@ -221,6 +221,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
         try {
           isLoop = false;
           helloArClickSE.musicPlay(HelloArActivity.this, "musics/se/camera-shutter.mp3", isLoop);
+          cameraButton.setClickable(false);
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -635,7 +636,6 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   }
 
   public void setImageView(Bitmap bitmap) {
-    cameraButton.setClickable(false);
     imageView.setImageBitmap(bitmap);
     imageView.setClickable(true);
     resetTimer();
