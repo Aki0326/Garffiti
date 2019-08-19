@@ -17,12 +17,17 @@ import android.widget.GridView;
 import android.widget.Toast;
 
 import com.google.ar.core.examples.java.common.helpers.TimeoutHelper;
-import com.google.ar.core.examples.java.common.view.GridAdapter;
+import com.google.ar.core.examples.java.common.views.GridAdapter;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
+/**
+ * This PhotoGalleryActivity show list of pictures.
+ */
 public class PhotoGalleryActivity extends AppCompatActivity {
     private static final String TAG = PhotoGalleryActivity.class.getSimpleName();
     private static final int PERMISSON_REQUEST_CODE = 2;
@@ -40,9 +45,17 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         } else {
             // ここに許可済みの時の動作を書く
             // 許可された時の動作
+            String filename = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "AR/";
+            File file = new File(filename);
+            if(!file.exists()) {
+                file.mkdirs();
+            }
             photoPathList = getLocalPhotos(Environment.DIRECTORY_PICTURES + File.separator + "AR/");
             gridViewPhotos = findViewById(R.id.gridView_photos);
+            Collections.sort(photoPathList);
             Collections.reverse(photoPathList);
+//            reversePhotoPathList();
+
 
             final GridAdapter adapter = new GridAdapter(this, photoPathList);
             gridViewPhotos.setAdapter(adapter);
@@ -98,7 +111,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         File dir = Environment.getExternalStoragePublicDirectory(directoryName);
 
         if(!dir.exists()){
-            Toast.makeText(this, directoryName+ "は存在しません", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, directoryName + "は存在しません", Toast.LENGTH_LONG).show();
             return null;
         }
 
@@ -120,12 +133,29 @@ public class PhotoGalleryActivity extends AppCompatActivity {
                 fileExtension = filename.substring(lastDotPosition + 1);
             }
             if (fullpath.contains(fileExtension)) {
+//                System.out.println(fullpath);
                 photoFilePaths.add(fullpath);
             }
 
         }
         return photoFilePaths;
 
+    }
+
+    private void reversePhotoPathList() {
+        HashMap<Long, String> temp = new HashMap<>();
+        for(String photoPath : photoPathList) {
+            String split[] = photoPath.split("[./_]");
+            temp.put(Long.parseLong(split[6]), photoPath);
+        }
+        List<Long> sortedKeys = new ArrayList<>(temp.keySet());
+        Collections.sort(sortedKeys);
+        int i = photoPathList.size() - 1;
+        for(Long key : sortedKeys) {
+            photoPathList.set(i, temp.get(key));
+            System.out.println(photoPathList.get(i));
+            i--;
+        }
     }
 
     @Override
@@ -137,7 +167,9 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             }else{
                 // 許可された時の動作
                 photoPathList = getLocalPhotos(Environment.DIRECTORY_DOWNLOADS);
+                Collections.sort(photoPathList);
                 Collections.reverse(photoPathList);
+//                reversePhotoPathList();
                 gridViewPhotos = findViewById(R.id.gridView_photos);
 
                 final GridAdapter adapter = new GridAdapter(this, photoPathList);

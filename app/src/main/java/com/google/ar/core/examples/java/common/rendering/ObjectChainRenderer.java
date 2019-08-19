@@ -42,8 +42,8 @@
 ///**
 // * Renders a point cloud.
 // */
-//public class LineShaderRenderer {
-//    private static final String TAG = LineShaderRenderer.class.getSimpleName();
+//public class ObjectChainRenderer {
+//    private static final String TAG = ObjectChainRenderer.class.getSimpleName();
 //
 //    // Shader names.
 //    private static final String VERTEX_SHADER_NAME = "shaders/line.vert";
@@ -115,7 +115,7 @@
 //    public int numPoints;
 //
 //
-//    public LineShaderRenderer() {
+//    public ObjectChainRenderer() {
 //    }
 //
 //    /**
@@ -142,7 +142,7 @@
 //
 //        /*
 //         *
-//         * The LineShaderRenderer uses an ES2 pipeline.  It uses the line_vert.glsl and
+//         * The ObjectChainRenderer uses an ES2 pipeline.  It uses the line_vert.glsl and
 //         * line_frag.glsl shader to render a volumetric line.  It uses several techniques detailed in
 //         * the following resources:
 //         *
@@ -642,8 +642,11 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
-public class LineShaderRenderer {
-    private static final String TAG = LineShaderRenderer.class.getSimpleName();
+/**
+ * This class renders the line shader like just a line. Not currently using.
+ */
+public class ObjectChainRenderer {
+    private static final String TAG = ObjectChainRenderer.class.getSimpleName();
 
     // Shader names.
 //    private static final String VERTEX_SHADER_NAME = "shaders/plane.vert";

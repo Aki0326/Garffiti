@@ -4,20 +4,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.google.ar.core.examples.java.common.helpers.MusicPlayerHelper;
-import com.google.ar.core.examples.java.common.helpers.WriteLogThreadHelpers;
 
 import java.io.IOException;
 
+/**
+ * This ModeSelectActivity selects mode.
+ */
 public class ModeSelectActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener {
     public static final String TAG = ModeSelectActivity.class.getSimpleName();
 
@@ -84,6 +83,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         super.onPause();
 
         wakeLock.release();
+        modeSelectBGM.musicStop();
     }
 
     @Override
@@ -99,7 +99,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
                     e.printStackTrace();
                 }
                 ((Graffiti) getApplication()).outputLine("Graffiti mode Clicked.");
-                startActivity(new Intent(ModeSelectActivity.this, HelloArActivity.class));
+                startActivity(new Intent(ModeSelectActivity.this, GraffitiActivity.class));
                 break;
             case R.id.coloringbattle_mode_button:
                 Toast.makeText(this, "すみません。ただいま工事中です。", Toast.LENGTH_SHORT).show();
