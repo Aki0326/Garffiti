@@ -19,6 +19,7 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+import com.google.ar.core.examples.java.common.drawer.TextureDrawer;
 import com.google.ar.core.examples.java.common.geometry.Vector;
 
 import java.io.IOException;
@@ -243,15 +244,14 @@ public class GraffitiRenderer {
     }
 
     /**
-     * Draws the circle Garffiti.
-     *
+     * Draw the texture.
      * @param x
      * @param y
-     * @param color
      * @param r
      * @param trackable
+     * @param drawer
      */
-    public void drawCircle(float x, float y, int color, int r, Trackable trackable) {
+    public void drawTexture(float x, float y, int r, Trackable trackable, TextureDrawer drawer) {
         if (textureBitmap != null) {
             Integer hitplaneobjectTextureNo = planeNo.get(trackable);
 
@@ -264,21 +264,21 @@ public class GraffitiRenderer {
 
             Bitmap bitmap = textureBitmaps.get(hitplaneobjectTextureNo);
             Canvas canvas = new Canvas(bitmap);
-            Paint paint = new Paint();
             Bitmap miniBitmap;
 
-            if(color == Color.TRANSPARENT) {
-//                paint.setColor(Color.TRANSPARENT);
-                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-                paint.setStyle(Paint.Style.FILL);
-                canvas.drawCircle(pixelX, pixelY, r, paint);
-                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
-            } else {
-                paint.setColor(color);
-                paint.setStyle(Paint.Style.FILL);
-                canvas.drawCircle(pixelX, pixelY, r, paint);
-                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
-            }
+            drawer.draw(pixelX, pixelY, r, canvas);
+
+//            if(color == Color.TRANSPARENT) {
+////                paint.setColor(Color.TRANSPARENT);
+//                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+//                paint.setStyle(Paint.Style.FILL);
+//                canvas.drawCircle(pixelX, pixelY, r, paint);
+//            } else {
+//                paint.setColor(color);
+//                paint.setStyle(Paint.Style.FILL);
+//                canvas.drawCircle(pixelX, pixelY, r, paint);
+//            }
+            miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
@@ -288,7 +288,7 @@ public class GraffitiRenderer {
     }
 
     /**
-     * Adjust thet texture axis.
+     * Adjust the texture axis.
      *
      * @param frame
      * @param camera

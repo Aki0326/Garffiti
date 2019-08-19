@@ -35,6 +35,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
     private FrameLayout purpleButton;
     private FrameLayout orangeButton;
     private FrameLayout eraserButton;
+    private View prevView;
 
     public ColorSelector(Context context) {
         super(context);
@@ -75,6 +76,7 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
 
         blueButton.setScaleX(1.5f);
         blueButton.setScaleY(1.5f);
+        prevView = blueButton;
     }
 
     @Override
@@ -86,342 +88,60 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
             e.printStackTrace();
         }
 
+        prevView.setScaleX(1.0f);
+        prevView.setScaleY(1.0f);
+        view.setScaleX(1.5f);
+        view.setScaleY(1.5f);
+        prevView = view;
+
         switch (view.getId()) {
             case R.id.blue_color_button:
                 selectedLineColor = Color.BLUE;
-                blueButton.setScaleX(1.5f);
-                blueButton.setScaleY(1.5f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.yellow_color_button:
                 selectedLineColor = Color.YELLOW;
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.5f);
-                yellowButton.setScaleY(1.5f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.red_color_button:
                 selectedLineColor = Color.RED;
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.5f);
-                redButton.setScaleY(1.5f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.green_color_button:
                 selectedLineColor = Color.GREEN;
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.5f);
-                greenButton.setScaleY(1.5f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.black_color_button:
                 selectedLineColor = Color.BLACK;
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.5f);
-                blackButton.setScaleY(1.5f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.white_color_button:
                 selectedLineColor = Color.WHITE;
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.5f);
-                whiteButton.setScaleY(1.5f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.pink_color_button:
                 selectedLineColor = Color.HSVToColor(new float[]{349f, 0.24f, 1.0f});
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.5f);
-                pinkButton.setScaleY(1.5f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.lightsteelblue_color_button:
                 selectedLineColor = Color.HSVToColor(new float[]{214f, 0.21f, 0.87f});
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.5f);
-                lightsteelblueButton.setScaleY(1.5f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.cyan_color_button:
                 selectedLineColor = Color.HSVToColor(new float[]{180f, 1.0f, 1.0f});
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.5f);
-                cyanButton.setScaleY(1.5f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.purple_color_button:
                 selectedLineColor = Color.HSVToColor(new float[]{300f, 1.0f, 0.5f});
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.5f);
-                purpleButton.setScaleY(1.5f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
 
             case R.id.orange_color_button:
                 selectedLineColor = Color.HSVToColor(new float[]{30f, 1.0f, 0.93f});
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.5f);
-                orangeButton.setScaleY(1.5f);
-                eraserButton.setScaleX(1.0f);
-                eraserButton.setScaleY(1.0f);
                 break;
 
             case R.id.eraser_button:
                 selectedLineColor = Color.TRANSPARENT;
-                blueButton.setScaleX(1.0f);
-                blueButton.setScaleY(1.0f);
-                yellowButton.setScaleX(1.0f);
-                yellowButton.setScaleY(1.0f);
-                redButton.setScaleX(1.0f);
-                redButton.setScaleY(1.0f);
-                greenButton.setScaleX(1.0f);
-                greenButton.setScaleY(1.0f);
-                blackButton.setScaleX(1.0f);
-                blackButton.setScaleY(1.0f);
-                whiteButton.setScaleX(1.0f);
-                whiteButton.setScaleY(1.0f);
-                pinkButton.setScaleX(1.0f);
-                pinkButton.setScaleY(1.0f);
-                lightsteelblueButton.setScaleX(1.0f);
-                lightsteelblueButton.setScaleY(1.0f);
-                cyanButton.setScaleX(1.0f);
-                cyanButton.setScaleY(1.0f);
-                purpleButton.setScaleX(1.0f);
-                purpleButton.setScaleY(1.0f);
-                orangeButton.setScaleX(1.0f);
-                orangeButton.setScaleY(1.0f);
-                eraserButton.setScaleX(1.5f);
-                eraserButton.setScaleY(1.5f);
                 break;
         }
     }
