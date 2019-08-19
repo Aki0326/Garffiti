@@ -57,6 +57,9 @@ import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+import com.google.ar.core.examples.java.common.drawer.CircleDrawer;
+import com.google.ar.core.examples.java.common.drawer.RectangleDrawer;
+import com.google.ar.core.examples.java.common.drawer.TextureDrawer;
 import com.google.ar.core.examples.java.common.helpers.CameraPermissionHelper;
 import com.google.ar.core.examples.java.common.helpers.DisplayRotationHelper;
 import com.google.ar.core.examples.java.common.helpers.FullScreenHelper;
@@ -560,10 +563,23 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
           float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
           float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
           float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
-          if(colorSelector.getSelectedLineColor() == Color.TRANSPARENT) {
-            graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 9, trackable);
+          int drawerStyle = 1;
+          int color = colorSelector.getSelectedLineColor();
+          TextureDrawer drawer = null;
+          switch(drawerStyle) {
+            case 1:
+              drawer = new CircleDrawer(color);
+              break;
+            case 2:
+              drawer = new RectangleDrawer(color);
+              break;
+          }
+
+
+          if(color == Color.TRANSPARENT) {
+            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ,9, trackable, drawer);
           } else {
-            graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), brushSizeSelector.getSelectedLineWidth(), trackable);
+            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, brushSizeSelector.getSelectedLineWidth(), trackable, drawer);
           }
         }
       }
