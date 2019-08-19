@@ -17,12 +17,10 @@ import android.widget.GridView;
 import android.widget.Toast;
 
 import com.google.ar.core.examples.java.common.helpers.TimeoutHelper;
-import com.google.ar.core.examples.java.common.view.GridAdapter;
+import com.google.ar.core.examples.java.common.views.GridAdapter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;

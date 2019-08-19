@@ -14,10 +14,10 @@ import java.util.Date;
 /**
  * Helper to write log thread.
  */
-public class WriteLogThreadHelpers extends Thread{
+public class WriteLogThreadHelper extends Thread{
     private Context context;
 
-    public WriteLogThreadHelpers(Context context) {
+    public WriteLogThreadHelper(Context context) {
         this.context = context;
     }
 

@@ -54,7 +54,7 @@
       </intent-filter>
     </activity>
     <activity
-        android:name="com.google.ar.core.examples.java.graffiti.HelloArActivity"
+        android:name="com.google.ar.core.examples.java.graffiti.GraffitiActivity"
         android:configChanges="orientation|screenSize"
         android:exported="true"
         android:theme="@style/Theme.AppCompat.NoActionBar"

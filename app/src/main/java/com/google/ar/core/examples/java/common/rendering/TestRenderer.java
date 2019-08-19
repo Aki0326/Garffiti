@@ -29,8 +29,8 @@ import java.util.Map;
 /**
  * This class renders the enclosure of plane. Not currently using.
  */
-public class Test {
-    private static final String TAG = Test.class.getSimpleName();
+public class TestRenderer {
+    private static final String TAG = TestRenderer.class.getSimpleName();
 
     // Shader names.
     private static final String VERTEX_SHADER_NAME = "shaders/test.vert";
@@ -103,7 +103,7 @@ public class Test {
 
     private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
 
-    public Test() {}
+    public TestRenderer() {}
 
     /**
      * Allocates and initializes OpenGL resources needed by the plane renderer. Must be called on the
