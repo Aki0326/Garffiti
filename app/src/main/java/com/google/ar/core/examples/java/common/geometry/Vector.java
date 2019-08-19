@@ -1,5 +1,8 @@
 package com.google.ar.core.examples.java.common.geometry;
 
+/**
+ * Geometry to compute vector.
+ */
 public class Vector {
     public static float dot(float[] vec1, float[] vec2) {
         if (vec1.length == 2 && vec2.length == 2) {

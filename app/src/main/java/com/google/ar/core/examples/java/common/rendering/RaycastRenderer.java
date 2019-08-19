@@ -11,6 +11,9 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
+/**
+ * This class renders the line raycast. Not currently using.
+ */
 public class RaycastRenderer {
     private static final String TAG = RaycastRenderer.class.getSimpleName();
 

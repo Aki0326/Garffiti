@@ -19,6 +19,7 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+import com.google.ar.core.examples.java.common.drawer.TextureDrawer;
 import com.google.ar.core.examples.java.common.geometry.Vector;
 
 import java.io.IOException;
@@ -34,6 +35,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class renders the AR Graffiti.
+ */
 public class GraffitiRenderer {
     private static final String TAG = GraffitiRenderer.class.getSimpleName();
 
@@ -49,8 +53,7 @@ public class GraffitiRenderer {
     private static final int INDICES_PER_BOUNDARY_VERT = 3;
     private static final int INITIAL_BUFFER_BOUNDARY_VERTS = 64;
 
-    private static final int INITIAL_VERTEX_BUFFER_SIZE_BYTES =
-            BYTES_PER_FLOAT * COORDS_PER_VERTEX * VERTS_PER_BOUNDARY_VERT * INITIAL_BUFFER_BOUNDARY_VERTS;
+    private static final int INITIAL_VERTEX_BUFFER_SIZE_BYTES = BYTES_PER_FLOAT * COORDS_PER_VERTEX * VERTS_PER_BOUNDARY_VERT * INITIAL_BUFFER_BOUNDARY_VERTS;
 
     private static final int INITIAL_INDEX_BUFFER_SIZE_BYTES =
             BYTES_PER_SHORT
@@ -96,8 +99,7 @@ public class GraffitiRenderer {
     private final float[] modelViewMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
     private final float[] planeobjectColor = new float[4];
-    private final float[] planeobjectAngleUvMatrix =
-            new float[4]; // 2x2 rotation matrix applied to uv coords.
+    private final float[] planeobjectAngleUvMatrix = new float[4]; // 2x2 rotation matrix applied to uv coords.
 
     private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
 
@@ -241,7 +243,15 @@ public class GraffitiRenderer {
 //        }
     }
 
-    public void drawCircle(float x, float y, int color, int r, Trackable trackable) {
+    /**
+     * Draw the texture.
+     * @param x
+     * @param y
+     * @param r
+     * @param trackable
+     * @param drawer
+     */
+    public void drawTexture(float x, float y, int r, Trackable trackable, TextureDrawer drawer) {
         if (textureBitmap != null) {
             Integer hitplaneobjectTextureNo = planeNo.get(trackable);
 
@@ -254,21 +264,21 @@ public class GraffitiRenderer {
 
             Bitmap bitmap = textureBitmaps.get(hitplaneobjectTextureNo);
             Canvas canvas = new Canvas(bitmap);
-            Paint paint = new Paint();
             Bitmap miniBitmap;
 
-            if(color == Color.TRANSPARENT) {
-//                paint.setColor(Color.TRANSPARENT);
-                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-                paint.setStyle(Paint.Style.FILL);
-                canvas.drawCircle(pixelX, pixelY, r, paint);
-                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
-            } else {
-                paint.setColor(color);
-                paint.setStyle(Paint.Style.FILL);
-                canvas.drawCircle(pixelX, pixelY, r, paint);
-                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
-            }
+            drawer.draw(pixelX, pixelY, r, canvas);
+
+//            if(color == Color.TRANSPARENT) {
+////                paint.setColor(Color.TRANSPARENT);
+//                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+//                paint.setStyle(Paint.Style.FILL);
+//                canvas.drawCircle(pixelX, pixelY, r, paint);
+//            } else {
+//                paint.setColor(color);
+//                paint.setStyle(Paint.Style.FILL);
+//                canvas.drawCircle(pixelX, pixelY, r, paint);
+//            }
+            miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
@@ -277,6 +287,12 @@ public class GraffitiRenderer {
         }
     }
 
+    /**
+     * Adjust the texture axis.
+     *
+     * @param frame
+     * @param camera
+     */
     public void adjustTextureAxis(Frame frame, Camera camera) {
         Pose cameraPose = camera.getPose();
         Pose worldToCameraLocal = cameraPose.inverse();
@@ -331,6 +347,13 @@ public class GraffitiRenderer {
         }
     }
 
+    /**
+     * Draw the Garffiti.
+     *
+     * @param cameraView
+     * @param cameraPerspective
+     * @param planeNormal
+     */
     private void draw(float[] cameraView, float[] cameraPerspective, float[] planeNormal) {
         // Build the ModelView and ModelViewProjection matrices
         // for calculating cube position and light.

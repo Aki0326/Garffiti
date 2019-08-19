@@ -5,12 +5,15 @@ import android.app.Application;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 
-import com.google.ar.core.examples.java.common.helpers.WriteLogThreadHelpers;
+import com.google.ar.core.examples.java.common.helpers.WriteLogThreadHelper;
 
+/**
+ * This class is main application of graffiti.
+ */
 public class Graffiti extends Application {
     private final String TAG = Graffiti.class.getSimpleName();
     private Bitmap bitmap;
-    private WriteLogThreadHelpers writeLogThread = null;
+    private WriteLogThreadHelper writeLogThread = null;
 
     public Graffiti() {
 
@@ -18,7 +21,7 @@ public class Graffiti extends Application {
             @Override
             public void onActivityCreated(Activity activity, Bundle bundle) {
                 if (writeLogThread == null) {
-                    writeLogThread = new WriteLogThreadHelpers(activity.getApplicationContext());
+                    writeLogThread = new WriteLogThreadHelper(activity.getApplicationContext());
                     writeLogThread.start();
                 }
             }

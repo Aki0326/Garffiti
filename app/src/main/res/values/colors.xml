@@ -9,7 +9,14 @@
     <color name="red">#ffcc0000</color>
     <color name="green">#ff22f033</color><!-- Green -->
     <color name="black">#000000</color><!-- Black -->
+    <color name="pink">#ffc0cb</color>color><!-- Pink -->
+    <color name="lightsteelblue">#b0c4de</color>color><!-- Lightsteelblue -->
+    <color name="cyan">#00ffff</color>color><!-- cyan -->
+    <color name="purple">#800080</color>color><!-- purple -->
+    <color name="orange">#ee7800</color>color><!-- orange -->
     <color name="black_30">#4D000000</color>
     <color name="disable">#cccccc</color>
+
+    <color name="ripple">#bbffffff</color>
 
 </resources>

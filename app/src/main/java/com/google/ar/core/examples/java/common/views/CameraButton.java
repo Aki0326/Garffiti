@@ -1,4 +1,4 @@
-package com.google.ar.core.examples.java.common.view;
+package com.google.ar.core.examples.java.common.views;
 
 import android.content.Context;
 import android.util.AttributeSet;
@@ -8,6 +8,9 @@ import android.widget.RelativeLayout;
 
 import com.google.ar.core.examples.java.graffiti.R;
 
+/**
+ * This class controll the camera button.
+ */
 class CameraButton extends RelativeLayout implements View.OnClickListener {
     private static final String TAG = CameraButton.class.getSimpleName();
 

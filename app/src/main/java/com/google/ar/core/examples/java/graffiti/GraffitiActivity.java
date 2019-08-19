@@ -57,6 +57,9 @@ import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+import com.google.ar.core.examples.java.common.drawer.CircleDrawer;
+import com.google.ar.core.examples.java.common.drawer.RectangleDrawer;
+import com.google.ar.core.examples.java.common.drawer.TextureDrawer;
 import com.google.ar.core.examples.java.common.helpers.CameraPermissionHelper;
 import com.google.ar.core.examples.java.common.helpers.DisplayRotationHelper;
 import com.google.ar.core.examples.java.common.helpers.FullScreenHelper;
@@ -66,15 +69,16 @@ import com.google.ar.core.examples.java.common.helpers.TapHelper;
 import com.google.ar.core.examples.java.common.helpers.TimeoutHelper;
 import com.google.ar.core.examples.java.common.rendering.BackgroundRenderer;
 import com.google.ar.core.examples.java.common.rendering.GraffitiRenderer;
-import com.google.ar.core.examples.java.common.rendering.LineShaderRenderer;
+import com.google.ar.core.examples.java.common.rendering.ObjectChainRenderer;
 import com.google.ar.core.examples.java.common.rendering.ObjectRenderer;
 import com.google.ar.core.examples.java.common.rendering.ObjectRenderer.BlendMode;
 import com.google.ar.core.examples.java.common.rendering.PlaneObjectRenderer;
 import com.google.ar.core.examples.java.common.rendering.PlaneRenderer;
 import com.google.ar.core.examples.java.common.rendering.PointCloudRenderer;
-import com.google.ar.core.examples.java.common.rendering.Test;
-import com.google.ar.core.examples.java.common.view.ColorSelector;
-import com.google.ar.core.examples.java.common.view.PlaneDiscoveryController;
+import com.google.ar.core.examples.java.common.rendering.TestRenderer;
+import com.google.ar.core.examples.java.common.views.BrushSizeSelector;
+import com.google.ar.core.examples.java.common.views.ColorSelector;
+import com.google.ar.core.examples.java.common.views.PlaneDiscoveryController;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
@@ -102,8 +106,8 @@ import javax.microedition.khronos.opengles.GL10;
  * ARCore API. The application will display any detected planes and will allow the user to tap on a
  * plane to place a 3d model of the Android robot.
  */
-public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
-  private static final String TAG = HelloArActivity.class.getSimpleName();
+public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
+  private static final String TAG = GraffitiActivity.class.getSimpleName();
 
   // Rendering. The Renderers are created here, and initialized when the GL surface is created.
   private GLSurfaceView surfaceView;
@@ -122,8 +126,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
   //  private final RaycastRenderer raycastRenderer = new RaycastRenderer();
   private final PlaneObjectRenderer planeObjectRenderer = new PlaneObjectRenderer();
-  private final LineShaderRenderer lineShaderRenderer = new LineShaderRenderer();
-  private final Test testRenderer = new Test();
+  private final ObjectChainRenderer objectChainRenderer = new ObjectChainRenderer();
+  private final TestRenderer testRenderer = new TestRenderer();
   private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
 
   // Temporary matrix allocated here to reduce number of allocations for each frame.
@@ -148,6 +152,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   private PlaneDiscoveryController planeDiscoveryController;
 
   private ColorSelector colorSelector;
+
+  private BrushSizeSelector brushSizeSelector;
 
   private MediaProjectionManager mpManager;
   private MediaProjection mProjection;
@@ -175,7 +181,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     displayRotationHelper = new DisplayRotationHelper(/*context=*/ this);
 
     // Set up tap listener.
-    tapHelper = new TapHelper(/*context=*/ this, HelloArActivity.this);
+    tapHelper = new TapHelper(/*context=*/ this, GraffitiActivity.this);
     surfaceView.setOnTouchListener(tapHelper);
 
     // Set up renderer.
@@ -197,13 +203,16 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     // Set up the ColorSelector View.
     colorSelector = findViewById(R.id.color_selector_view);
 
+    // Set up the brushSizeSelector View.
+    brushSizeSelector = findViewById(R.id.brush_size_selector);
+
     // Set up the Screen Shot View.
     // 撮影したスクリーンを表示するImageView
     imageView = findViewById(R.id.image_view);
     imageView.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        startActivity(new Intent(HelloArActivity.this, PhotoGalleryActivity.class));
+        startActivity(new Intent(GraffitiActivity.this, PhotoGalleryActivity.class));
         imageView.setClickable(false);
         cameraButton.setClickable(false);
         imageView.setImageBitmap(null);
@@ -218,7 +227,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       public void onClick(View view) {
         try {
           isLoop = false;
-          helloArClickSE.musicPlay(HelloArActivity.this, "musics/se/camera-shutter.mp3", isLoop);
+          helloArClickSE.musicPlay(GraffitiActivity.this, "musics/se/camera-shutter.mp3", isLoop);
+          cameraButton.setClickable(false);
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -316,9 +326,10 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
     displayRotationHelper.onResume();
 
 //    messageSnackbarHelper.showMessage(this, "Searching for surfaces...");
+    messageSnackbarHelper.showMessage(this, "端末を持ち上げて、カメラに映った壁や床にタッチしてらくがきして下さい。");
     planeDiscoveryController.show();
 
-    TimeoutHelper.startTimer(HelloArActivity.this);
+    TimeoutHelper.startTimer(GraffitiActivity.this);
   }
 
   @Override
@@ -413,7 +424,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
 //      raycastRenderer.createOnGlThread(this);
       planeObjectRenderer.createOnGlThread(this,"models/nambo.png");
-      lineShaderRenderer.createOnGlThread(/*context=*/ this,"models/linecap.png");
+//      objectChainRenderer.createOnGlThread(/*context=*/ this,"models/linecap.png");
 
       testRenderer.createOnGlThread(this,"models/nambo.png");
       graffitiRenderer.createOnGlThread(this,"models/plane.png");
@@ -488,15 +499,15 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
       pointCloud.release();
 
       // Check if we detected at least one plane. If so, hide the loading message.
-//      if (messageSnackbarHelper.isShowing()) {
-      for (Plane plane : session.getAllTrackables(Plane.class)) {
-        if (plane.getTrackingState() == TrackingState.TRACKING) {
-//            messageSnackbarHelper.hide(this);
-          planeDiscoveryController.hide();
-          break;
+      if (messageSnackbarHelper.isShowing()) {
+        for (Plane plane : session.getAllTrackables(Plane.class)) {
+          if (plane.getTrackingState() == TrackingState.TRACKING) {
+            messageSnackbarHelper.hide(this);
+            planeDiscoveryController.hide();
+            break;
+          }
         }
       }
-//      }
 
       // Visualize planes.
 //      planeRenderer.drawPlanes(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projmtx);
@@ -524,8 +535,8 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 //        virtualObjectShadow.updateModelMatrix(anchorMatrix, scaleFactor);
 //        virtualObject.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color);
 //        virtualObjectShadow.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color);
-        lineShaderRenderer.updateModelMatrix(anchorMatrix, scaleFactor);
-//        lineShaderRenderer.draw(viewmtx, projmtx);
+        objectChainRenderer.updateModelMatrix(anchorMatrix, scaleFactor);
+//        objectChainRenderer.draw(viewmtx, projmtx);
       }
 
     } catch (Throwable t) {
@@ -552,10 +563,23 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
           float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
           float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
           float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
-          if(colorSelector.getSelectedLineColor() == Color.TRANSPARENT) {
-            graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 9, trackable);
+          int drawerStyle = 1;
+          int color = colorSelector.getSelectedLineColor();
+          TextureDrawer drawer = null;
+          switch(drawerStyle) {
+            case 1:
+              drawer = new CircleDrawer(color);
+              break;
+            case 2:
+              drawer = new RectangleDrawer(color);
+              break;
+          }
+
+
+          if(color == Color.TRANSPARENT) {
+            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ,9, trackable, drawer);
           } else {
-            graffitiRenderer.drawCircle(hitOnPlaneCoordX, -hitOnPlaneCoordZ, colorSelector.getSelectedLineColor(), 4, trackable);
+            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, brushSizeSelector.getSelectedLineWidth(), trackable, drawer);
           }
         }
       }
@@ -625,7 +649,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   // アンドロイドのデータベースへ登録する
   private void registerDatabase(String file) {
     ContentValues contentValues = new ContentValues();
-    ContentResolver contentResolver = HelloArActivity.this.getContentResolver();
+    ContentResolver contentResolver = GraffitiActivity.this.getContentResolver();
     contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
     contentValues.put("_data", file);
     contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -633,7 +657,6 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
   }
 
   public void setImageView(Bitmap bitmap) {
-    cameraButton.setClickable(false);
     imageView.setImageBitmap(bitmap);
     imageView.setClickable(true);
     resetTimer();
