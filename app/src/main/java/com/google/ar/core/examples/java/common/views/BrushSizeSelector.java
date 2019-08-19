@@ -17,7 +17,7 @@
  * Created by Kat on 11/13/17.
  * Custom view for selecting brush size
  */
-package com.google.ar.core.examples.java.common.view;
+package com.google.ar.core.examples.java.common.views;
 
 import android.animation.Animator;
 import android.content.Context;

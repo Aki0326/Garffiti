@@ -1,4 +1,4 @@
-package com.google.ar.core.examples.java.common.view;
+package com.google.ar.core.examples.java.common.views;
 
 import android.support.annotation.Nullable;
 import android.view.View;

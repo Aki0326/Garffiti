@@ -20,7 +20,7 @@
     android:id="@+id/content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.google.ar.core.examples.java.graffiti.HelloArActivity">
+    tools:context="com.google.ar.core.examples.java.graffiti.GraffitiActivity">
 
   <android.opengl.GLSurfaceView
       android:id="@+id/surfaceview"
@@ -35,7 +35,7 @@
       android:layout_marginStart="5dp"
       android:layout_marginBottom="20dp">
 
-    <com.google.ar.core.examples.java.common.view.BrushSizeSelector
+    <com.google.ar.core.examples.java.common.views.BrushSizeSelector
         android:id="@+id/brush_size_selector"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -45,7 +45,7 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <com.google.ar.core.examples.java.common.view.ColorSelector
+    <com.google.ar.core.examples.java.common.views.ColorSelector
         android:id="@+id/color_selector_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

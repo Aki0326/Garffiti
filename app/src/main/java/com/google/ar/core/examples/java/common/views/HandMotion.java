@@ -1,4 +1,4 @@
-package com.google.ar.core.examples.java.common.view;
+package com.google.ar.core.examples.java.common.views;
 
 import android.app.Activity;
 import android.content.Context;

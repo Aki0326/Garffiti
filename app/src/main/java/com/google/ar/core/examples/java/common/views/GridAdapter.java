@@ -1,4 +1,4 @@
-package com.google.ar.core.examples.java.common.view;
+package com.google.ar.core.examples.java.common.views;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.google.ar.core.examples.java.graffiti.Graffiti;
 import com.google.ar.core.examples.java.graffiti.ShowPhotoActivity;
