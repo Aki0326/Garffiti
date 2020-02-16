@@ -2,10 +2,11 @@ package org.ntlab.graffiti.common.views;
 
 import android.app.Activity;
 import android.content.Context;
-import android.support.v7.widget.AppCompatImageView;
 import android.util.AttributeSet;
 import android.view.animation.Animation;
 import android.widget.FrameLayout;
+
+import androidx.appcompat.widget.AppCompatImageView;
 
 import org.ntlab.graffiti.R;
 
