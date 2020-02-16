@@ -12,6 +12,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import com.google.ar.core.Camera;
 import com.google.ar.core.Frame;
@@ -255,6 +256,7 @@ public class GraffitiRenderer {
         if (textureBitmap != null) {
             Integer hitplaneobjectTextureNo = planeNo.get(trackable);
 
+            Log.d(TAG, "No. " + hitplaneobjectTextureNo);
             int w = textureBitmaps.get(hitplaneobjectTextureNo).getWidth();
             int h = textureBitmaps.get(hitplaneobjectTextureNo).getHeight();
             int pixelX = (int)((x * DOTS_PER_METER + 0.5) * w);

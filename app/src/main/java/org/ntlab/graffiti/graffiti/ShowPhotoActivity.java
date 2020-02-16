@@ -2,9 +2,10 @@ package org.ntlab.graffiti.graffiti;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.widget.ImageView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import org.ntlab.graffiti.R;
 import org.ntlab.graffiti.common.helpers.TimeoutHelper;
