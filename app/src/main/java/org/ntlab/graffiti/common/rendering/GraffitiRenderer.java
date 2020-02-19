@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.opengl.GLES20;
@@ -252,7 +253,7 @@ public class GraffitiRenderer {
      * @param trackable
      * @param drawer
      */
-    public void drawTexture(float x, float y, int r, Trackable trackable, TextureDrawer drawer) {
+    public PointF drawTexture(float x, float y, int r, Trackable trackable, TextureDrawer drawer) {
         if (textureBitmap != null) {
             Integer hitplaneobjectTextureNo = planeNo.get(trackable);
 
@@ -286,7 +287,9 @@ public class GraffitiRenderer {
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
             GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, pixelX - r, pixelY - r, miniBitmap, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+            return new PointF(pixelX, pixelY);
         }
+        return null;
     }
 
     /**
