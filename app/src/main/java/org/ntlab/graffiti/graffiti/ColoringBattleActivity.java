@@ -76,13 +76,18 @@ import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.common.base.Preconditions;
-import com.google.firebase.database.DatabaseError;
+//import com.google.firebase.database.DatabaseError;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+import static java.util.stream.Collectors.toList;
+
 /**
  * Main Activity for the Cloud Anchor Example
  *
@@ -142,7 +147,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     private Set<Anchor> anchors = new HashSet<>();
 
     // Cloud Anchor Components.
-    private FirebaseManager firebaseManager;
+//    private FirebaseManager firebaseManager;
+    private ServiceManager serviceManager;
     private final ColoringBattleManager cloudManager = new ColoringBattleManager();
 //    private HostResolveMode currentMode;
     private CloudAnchorListener hostListener;
@@ -184,7 +190,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         roomCodeText = findViewById(R.id.room_code_text);
 
         // Initialize Cloud Anchor variables.
-        firebaseManager = new FirebaseManager(this);
+//        firebaseManager = new FirebaseManager(this);
+        serviceManager = new ServiceManager();
 //        currentMode = HostResolveMode.NONE;
         sharedPreferences = getSharedPreferences(PREFERENCE_FILE_KEY, Context.MODE_PRIVATE);
     }
@@ -325,10 +332,12 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //                Preconditions.checkState(currentMode == HostResolveMode.HOSTING, "We should only be creating an anchor in hosting mode.");
                 for (HitResult hit : frame.hitTest(tap)) {
                     if (shouldCreateAnchorWithHit(hit)) {
-                        Anchor newAnchor = hit.createAnchor();
                         // Check if any plane was hit, and if it was hit inside the plane polygon
                         Trackable trackable = hit.getTrackable();
                         Pose planePose = ((Plane) trackable).getCenterPose();
+                        for(Anchor anchor: ((Plane) trackable).getAnchors()) {
+                                Log.d(TAG, "getAnchor: " + anchor + ", " + anchor.getCloudAnchorId());
+                        }
                         float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
                         float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
                         float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
@@ -347,18 +356,38 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                         }
                         Preconditions.checkNotNull(hostListener, "The host listener cannot be null.");
                         PointF newCoordinate = new PointF(hitOnPlaneCoordX, -hitOnPlaneCoordZ);
+                        Anchor newAnchor = null;
+                        List<Anchor> anchor = trackable.getAnchors().stream().collect(toList());
+                        if(anchor.size() == 0) {
+                             newAnchor = hit.createAnchor();
+                        } else {
+                            newAnchor = anchor.get(0);
+                            if (anchors.contains(anchor.get(0))) {
+                                for (Iterator<Anchor> i = anchors.iterator(); i.hasNext();) {
+                                    Log.d(TAG, "anchors:" + i.next() + i.next().getCloudAnchorId());
+                                }
+                            }
+                        }
+                        Log.d(TAG, "newAnchor:" + newAnchor);
                         cloudManager.hostCloudAnchor(newAnchor, hostListener, newCoordinate);
                         setNewAnchor(newAnchor, newCoordinate);
                         anchors.add(newAnchor);
                         snackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
                         Log.d(TAG, "trackable: " + trackable);
                         Log.d(TAG, "trackableCenterPose: " + ((Plane) trackable).getCenterPose());
-                        Log.d(TAG, "anchor: " + hit.getTrackable().createAnchor(planePose));
+//                        Log.d(TAG, "anchor: " + hit.getTrackable().createAnchor(planePose));
+//                        PointF newCoordinate;
                         if (color == Color.TRANSPARENT) {
+//                            newCoordinate = graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
                             graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
                         } else {
+//                            newCoordinate = graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
                             graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
                         }
+//                        cloudManager.hostCloudAnchor(newAnchor, hostListener, newCoordinate);
+//                        setNewAnchor(newAnchor, newCoordinate);
+//                        anchors.add(newAnchor);
+//                        snackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
                         Log.d(TAG, hitOnPlaneCoordX + ", " + -hitOnPlaneCoordZ);
                         break; // Only handle the first valid hit.
                     }
@@ -625,7 +654,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     /** Resets the mode of the app to its initial state and removes the anchors. */
     private void resetMode() {
         roomCodeText.setText(null);
-        firebaseManager.clearRoomListener();
+//        firebaseManager.clearRoomListener();
+        serviceManager.clearRoomListener();
         hostListener = null;
         setNewAnchor(null, null);
         snackbarHelper.hide(this);
@@ -656,11 +686,17 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         cloudAnchorListener.onNewRoomCode(roomCode);
 
         // Register a new listener for the given room.
-        firebaseManager.registerNewListenerForRoom(roomCode, (cloudAnchorId, coordinate) -> {
+//        firebaseManager.registerNewListenerForRoom(roomCode, (cloudAnchorId, coordinate) -> {
+//            // When the cloud anchor ID is available from Firebase.
+//            Preconditions.checkNotNull(cloudAnchorListener, "The Cloud Anchor listener cannot be null.");
+//            cloudManager.resolveCloudAnchor(cloudAnchorId, cloudAnchorListener, SystemClock.uptimeMillis(), coordinate);
+//        });
+        serviceManager.registerNewListenerForRoom(roomCode, (cloudAnchorId, coordinate) -> {
             // When the cloud anchor ID is available from Firebase.
             Preconditions.checkNotNull(cloudAnchorListener, "The Cloud Anchor listener cannot be null.");
             cloudManager.resolveCloudAnchor(cloudAnchorId, cloudAnchorListener, SystemClock.uptimeMillis(), coordinate);
         });
+
     }
 
     /**
@@ -746,7 +782,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
      * Listens for both a new room code and an anchor ID, and shares the anchor ID in Firebase with
      * the room code when both are available.
      */
-    private final class CloudAnchorListener implements ColoringBattleManager.CloudAnchorHostListener, FirebaseManager.RoomCodeListener, ColoringBattleManager.CloudAnchorResolveListener {
+    public final class CloudAnchorListener implements ColoringBattleManager.CloudAnchorHostListener, ServiceManager.RoomCodeListener, ColoringBattleManager.CloudAnchorResolveListener {
 
         private Long roomCode;
         private String cloudAnchorId;
@@ -760,11 +796,11 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             checkAndMaybeShare();
         }
 
-        @Override
-        public void onError(DatabaseError error) {
-            Log.w(TAG, "A Firebase database error happened.", error.toException());
-            snackbarHelper.showError(ColoringBattleActivity.this, getString(R.string.snackbar_firebase_error));
-        }
+//        @Override
+//        public void onError(DatabaseError error) {
+//            Log.w(TAG, "A Firebase database error happened.", error.toException());
+//            snackbarHelper.showError(ColoringBattleActivity.this, getString(R.string.snackbar_firebase_error));
+//        }
 
         @Override
         public void onCloudHostTaskComplete(Anchor anchor, PointF coordinate) {
@@ -786,8 +822,10 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             if (roomCode == null || cloudAnchorId == null) {
                 return;
             }
-            firebaseManager.storeAnchorIdInRoom(roomCode, cloudAnchorId, coordinate);
+//            firebaseManager.storeAnchorIdInRoom(roomCode, cloudAnchorId, coordinate);
+            serviceManager.storeAnchorIdInRoom(roomCode, cloudAnchorId, coordinate);
             snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_cloud_id_shared));
+            cloudAnchorId = null;
         }
 
         @Override
