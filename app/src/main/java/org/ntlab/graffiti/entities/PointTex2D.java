@@ -1,13 +1,13 @@
 package org.ntlab.graffiti.entities;
 
-public class Point2D {
+public class PointTex2D {
     float x;
     float y;
 
-    public Point2D() {
+    public PointTex2D() {
     }
 
-    public Point2D(float x, float y) {
+    public PointTex2D(float x, float y) {
         this.x = x;
         this.y = y;
     }

@@ -321,7 +321,7 @@ public class TestRenderer {
             }
 
             float distance = calculateDistanceToPlane(plane.getCenterPose(), cameraPose);
-            if (distance < 0) { // Plane is back-facing.
+            if (distance < 0) { // PlaneJSON is back-facing.
                 continue;
             }
             sortedPlaneObjects.add(new PlaneObjectRenderer.SortablePlaneObject(distance, plane));
@@ -390,7 +390,7 @@ public class TestRenderer {
                 planeobjectIndexMap.put(plane, planeobjectIndex);
             }
 
-            // Set plane color. Computed deterministically from the Plane index.
+            // Set plane color. Computed deterministically from the PlaneJSON index.
             int colorIndex = planeobjectIndex % PLANE_COLORS_RGBA.length;
             colorRgbaToFloat(planeobjectColor, PLANE_COLORS_RGBA[colorIndex]);
             GLES20.glUniform4fv(lineColorUniform, 1, planeobjectColor, 0);
