@@ -415,7 +415,7 @@ public class GraffitiRenderer {
             }
 
             float distance = calculateDistanceToPlane(plane.getCenterPose(), cameraPose);
-            if (distance < 0) { // Plane is back-facing.
+            if (distance < 0) { // PlaneJSON is back-facing.
                 continue;
             }
             sortedPlaneObjects.add(new SortablePlaneObject(distance, plane));
@@ -508,7 +508,7 @@ public class GraffitiRenderer {
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(planeobjectIndex));
             GLES20.glUniform1i(textureUniform, 0);
 
-            // Set plane color. Computed deterministically from the Plane index.
+            // Set plane color. Computed deterministically from the PlaneJSON index.
             int colorIndex = planeobjectIndex % PLANE_COLORS_RGBA.length;
             colorRgbaToFloat(planeobjectColor, PLANE_COLORS_RGBA[colorIndex]);
             GLES20.glUniform4fv(lineColorUniform, 1, planeobjectColor, 0);

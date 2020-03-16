@@ -17,6 +17,7 @@ package org.ntlab.graffiti.graffiti;
 
 import android.graphics.PointF;
 import android.os.SystemClock;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -73,11 +74,15 @@ public class ColoringBattleManager {
      * This method hosts an anchor. The {@code listener} will be invoked when the results are
      * available.
      */
-    synchronized void hostCloudAnchor(Anchor anchor, CloudAnchorHostListener listener, PointF coordinate) {
+    synchronized Anchor hostCloudAnchor(Anchor anchor, CloudAnchorHostListener listener, PointF coordinate) {
         Preconditions.checkNotNull(session, "The session cannot be null.");
         Anchor newAnchor = session.hostCloudAnchor(anchor);
         pendingHostAnchors.put(newAnchor, listener);
-        pendingHostCoordinates.put(newAnchor, coordinate);
+        Log.d(TAG, "session#hostCloudAnchor:" + newAnchor.getCloudAnchorId());
+        if (coordinate != null) {
+            pendingHostCoordinates.put(newAnchor, coordinate);
+        }
+        return newAnchor;
     }
 
     /**
@@ -114,7 +119,9 @@ public class ColoringBattleManager {
             if (isReturnableState(anchor.getCloudAnchorState())) {
                 CloudAnchorHostListener listener = entry.getValue();
                 PointF coordinate = pendingHostCoordinates.get(anchor);
+//                if (coordinate != null) {
                 listener.onCloudHostTaskComplete(anchor, coordinate);
+//                }
                 hostIter.remove();
             }
         }

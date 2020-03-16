@@ -513,13 +513,13 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
       }
 
       // Visualize planes.
-//      planeRenderer.drawPlanes(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projmtx);
+//      planeRenderer.drawPlanes(session.getAllTrackables(PlaneJSON.class), camera.getDisplayOrientedPose(), projmtx);
 
-//      planeObjectRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
-//      testRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
+//      planeObjectRenderer.draw(session.getAllTrackables(PlaneJSON.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
+//      testRenderer.draw(session.getAllTrackables(PlaneJSON.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
       graffitiRenderer.adjustTextureAxis(frame, camera);
-      graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(Plane.class)*/, camera.getDisplayOrientedPose(), projmtx);
+      graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
 //      raycastRenderer.draw(viewmtx,projmtx);
 
