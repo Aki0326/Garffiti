@@ -8,21 +8,27 @@ public class CloudAnchor {
 
     String displayName;
     Timestamp updateTimestamp;
-    List<Point2D> draw = new ArrayList<>();
+    PlaneJSON plane;
+    List<PointTex2D> stroke = new ArrayList<>();
 
     public CloudAnchor() {
     }
 
-    public CloudAnchor(String displayName, Point2D coordinate) {
+    public CloudAnchor(String displayName, Timestamp updateTimestamp) {
         this.displayName = displayName;
         this.updateTimestamp = new Timestamp(System.currentTimeMillis());
-        this.draw.add(coordinate);
     }
 
-    public CloudAnchor(String displayName, Timestamp updateTimestamp, List<Point2D> draw) {
+    public CloudAnchor(String displayName, PointTex2D coordinate) {
+        this.displayName = displayName;
+        this.updateTimestamp = new Timestamp(System.currentTimeMillis());
+        this.stroke.add(coordinate);
+    }
+
+    public CloudAnchor(String displayName, Timestamp updateTimestamp, List<PointTex2D> stroke) {
         this.displayName = displayName;
         this.updateTimestamp = updateTimestamp;
-        this.draw = draw;
+        this.stroke = stroke;
     }
 
     public String getDisplayName() {
@@ -41,12 +47,20 @@ public class CloudAnchor {
         this.updateTimestamp = updateTimestamp;
     }
 
-    public List<Point2D> getDraw() {
-        return draw;
+    public PlaneJSON getPlane() {
+        return plane;
     }
 
-    public void setDraw(List<Point2D> draw) {
-        this.draw = draw;
+    public void setPlane(PlaneJSON plane) {
+        this.plane = plane;
+    }
+
+    public List<PointTex2D> getStroke() {
+        return stroke;
+    }
+
+    public void setStroke(List<PointTex2D> stroke) {
+        this.stroke = stroke;
     }
 
 }

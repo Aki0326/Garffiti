@@ -1,8 +1,13 @@
 package org.ntlab.graffiti.resources;
 
+import org.ntlab.graffiti.entities.CloudAnchor;
+import org.ntlab.graffiti.entities.PointPlane2D;
 import org.ntlab.graffiti.entities.Room;
 
+import java.sql.Timestamp;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -20,15 +25,25 @@ public interface RoomsService {
     Call<Collection<Room>> getRooms();
 
     @GET("rooms/{roomId}")
-    Call<Room> getRoom(@Path("roomId") String roomId);
+    Call<Map<String, Timestamp>> getRoom(@Path("roomId") String roomId);
 
-    @FormUrlEncoded
-    @POST("rooms")
-    Call<Room> createRoom(@Field("roomId") String roomId);
+    @GET("rooms/{roomId}/{cloudAnchorId}")
+    Call<CloudAnchor> getCloudAnchor(@Path("roomId") String roomId , @Path("cloudAnchorId") String cloudAnchorId);
 
-    @FormUrlEncoded
     @PUT("rooms/{roomId}")
-    Call<Room> updateRoom(@Path("roomId") String roomId, @Field("cloudAnchorId") String cloudAnchorId, @Field("displayName") String displayName, @Field("x") float x, @Field("y") float y);
+    Call<Void> createRoom(@Path("roomId") String roomId);
+
+    @FormUrlEncoded
+    @PUT("rooms/{roomId}/{cloudAnchorId}")
+    Call<Void> updateCloudAnchor(@Path("roomId") String roomId, @Path("cloudAnchorId") String cloudAnchorId, @Nullable @Field("displayName") String displayName);
+
+    @FormUrlEncoded
+    @PUT("rooms/{roomId}/{cloudAnchorId}/plane")
+    Call<Void> updatePlane(@Path("roomId") String roomId, @Path("cloudAnchorId") String cloudAnchorId, @Field("polygon") float[] polygon);
+
+    @FormUrlEncoded
+    @POST("rooms/{roomId}/{cloudAnchorId}/stroke")
+    Call<Void> stroke(@Path("roomId") String roomId, @Path("cloudAnchorId") String cloudAnchorId, @Field("texX") float texX, @Field("texY") float texY);
 
     @DELETE("rooms/{roomId}")
     Call<Room> deleteRoom(@Path("roomId") String roomId);
