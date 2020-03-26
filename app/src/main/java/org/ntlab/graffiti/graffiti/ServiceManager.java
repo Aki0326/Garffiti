@@ -3,15 +3,20 @@ package org.ntlab.graffiti.graffiti;
 import android.graphics.PointF;
 import android.util.Log;
 
+import com.google.ar.core.Anchor;
+import com.google.ar.core.Plane;
 import com.google.common.base.Preconditions;
 
 import org.ntlab.graffiti.entities.CloudAnchor;
 import org.ntlab.graffiti.entities.PointTex2D;
 import org.ntlab.graffiti.entities.Room;
+import org.ntlab.graffiti.entities.SharedAnchor;
 import org.ntlab.graffiti.resources.RoomsService;
 
 import java.io.IOException;
+import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -62,6 +69,8 @@ public class ServiceManager {
     private static final String X = "x";
     private static final String Y = "y";
 
+    private static final Timestamp LATEST = null;
+
     private final Retrofit retrofit;
     private final RoomsService roomsService;
 
@@ -84,12 +93,12 @@ public class ServiceManager {
     private Set<String> cloudAnchorIds = new HashSet<>();
     private Map<String, Set<PointF>> coordinates = new HashMap<>();
 
-    private Timer timer;
+    private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
 
     /**
      * Default constructor for the ServiceManager.
      */
-    ServiceManager(/*Context context*/) {
+    ServiceManager() {
         //retrofitの処理
         retrofit = new Retrofit.Builder()
 //                .baseUrl("http://192.168.2.109:8080/garffitiserver/")
@@ -176,7 +185,7 @@ public class ServiceManager {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Room room = rooms.get(roomId);
-                    room.putCloudAnchor(cloudAnchorId, new CloudAnchor(DISPLAY_NAME_VALUE, new Timestamp(System.currentTimeMillis())));
+                    room.putCloudAnchor(cloudAnchorId, new CloudAnchor(DISPLAY_NAME_VALUE, LATEST));
                     Log.d(TAG, "Success No." + roomId + " update!");
                 } else {
                     //onFailureでキャッチできないエラーの処理
@@ -320,13 +329,14 @@ public class ServiceManager {
                 if (response.isSuccessful()) {
                     rooms.put(roomId, new Room(roomId));
                     Log.d(TAG, "Success No." + roomId + " createRoom!");
-                    if(timer == null) {
-                        timer = new Timer();
+                    if(scheduledThreadPoolExecutor == null) {
+                        scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
 //            new Thread(new Runnable() {
 //                public void run() {
                         TimerTask task = new TimerTask() {
                             @Override
                             public void run() {
+//                                Log.d(TAG, "Timer run!");
                                 final Call<Map<String, Timestamp>> getRoomCall = roomsService.getRoom(roomId);
                                 Response<Map<String, Timestamp>> getRoomResponse;
                                 try {
@@ -340,6 +350,7 @@ public class ServiceManager {
                                                 CloudAnchor cashedCloudAnchor = room.getCloudAnchor(anchorId);
                                                 final Call<CloudAnchor> getCloudAnchorCall = roomsService.getCloudAnchor(roomId, anchorId);
                                                 if (cashedCloudAnchor == null) {
+                                                    room.putCloudAnchor(anchorId, new CloudAnchor(DISPLAY_NAME_VALUE, LATEST));
                                                     getCloudAnchorCall.enqueue(new Callback<CloudAnchor>() {
                                                         @Override
                                                         public void onResponse(Call<CloudAnchor> call, Response<CloudAnchor> response) {
@@ -349,6 +360,7 @@ public class ServiceManager {
                                                                 room.putCloudAnchor(anchorId, cloudAnchor);
                                                                 onNewListener.onNewCloudAnchorId(anchorId, cloudAnchor, null);
                                                             } else {
+                                                                room.removeCloudAnchor(anchorId);
                                                                 try {
                                                                     System.out.println(response.errorBody().string());
                                                                 } catch (IOException e) {
@@ -361,11 +373,14 @@ public class ServiceManager {
 
                                                         @Override
                                                         public void onFailure(Call<CloudAnchor> call, Throwable t) {
+                                                            room.removeCloudAnchor(anchorId);
                                                             t.printStackTrace();
                                                             Log.d(TAG, "Failed getCloudAnchor.");
                                                         }
                                                     });
-                                                } else if (cashedCloudAnchor != null && cashedCloudAnchor.getUpdateTimestamp().before(anchorToTimestamp.get(anchorId))) {
+                                                } else if (cashedCloudAnchor.getUpdateTimestamp() != LATEST && cashedCloudAnchor.getUpdateTimestamp().before(anchorToTimestamp.get(anchorId))) {
+                                                    final Timestamp backupUpdateTimestamp = cashedCloudAnchor.getUpdateTimestamp();
+                                                    cashedCloudAnchor.setUpdateTimestamp(LATEST);
                                                     getCloudAnchorCall.enqueue(new Callback<CloudAnchor>() {
                                                         @Override
                                                         public void onResponse(Call<CloudAnchor> call, Response<CloudAnchor> response) {
@@ -375,6 +390,7 @@ public class ServiceManager {
                                                                 room.putCloudAnchor(anchorId, cloudAnchor);
                                                                 onUpdateListener.onNewCloudAnchorId(anchorId, cloudAnchor, null);
                                                             } else {
+                                                                cashedCloudAnchor.setUpdateTimestamp(backupUpdateTimestamp);
                                                                 try {
                                                                     System.out.println(response.errorBody().string());
                                                                 } catch (IOException e) {
@@ -387,6 +403,7 @@ public class ServiceManager {
 
                                                         @Override
                                                         public void onFailure(Call<CloudAnchor> call, Throwable t) {
+                                                            cashedCloudAnchor.setUpdateTimestamp(backupUpdateTimestamp);
                                                             t.printStackTrace();
                                                             Log.d(TAG, "Failed getCloudAnchor.");
                                                         }
@@ -409,9 +426,10 @@ public class ServiceManager {
                                     e.printStackTrace();
                                     Log.d(TAG, "Failed getRoom.");
                                 }
+//                                Log.d(TAG, "Timer run end.");
                             }
                         };
-                        timer.schedule(task, 0, 5000);
+                        scheduledThreadPoolExecutor.scheduleWithFixedDelay(task, 0, 250, TimeUnit.MILLISECONDS);
                     }
 //                }
 //        }).start();
@@ -645,8 +663,8 @@ public class ServiceManager {
      * CloudAnchorIdListener, CloudAnchorIdListener)}.
      */
     void clearRoomListener() {
-        if (timer != null) {
-            timer.cancel();
+        if (scheduledThreadPoolExecutor != null) {
+            scheduledThreadPoolExecutor.shutdown();
         }
 //        if (currentRoomListener != null && currentRoomRef != null) {
 //            currentRoomRef.removeEventListener(currentRoomListener);
