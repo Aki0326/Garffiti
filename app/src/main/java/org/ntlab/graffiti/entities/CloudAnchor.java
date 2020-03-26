@@ -16,7 +16,7 @@ public class CloudAnchor {
 
     public CloudAnchor(String displayName, Timestamp updateTimestamp) {
         this.displayName = displayName;
-        this.updateTimestamp = new Timestamp(System.currentTimeMillis());
+        this.updateTimestamp = updateTimestamp;
     }
 
     public CloudAnchor(String displayName, PointTex2D coordinate) {

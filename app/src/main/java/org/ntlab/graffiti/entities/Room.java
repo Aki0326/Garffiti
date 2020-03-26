@@ -40,6 +40,10 @@ public class Room {
         return this.cloudAnchors.put(cloudAnchorId, cloudAnchor);
     }
 
+    public CloudAnchor removeCloudAnchor(String cloudAnchorId) {
+        return this.cloudAnchors.remove(cloudAnchorId);
+    }
+
     public Map<String, CloudAnchor> getCloudAnchors() {
         return cloudAnchors;
     }

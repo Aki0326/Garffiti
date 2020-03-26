@@ -569,6 +569,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                                 Log.d(TAGTEST, "planeAnchors.put:" + myAnchor.getCloudAnchorId());
                                 myAnchors.remove(myAnchor);
                                 partnerAnchors.remove(partnerAnchor);
+                                snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Shared Plane.");
                                 hostListener.onStorePolygon(myAnchor.getCloudAnchorId(), myPlane.getPolygon());
                             }
                         }
@@ -986,8 +987,18 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                 }
             }
             if (!flag) {
+                for (Anchor partnerAnchor : partnerAnchors) {
+                    if (partnerAnchor.getCloudAnchorId().equals(anchor.getCloudAnchorId())) {
+                        flag = true;
+                        break;
+                    }
+                }
+            }
+            if (!flag) {
                 partnerAnchors.add(anchor);
                 Log.d(TAGTEST, "partnerAnchors.put:" + anchor + ", " + anchor.getCloudAnchorId() + ", (" + anchor.getPose().getTranslation()[0] + ", " + anchor.getPose().getTranslation()[1] + ", " + anchor.getPose().getTranslation()[2] + ")");
+            } else {
+                Log.d(TAGTEST, "partnerAnchors.notput:" + anchor + ", " + anchor.getCloudAnchorId() + ", (" + anchor.getPose().getTranslation()[0] + ", " + anchor.getPose().getTranslation()[1] + ", " + anchor.getPose().getTranslation()[2] + ")");
             }
         }
 
@@ -1026,6 +1037,9 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                             break;
                         }
                     }
+                } else {
+                    snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "No Store Stroke.");
+                    return;
                 }
             }
 
