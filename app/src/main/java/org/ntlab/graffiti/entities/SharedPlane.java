@@ -15,12 +15,15 @@ import java.util.List;
 
 public class SharedPlane extends Plane {
     private Plane originalPlane;
+    private Plane currentPlane;
     private FloatBuffer margedPolygon = null;
+    private FloatBuffer currentPolygon = null;
     private List<PointTex2D> stroke = new ArrayList<>();
     private int drawnStrokeIndex = 0;
 
     public SharedPlane(Plane originalPlane) {
         this.originalPlane = originalPlane;
+        this.currentPlane = originalPlane;
     }
 
     public Plane getOriginalPlane() {
@@ -39,6 +42,14 @@ public class SharedPlane extends Plane {
         return originalPlane.createAnchor(pose);
     }
 
+    public void setCurrentPlane(Plane myNewPlane) {
+        currentPlane = myNewPlane;
+    }
+
+    public Plane getCurrentPlane() {
+        return currentPlane;
+    }
+
     public void margePolygon(Collection<PointPlane2D> partnerPolygon, Pose partnerPose) {
         ArrayList<PointPlane2D> margedPoints = new ArrayList<>();
         float[] partnerCenter = partnerPose.getTranslation();
@@ -53,6 +64,34 @@ public class SharedPlane extends Plane {
         for (int i = 0; i < myPolygon.length; i += 2) {
             margedPoints.add(new PointPlane2D(myPolygon[i], myPolygon[i+1]));
         }
+        margePolygonSub(margedPoints);
+    }
+
+    public void updatePolygon(FloatBuffer myNewPolygonBuf) {
+        Pose currentPose = currentPlane.getCenterPose();
+        ArrayList<PointPlane2D> margedPoints = new ArrayList<>();
+        float[] currentCenter = currentPose.getTranslation();
+        float[] currentXAxis = currentPose.getXAxis();
+        float[] currentZAxis = currentPose.getZAxis();
+        float[] currentPolygon = myNewPolygonBuf.array();
+        this.currentPolygon = FloatBuffer.allocate(currentPolygon.length * 2);
+        for (int i = 0; i < currentPolygon.length; i += 2) {
+            float[] target3D = Vector.add(Vector.add(currentCenter, Vector.scale(currentXAxis, currentPolygon[i])), Vector.scale(currentZAxis, currentPolygon[i+1]));
+            float[] target2D = getPlaneLocal2D(target3D);
+            margedPoints.add(new PointPlane2D(target2D[0], target2D[1]));
+            this.currentPolygon.put(target2D[0]);
+            this.currentPolygon.put(target2D[1]);
+        }
+        this.currentPolygon.position(0);
+
+        float[] myPolygon = margedPolygon.array();
+        for (int i = 0; i < myPolygon.length; i += 2) {
+            margedPoints.add(new PointPlane2D(myPolygon[i], myPolygon[i+1]));
+        }
+        margePolygonSub(margedPoints);
+    }
+
+    private void margePolygonSub(ArrayList<PointPlane2D> margedPoints) {
         ArrayList<PointPlane2D> convexFull = new ArrayList<>();
         PointPlane2D minPoint = null;
         for (PointPlane2D p: margedPoints) {
@@ -89,6 +128,12 @@ public class SharedPlane extends Plane {
     public FloatBuffer getPolygon() {
         return margedPolygon;
     }
+
+    public FloatBuffer getCurrentPolygon() {
+        if (currentPolygon == null) return originalPlane.getPolygon();
+        return currentPolygon;
+    }
+
 
     public boolean isPoseInPolygon(Pose target) {
         float[] targetPos3D = target.getTranslation();
@@ -140,5 +185,4 @@ public class SharedPlane extends Plane {
     public void drawnStroke(int drawnStrokeIndex) {
         this.drawnStrokeIndex = drawnStrokeIndex;
     }
-
 }
