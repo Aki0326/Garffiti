@@ -302,6 +302,22 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 
     @Override
     public void onStop() {
+        Log.d(TAG,  "PlaneSize:" + session.getAllTrackables(Plane.class).size());
+        int cnt = 0;
+        for (Plane plane : session.getAllTrackables(Plane.class)) {
+            if (plane.getSubsumedBy() == null) {
+                cnt++;
+            }
+        }
+        Log.d(TAG,  "NotSubsumedPlaneSize:" + cnt);
+        Log.d(TAG,  "pendingAnchorsSize:" + pendingAnchors.size() + ", myAcnhorsSize:" + myAnchors.size() + ", partnerAnchorsSize:" + partnerAnchors.size() + ", sharedAnchorsSize:" + sharedAnchors.size());
+        cnt = 0;
+        for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
+            if (sharedAnchor.getMargedPlane() instanceof SharedPlane) {
+                cnt++;
+            }
+        }
+        Log.d(TAG,  "MargedPlaneSize:" + cnt);
         Log.d(TAG, "onStop()");
         super.onStop();
     }
@@ -350,7 +366,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //                Preconditions.checkState(currentMode == HostResolveMode.HOSTING, "We should only be creating an anchor in hosting mode.");
                 for (HitResult hit : frame.hitTest(tap)) {
                     Plane trackable = shouldCreateAnchorWithHit(hit);
-                    if (trackable != null) {
+                    if (trackable != null && trackable.getSubsumedBy() == null) {
                         // Check if any plane was hit, and if it was hit inside the plane polygon
                         Pose planePose = ((Plane) trackable).getCenterPose();
                         for(Anchor anchor: ((Plane) trackable).getAnchors()) {
@@ -533,25 +549,106 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                 }
             }
 
-//            Log.d(TAG,  "PlaneSize:" + session.getAllTrackables(PlaneJSON.class).size());
+            Log.d(TAG,  "PlaneSize:" + session.getAllTrackables(Plane.class).size());
+            int cnt = 0;
+            for (Plane plane : session.getAllTrackables(Plane.class)) {
+                if (plane.getSubsumedBy() == null) {
+                    cnt++;
+                }
+            }
+            Log.d(TAG,  "NotSubsumedPlaneSize:" + cnt);
+            Log.d(TAG,  "pendingAnchorsSize:" + pendingAnchors.size() + ", myAcnhorsSize:" + myAnchors.size() + ", partnerAnchorsSize:" + partnerAnchors.size() + ", sharedAnchorsSize:" + sharedAnchors.size());
+            cnt = 0;
+            for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
+                if (sharedAnchor.getMargedPlane() instanceof SharedPlane) {
+                    cnt++;
+                }
+            }
+            Log.d(TAG,  "MargedPlaneSize:" + cnt);
+
+
             for (Plane plane : session.getAllTrackables(Plane.class)) {
 //                Log.d(TAG,  "PlaneJSON:" + plane + ", " + plane.getCenterPose());
             }
 
 //            Log.d(TAG,  "UpdatePlaneSize:" + frame.getUpdatedTrackables(PlaneJSON.class).size());
             if (hostListener != null) {
-                for (Plane plane : frame.getUpdatedTrackables(Plane.class)) {
+                for (Plane newPlane : frame.getUpdatedTrackables(Plane.class)) {
 //                Log.d(TAG,  "UpdatePlane:" + plane + ", " + plane.getCenterPose());
-                    if (!pendingAnchors.values().contains(plane) && !myAnchors.values().contains(plane)) {
-                        if (!planeAnchors.keySet().contains(plane)) {
-                            Anchor hostAnchor = cloudManager.hostCloudAnchor(plane.createAnchor(plane.getCenterPose()), hostListener, null);
-                            pendingAnchors.put(hostAnchor, plane);
-                            Log.d(TAGTEST, "pendingAnchors.put:" + hostAnchor.getCloudAnchorId());
+                    if (newPlane.getSubsumedBy() == null && !pendingAnchors.values().contains(newPlane) && !myAnchors.values().contains(newPlane)) {
+                        if (!planeAnchors.keySet().contains(newPlane)) {
+                            boolean flag = false;
+                            for (Map.Entry<Anchor, Plane> pendingAnchorEntry: pendingAnchors.entrySet()) {
+                                if (pendingAnchorEntry.getValue().getSubsumedBy().equals(newPlane)) {
+                                    flag = true;
+                                    // 座標変換
+                                    Plane plane = pendingAnchorEntry.getValue();
+                                    if (!(plane instanceof SharedPlane)) {
+                                        plane = new SharedPlane(plane);
+                                    }
+                                    ((SharedPlane) plane).setCurrentPlane(newPlane);
+                                    ((SharedPlane) plane).updatePolygon(newPlane.getPolygon());
+                                    pendingAnchorEntry.setValue(plane);
+                                    break;
+                                }
+                            }
+                            for (Map.Entry<Anchor, Plane> myAnchorEntry: myAnchors.entrySet()) {
+                                if (myAnchorEntry.getValue().getSubsumedBy().equals(newPlane)) {
+                                    flag = true;
+                                    // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
+                                    Plane plane = myAnchorEntry.getValue();
+                                    if (!(plane instanceof SharedPlane)) {
+                                        plane = new SharedPlane(plane);
+                                    }
+                                    ((SharedPlane) plane).setCurrentPlane(newPlane);
+                                    ((SharedPlane) plane).updatePolygon(newPlane.getPolygon());
+                                    myAnchorEntry.setValue(plane);
+                                    break;
+                                    // 座標変換
+//                                    Anchor myAnchor = sharedAnchorEntry.getValue().getMyAnchor();
+//                                    FloatBuffer newPlanePolygon = newPlane.getPolygon();
+//                                    Pose myPose = myAnchor.getPose();
+//                                    Pose newPlanePose = newPlane.getCenterPose();
+//                                    Pose myInversePose = myPose.inverse();
+//                                    FloatBuffer polygon = FloatBuffer.allocate(newPlanePolygon.capacity());
+//                                    for (int i = 0; i < newPlanePolygon.capacity(); i += 2) {
+//                                        PointPlane2D newPlaneLocal = new PointPlane2D(newPlanePolygon.get(i), newPlanePolygon.get(i+1));
+//                                        float[] newPlaneRotated = newPlanePose.rotateVector(new float[]{newPlaneLocal.getX(), 0f, newPlaneLocal.getZ()});
+//                                        float[] world = newPlanePose.transformPoint(newPlaneRotated);
+//                                        float[] myTransformedPose = myInversePose.transformPoint(world);
+//                                        float[] myLocal = myInversePose.rotateVector(myTransformedPose);
+//                                        polygon.put(myLocal[0]);
+//                                        polygon.put(myLocal[2]);
+//                                    }
+//                                    polygon.rewind();
+                                }
+                            }
+                            Plane oldPlane = null;
+                            for (Map.Entry<Plane, SharedAnchor> planeAnchorEntry: planeAnchors.entrySet()) {
+                                Plane plane = planeAnchorEntry.getValue().getMargedPlane();
+                                if (plane.getSubsumedBy().equals(newPlane)) {
+                                    flag = true;
+                                    // 既にSharedAnchorsに入っているplaneがSharedPlaneだったときもPlaneだったときも
+                                    // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
+                                    planeAnchorEntry.getValue().updatePlane(newPlane);
+                                    FloatBuffer currentPolygon = ((SharedPlane)planeAnchorEntry.getValue().getMargedPlane()).getCurrentPolygon();
+                                    hostListener.onStorePolygon(planeAnchorEntry.getValue().getMyAnchor().getCloudAnchorId(), currentPolygon);
+                                    oldPlane = planeAnchorEntry.getKey();
+                                    break;
+                                }
+                            }
+                            if (oldPlane != null) planeAnchors.put(newPlane, planeAnchors.remove(oldPlane));
+                            if (!flag) {
+                                Anchor hostAnchor = cloudManager.hostCloudAnchor(newPlane.createAnchor(newPlane.getCenterPose()), hostListener, null);
+                                pendingAnchors.put(hostAnchor, newPlane);
+                                Log.d(TAGTEST, "pendingAnchors.put:" + hostAnchor.getCloudAnchorId());
+                            }
                         } else {
-                            // REST merged
+                            // 既にplaneAnchors含まれている同じ平面のpolygon情報のみが更新された場合
+                            hostListener.onStorePolygon(planeAnchors.get(newPlane).getMyAnchor().getCloudAnchorId(), newPlane.getPolygon());
+                            // REST marged?
                         }
                     }
-//                    Log.d(TAG, "pendingAnchors:" + pendingAnchors.size());
                 }
 
                 for (Anchor myAnchor: myAnchors.keySet()) {
@@ -605,6 +702,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //            }
 
             for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
+                // BUG when simply plane
                 SharedPlane margedPlane = (SharedPlane)sharedAnchor.getMargedPlane();
                 List<PointTex2D> stroke = margedPlane.getStroke();
                 if (stroke.size() > margedPlane.getDrawnStrokeIndex()) {
@@ -797,7 +895,10 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                     SharedAnchor sharedAnchor = sharedAnchors.get(cloudAnchorId);
                     List<PointTex2D> newStroke = cloudAnchor.getStroke();
                     if (sharedAnchor != null) {
+                        //BUG strokeも同時に入っている
+                        if (cloudAnchor.getPlane() != null) sharedAnchor.margePlane(cloudAnchor.getPlane().getPolygon());
                         if(sharedAnchor.getMargedPlane() instanceof SharedPlane) {
+                            // 座標変換 stroke
                             Anchor myAnchor = sharedAnchor.getMyAnchor();
                             Anchor partnerAnchor = sharedAnchor.getPartnerAnchor();
                             Pose myPose = myAnchor.getPose();
@@ -814,8 +915,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                                     margedPlane.addStroke(myLocal[0], myLocal[2]);
                                 }
                             }
-                        } else {
-                            if (cloudAnchor.getPlane() != null) sharedAnchor.margePlane(cloudAnchor.getPlane().getPolygon());
                         }
                     } else {
                         //myAnchor
