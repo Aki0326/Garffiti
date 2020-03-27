@@ -40,9 +40,9 @@ public class SharedAnchor {
     }
 
     public void updatePlane(Plane myNewPlane) {
-//        if (!(margedPlane instanceof SharedPlane)) {
-//            margedPlane = new SharedPlane(margedPlane);
-//        }
+        if (!(margedPlane instanceof SharedPlane)) {
+            margedPlane = new SharedPlane(margedPlane);
+        }
         ((SharedPlane) margedPlane).setCurrentPlane(myNewPlane);
         ((SharedPlane) margedPlane).updatePolygon(myNewPlane.getPolygon());
     }
