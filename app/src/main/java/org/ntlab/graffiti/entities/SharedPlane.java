@@ -42,6 +42,10 @@ public class SharedPlane extends Plane {
         return originalPlane.createAnchor(pose);
     }
 
+    public Plane getSubsumedBy() {
+        return currentPlane.getSubsumedBy();
+    }
+
     public void setCurrentPlane(Plane myNewPlane) {
         currentPlane = myNewPlane;
     }
@@ -84,7 +88,13 @@ public class SharedPlane extends Plane {
         }
         this.currentPolygon.position(0);
 
-        float[] myPolygon = margedPolygon.array();
+        FloatBuffer oldPolygon = null;
+        if (margedPolygon == null) {
+            oldPolygon = originalPlane.getPolygon();
+        } else {
+            oldPolygon = margedPolygon;
+        }
+        float[] myPolygon = oldPolygon.array();
         for (int i = 0; i < myPolygon.length; i += 2) {
             margedPoints.add(new PointPlane2D(myPolygon[i], myPolygon[i+1]));
         }
@@ -126,6 +136,9 @@ public class SharedPlane extends Plane {
     }
 
     public FloatBuffer getPolygon() {
+        if (margedPolygon == null) {
+            return currentPlane.getPolygon();
+        }
         return margedPolygon;
     }
 
