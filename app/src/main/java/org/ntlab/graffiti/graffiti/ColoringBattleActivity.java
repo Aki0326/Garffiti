@@ -45,7 +45,6 @@ import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Point;
-import com.google.ar.core.Point.OrientationMode;
 import com.google.ar.core.PointCloud;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
@@ -60,7 +59,6 @@ import org.ntlab.graffiti.common.geometry.Vector;
 import org.ntlab.graffiti.common.helpers.TapHelper;
 import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
-import org.ntlab.graffiti.entities.PointPlane2D;
 import org.ntlab.graffiti.entities.PointTex2D;
 import org.ntlab.graffiti.entities.SharedAnchor;
 import org.ntlab.graffiti.entities.SharedPlane;
@@ -85,8 +83,6 @@ import com.google.common.base.Preconditions;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -302,23 +298,38 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 
     @Override
     public void onStop() {
-        Log.d(TAG,  "PlaneSize:" + session.getAllTrackables(Plane.class).size());
+        Log.d(TAGTEST, "onStop()");
+        Log.d(TAGTEST,  "PlaneSize:" + session.getAllTrackables(Plane.class).size());
         int cnt = 0;
         for (Plane plane : session.getAllTrackables(Plane.class)) {
             if (plane.getSubsumedBy() == null) {
+                Log.d(TAGTEST,  "NotSubsumedPlane:" + plane);
                 cnt++;
+            } else {
+                Log.d(TAGTEST,  "SubsumedPlane:" + plane + " subsumed by" + plane.getSubsumedBy());
+
             }
         }
-        Log.d(TAG,  "NotSubsumedPlaneSize:" + cnt);
-        Log.d(TAG,  "pendingAnchorsSize:" + pendingAnchors.size() + ", myAcnhorsSize:" + myAnchors.size() + ", partnerAnchorsSize:" + partnerAnchors.size() + ", sharedAnchorsSize:" + sharedAnchors.size());
+        Log.d(TAGTEST,  "NotSubsumedPlaneSize:" + cnt);
+        Log.d(TAGTEST,  "pendingAnchorsSize:" + pendingAnchors.size() + ", myAcnhorsSize:" + myAnchors.size() + ", partnerAnchorsSize:" + partnerAnchors.size() + ", sharedAnchorsSize:" + sharedAnchors.size());
+        for (Anchor anchor: pendingAnchors.keySet()) {
+            Log.d(TAGTEST,  "pendingAnchors:" + anchor + ", " + pendingAnchors.get(anchor));
+        }
+        for (Anchor anchor: myAnchors.keySet()) {
+            Log.d(TAGTEST,  "myAnchors:" + anchor + ", " + anchor.getCloudAnchorId() + ", " + myAnchors.get(anchor));
+        }
+        for (Anchor anchor: partnerAnchors) {
+            Log.d(TAGTEST,  "partnerAnchors:" + anchor + ", " + anchor.getCloudAnchorId());
+        }
+
         cnt = 0;
         for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
             if (sharedAnchor.getMargedPlane() instanceof SharedPlane) {
+                Log.d(TAGTEST,  "margedPlane:" + sharedAnchor.getMyAnchor().getCloudAnchorId() + ", " + sharedAnchor.getPartnerAnchor().getCloudAnchorId());
                 cnt++;
             }
         }
-        Log.d(TAG,  "MargedPlaneSize:" + cnt);
-        Log.d(TAG, "onStop()");
+        Log.d(TAGTEST,  "MargedPlaneSize:" + cnt);
         super.onStop();
     }
 
@@ -366,7 +377,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //                Preconditions.checkState(currentMode == HostResolveMode.HOSTING, "We should only be creating an anchor in hosting mode.");
                 for (HitResult hit : frame.hitTest(tap)) {
                     Plane trackable = shouldCreateAnchorWithHit(hit);
-                    if (trackable != null && trackable.getSubsumedBy() == null) {
+                    if (trackable != null /*&& trackable.getSubsumedBy() == null*/) {
                         // Check if any plane was hit, and if it was hit inside the plane polygon
                         Pose planePose = ((Plane) trackable).getCenterPose();
                         for(Anchor anchor: ((Plane) trackable).getAnchors()) {
@@ -549,22 +560,22 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                 }
             }
 
-            Log.d(TAG,  "PlaneSize:" + session.getAllTrackables(Plane.class).size());
-            int cnt = 0;
-            for (Plane plane : session.getAllTrackables(Plane.class)) {
-                if (plane.getSubsumedBy() == null) {
-                    cnt++;
-                }
-            }
-            Log.d(TAG,  "NotSubsumedPlaneSize:" + cnt);
-            Log.d(TAG,  "pendingAnchorsSize:" + pendingAnchors.size() + ", myAcnhorsSize:" + myAnchors.size() + ", partnerAnchorsSize:" + partnerAnchors.size() + ", sharedAnchorsSize:" + sharedAnchors.size());
-            cnt = 0;
-            for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
-                if (sharedAnchor.getMargedPlane() instanceof SharedPlane) {
-                    cnt++;
-                }
-            }
-            Log.d(TAG,  "MargedPlaneSize:" + cnt);
+//            Log.d(TAG,  "PlaneSize:" + session.getAllTrackables(Plane.class).size());
+//            int cnt = 0;
+//            for (Plane plane : session.getAllTrackables(Plane.class)) {
+//                if (plane.getSubsumedBy() == null) {
+//                    cnt++;
+//                }
+//            }
+//            Log.d(TAG,  "NotSubsumedPlaneSize:" + cnt);
+//            Log.d(TAG,  "pendingAnchorsSize:" + pendingAnchors.size() + ", myAcnhorsSize:" + myAnchors.size() + ", partnerAnchorsSize:" + partnerAnchors.size() + ", sharedAnchorsSize:" + sharedAnchors.size());
+//            cnt = 0;
+//            for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
+//                if (sharedAnchor.getMargedPlane() instanceof SharedPlane) {
+//                    cnt++;
+//                }
+//            }
+//            Log.d(TAG,  "MargedPlaneSize:" + cnt);
 
 
             for (Plane plane : session.getAllTrackables(Plane.class)) {
@@ -574,36 +585,47 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //            Log.d(TAG,  "UpdatePlaneSize:" + frame.getUpdatedTrackables(PlaneJSON.class).size());
             if (hostListener != null) {
                 for (Plane newPlane : frame.getUpdatedTrackables(Plane.class)) {
-//                Log.d(TAG,  "UpdatePlane:" + plane + ", " + plane.getCenterPose());
+                Log.d(TAG,  "UpdatePlane:" + newPlane + ", " + newPlane.getCenterPose());
                     if (newPlane.getSubsumedBy() == null && !pendingAnchors.values().contains(newPlane) && !myAnchors.values().contains(newPlane)) {
+                        // newPlane 一番外側のPlaneのみ
                         if (!planeAnchors.keySet().contains(newPlane)) {
                             boolean flag = false;
-                            for (Map.Entry<Anchor, Plane> pendingAnchorEntry: pendingAnchors.entrySet()) {
-                                if (pendingAnchorEntry.getValue().getSubsumedBy().equals(newPlane)) {
+                            Plane oldPlane = null;
+                            for (Map.Entry<Plane, SharedAnchor> planeAnchorEntry : planeAnchors.entrySet()) {
+                                Plane plane = planeAnchorEntry.getValue().getMargedPlane();
+                                if (plane.getSubsumedBy() != null && plane.getSubsumedBy().equals(newPlane)) {
+                                    Log.d(TAGTEST, "planeAnchorSubsumed." + newPlane);
                                     flag = true;
-                                    // 座標変換
-                                    Plane plane = pendingAnchorEntry.getValue();
-                                    if (!(plane instanceof SharedPlane)) {
-                                        plane = new SharedPlane(plane);
-                                    }
-                                    ((SharedPlane) plane).setCurrentPlane(newPlane);
-                                    ((SharedPlane) plane).updatePolygon(newPlane.getPolygon());
-                                    pendingAnchorEntry.setValue(plane);
+                                    // 既にSharedAnchorsに入っているplaneがSharedPlaneだったときもPlaneだったときも
+                                    // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
+                                    planeAnchorEntry.getValue().updatePlane(newPlane);
+                                    FloatBuffer currentPolygon = ((SharedPlane) planeAnchorEntry.getValue().getMargedPlane()).getCurrentPolygon();
+                                    hostListener.onStorePolygon(planeAnchorEntry.getValue().getMyAnchor().getCloudAnchorId(), currentPolygon);
+                                    oldPlane = planeAnchorEntry.getKey();
                                     break;
                                 }
                             }
-                            for (Map.Entry<Anchor, Plane> myAnchorEntry: myAnchors.entrySet()) {
-                                if (myAnchorEntry.getValue().getSubsumedBy().equals(newPlane)) {
-                                    flag = true;
-                                    // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
-                                    Plane plane = myAnchorEntry.getValue();
-                                    if (!(plane instanceof SharedPlane)) {
-                                        plane = new SharedPlane(plane);
+                            if (oldPlane != null) planeAnchors.put(newPlane, planeAnchors.remove(oldPlane));
+
+                            HashMap<Anchor, Plane> cloneMyAnchors = new HashMap<>(myAnchors);
+                            for (Map.Entry<Anchor, Plane> myAnchorEntry : cloneMyAnchors.entrySet()) {
+                                if (myAnchorEntry.getValue().getSubsumedBy() != null && myAnchorEntry.getValue().getSubsumedBy().equals(newPlane)) {
+                                    if (!flag) {
+                                        Log.d(TAGTEST, "myAnchorSubsumed." + newPlane);
+                                        flag = true;
+                                        // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
+                                        Plane plane = myAnchorEntry.getValue();
+                                        if (!(plane instanceof SharedPlane)) {
+                                            plane = new SharedPlane(plane);
+                                        }
+                                        ((SharedPlane) plane).setCurrentPlane(newPlane);
+                                        ((SharedPlane) plane).updatePolygon(newPlane.getPolygon());
+//                                        myAnchorEntry.setValue(plane);
+                                        myAnchors.put(myAnchorEntry.getKey(), plane);
+                                    } else {
+                                        Log.d(TAGTEST,  "myAnchors remove:" + myAnchorEntry.getKey());
+                                        myAnchors.remove(myAnchorEntry.getKey());
                                     }
-                                    ((SharedPlane) plane).setCurrentPlane(newPlane);
-                                    ((SharedPlane) plane).updatePolygon(newPlane.getPolygon());
-                                    myAnchorEntry.setValue(plane);
-                                    break;
                                     // 座標変換
 //                                    Anchor myAnchor = sharedAnchorEntry.getValue().getMyAnchor();
 //                                    FloatBuffer newPlanePolygon = newPlane.getPolygon();
@@ -623,29 +645,37 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //                                    polygon.rewind();
                                 }
                             }
-                            Plane oldPlane = null;
-                            for (Map.Entry<Plane, SharedAnchor> planeAnchorEntry: planeAnchors.entrySet()) {
-                                Plane plane = planeAnchorEntry.getValue().getMargedPlane();
-                                if (plane.getSubsumedBy().equals(newPlane)) {
-                                    flag = true;
-                                    // 既にSharedAnchorsに入っているplaneがSharedPlaneだったときもPlaneだったときも
-                                    // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
-                                    planeAnchorEntry.getValue().updatePlane(newPlane);
-                                    FloatBuffer currentPolygon = ((SharedPlane)planeAnchorEntry.getValue().getMargedPlane()).getCurrentPolygon();
-                                    hostListener.onStorePolygon(planeAnchorEntry.getValue().getMyAnchor().getCloudAnchorId(), currentPolygon);
-                                    oldPlane = planeAnchorEntry.getKey();
-                                    break;
+                            HashMap<Anchor, Plane> clonePendingAnchors = new HashMap<>(pendingAnchors);
+                            for (Map.Entry<Anchor, Plane> pendingAnchorEntry : clonePendingAnchors.entrySet()) {
+                                if (pendingAnchorEntry.getValue().getSubsumedBy() != null && pendingAnchorEntry.getValue().getSubsumedBy().equals(newPlane)) {
+                                    if (!flag) {
+                                        Log.d(TAGTEST, "pendingAnchorSubsumed." + newPlane);
+                                        flag = true;
+                                        // 座標変換
+                                        Plane plane = pendingAnchorEntry.getValue();
+                                        if (!(plane instanceof SharedPlane)) {
+                                            plane = new SharedPlane(plane);
+                                        }
+                                        ((SharedPlane) plane).setCurrentPlane(newPlane);
+                                        ((SharedPlane) plane).updatePolygon(newPlane.getPolygon());
+//                                        pendingAnchorEntry.setValue(plane);
+                                        pendingAnchors.put(pendingAnchorEntry.getKey(), plane);
+                                    } else {
+                                        Log.d(TAGTEST,  "pendingAnchors remove:" + pendingAnchorEntry.getKey());
+                                        pendingAnchors.remove(pendingAnchorEntry.getKey());
+                                    }
                                 }
                             }
-                            if (oldPlane != null) planeAnchors.put(newPlane, planeAnchors.remove(oldPlane));
                             if (!flag) {
                                 Anchor hostAnchor = cloudManager.hostCloudAnchor(newPlane.createAnchor(newPlane.getCenterPose()), hostListener, null);
                                 pendingAnchors.put(hostAnchor, newPlane);
-                                Log.d(TAGTEST, "pendingAnchors.put:" + hostAnchor.getCloudAnchorId());
+                                Log.d(TAGTEST, "pendingAnchors.put:" + hostAnchor.getCloudAnchorId() + newPlane);
+                                snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "pendingAnchor put.");
                             }
                         } else {
                             // 既にplaneAnchors含まれている同じ平面のpolygon情報のみが更新された場合
                             hostListener.onStorePolygon(planeAnchors.get(newPlane).getMyAnchor().getCloudAnchorId(), newPlane.getPolygon());
+                            Log.d(TAGTEST, "else");
                             // REST marged?
                         }
                     }
@@ -655,14 +685,20 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                     for (Anchor partnerAnchor : partnerAnchors) {
                         Pose myPose = myAnchor.getPose();
                         Pose patnerPose = partnerAnchor.getPose();
+//                        Log.d(TAGTEST, "?sharedAnchors?" + Vector.dot(myPose.getYAxis(), patnerPose.getYAxis()));
                         if (Vector.dot(myPose.getYAxis(), patnerPose.getYAxis()) > 0.95) {
                             float[] sub = Vector.minus(patnerPose.getTranslation(), myPose.getTranslation());
+//                            Log.d(TAGTEST, "?sharedAnchors?" + Math.abs(Vector.dot(sub, myPose.getYAxis())) + ", " + Vector.length(sub));
                             if (Math.abs(Vector.dot(sub, myPose.getYAxis())) < 0.15 && Vector.length(sub) < 1.0) {
                                 Plane myPlane = myAnchors.get(myAnchor);
                                 SharedAnchor sharedAnchor = new SharedAnchor(myAnchor, partnerAnchor, myPlane);
                                 sharedAnchors.put(partnerAnchor.getCloudAnchorId(), sharedAnchor);
                                 Log.d(TAGTEST, "sharedAnchors.put:" + partnerAnchor.getCloudAnchorId());
-                                planeAnchors.put(myPlane, sharedAnchor);
+                                if (!(myPlane instanceof SharedPlane)) {
+                                    planeAnchors.put(myPlane, sharedAnchor);
+                                } else {
+                                    planeAnchors.put(((SharedPlane) myPlane).getCurrentPlane(), sharedAnchor);
+                                }
                                 Log.d(TAGTEST, "planeAnchors.put:" + myAnchor.getCloudAnchorId());
                                 myAnchors.remove(myAnchor);
                                 partnerAnchors.remove(partnerAnchor);
@@ -703,13 +739,15 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 
             for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
                 // BUG when simply plane
-                SharedPlane margedPlane = (SharedPlane)sharedAnchor.getMargedPlane();
-                List<PointTex2D> stroke = margedPlane.getStroke();
-                if (stroke.size() > margedPlane.getDrawnStrokeIndex()) {
-                    for (int i = margedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
-                        graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, margedPlane, new CircleDrawer(Color.RED));
+                if (sharedAnchor.getMargedPlane() instanceof  SharedPlane) {
+                    SharedPlane margedPlane = (SharedPlane) sharedAnchor.getMargedPlane();
+                    List<PointTex2D> stroke = margedPlane.getStroke();
+                    if (stroke.size() > margedPlane.getDrawnStrokeIndex()) {
+                        for (int i = margedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
+                            graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, margedPlane, new CircleDrawer(Color.RED));
+                        }
+                        margedPlane.drawnStroke(stroke.size());
                     }
-                    margedPlane.drawnStroke(stroke.size());
                 }
             }
 
@@ -1028,8 +1066,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         public void onNewRoomCode(Long newRoomCode) {
             roomCode = newRoomCode;
             roomCodeText.setText(String.valueOf(roomCode));
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Now in No. " + roomCode + " room. Press Cancel to Exit.");
-            checkAndMaybeShare();
+            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_on_room_code_available, roomCode));
+//            checkAndMaybeShare();
         }
 
 //        @Override
@@ -1062,7 +1100,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             }
 //            firebaseManager.storeAnchorIdInRoom(roomCode, cloudAnchorId, coordinate);
             serviceManager.storeAnchorIdInRoom(roomCode, cloudAnchorId);
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_cloud_id_shared));
+//            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_cloud_id_shared));
+            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "myAnchor put.");
             cloudAnchorId = null;
         }
 
