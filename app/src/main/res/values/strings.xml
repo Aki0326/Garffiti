@@ -65,6 +65,7 @@
   <string name="snackbar_add_success">The anchor was successfully added.</string>
   <string name="snackbar_update_success">The anchor was successfully updated.</string>
   <string name="snackbar_nothing">The anchor was successfully nothing.</string>
+  <string name="snackbar_on_room_code_available">Now in No. %d room. Press Cancel to Exit.</string>
   <string name="snackbar_room_code_available">The room code is now available. Please place an anchor to host.</string>
   <!-- Resolve anchor has no result yet. [CHAR_LIMIT=NONE] -->
   <string name="snackbar_resolve_no_result_yet">Still resolving the anchor. Please make sure you\'re looking at where the Cloud Anchor was hosted. Or, try to re-join the room.</string>

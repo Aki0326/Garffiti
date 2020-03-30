@@ -176,11 +176,11 @@ public class SharedPlane extends Plane {
     }
 
     public boolean equals(Object another) {
-        return originalPlane.equals(another);
+        return currentPlane.equals(another);
     }
 
     public int hashCode() {
-        return originalPlane.hashCode();
+        return currentPlane.hashCode();
     }
 
     public List<PointTex2D> getStroke() {

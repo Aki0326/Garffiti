@@ -7,6 +7,8 @@ import com.google.ar.core.Anchor;
 import com.google.ar.core.Plane;
 import com.google.common.base.Preconditions;
 
+import org.ntlab.graffiti.R;
+import org.ntlab.graffiti.common.helpers.SnackbarHelper;
 import org.ntlab.graffiti.entities.CloudAnchor;
 import org.ntlab.graffiti.entities.PointTex2D;
 import org.ntlab.graffiti.entities.Room;
@@ -94,6 +96,9 @@ public class ServiceManager {
     private Map<String, Set<PointF>> coordinates = new HashMap<>();
 
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
+
+    private final SnackbarHelper snackbarHelper = new SnackbarHelper();
+
 
     /**
      * Default constructor for the ServiceManager.

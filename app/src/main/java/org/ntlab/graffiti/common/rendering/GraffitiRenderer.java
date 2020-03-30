@@ -410,7 +410,7 @@ public class GraffitiRenderer {
         List<GraffitiRenderer.SortablePlaneObject> sortedPlaneObjects = new ArrayList<>();
 
         for (Plane plane : updateObjectPlanes) {
-            if (plane.getTrackingState() != TrackingState.TRACKING || plane.getSubsumedBy() != null) {
+            if (plane.getTrackingState() != TrackingState.TRACKING/* || plane.getSubsumedBy() != null*/) {
                 continue;
             }
 
