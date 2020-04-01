@@ -2,7 +2,6 @@ package org.ntlab.graffiti.entities;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Plane;
-import com.google.ar.core.Point;
 import com.google.ar.core.Pose;
 
 import org.ntlab.graffiti.common.geometry.Vector;

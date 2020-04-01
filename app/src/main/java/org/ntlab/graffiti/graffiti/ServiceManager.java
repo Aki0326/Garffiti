@@ -229,7 +229,7 @@ public class ServiceManager {
                 if (response.isSuccessful()) {
                     Room room = rooms.get(roomId);
 //                    room.getCloudAnchor(cloudAnchorId).setPlane(polygon);
-                    Log.d(TAG, "Success No." + roomId + " updatePlane!");
+//                    Log.d(TAG, "Success No." + roomId + " updatePlane!");
                 } else {
                     //onFailureでキャッチできないエラーの処理
                     Log.d(TAG, "Error updatePlane connection.");
@@ -263,7 +263,7 @@ public class ServiceManager {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
-                    Log.d(TAG, "Success No." + roomId + " updateStroke!");
+//                    Log.d(TAG, "Success No." + roomId + " updateStroke!");
                 } else {
                     //onFailureでキャッチできないエラーの処理
                     Log.d(TAG, "Error updateStroke connection.");

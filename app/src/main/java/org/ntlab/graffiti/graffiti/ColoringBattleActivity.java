@@ -79,7 +79,6 @@ import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.common.base.Preconditions;
-//import com.google.firebase.database.DatabaseError;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -106,6 +105,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     private static final String TAG = ColoringBattleActivity.class.getSimpleName();
     private static final String TAGTEST = ColoringBattleActivity.class.getSimpleName() + "Shared";
     private static final String TAGPLANE = ColoringBattleActivity.class.getSimpleName() + "Plane";
+    private static final String TAGANCHOR = ColoringBattleActivity.class.getSimpleName() + "Anchor";
+    private static final String TAGSTROKE = ColoringBattleActivity.class.getSimpleName() + "Stroke";
 //    private static final float[] OBJECT_COLOR = new float[] {139.0f, 195.0f, 74.0f, 255.0f};
 
 //    private enum HostResolveMode {
@@ -312,10 +313,10 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             }
         }
         Log.d(TAGTEST,  "NotSubsumedPlaneSize:" + cnt);
-        Log.d(TAGTEST,  "pendingAnchorsSize:" + pendingAnchors.size() + ", myAcnhorsSize:" + myAnchors.size() + ", partnerAnchorsSize:" + partnerAnchors.size() + ", sharedAnchorsSize:" + sharedAnchors.size());
-        for (Anchor anchor: pendingAnchors.keySet()) {
-            Log.d(TAGTEST,  "pendingAnchors:" + anchor + ", " + pendingAnchors.get(anchor));
-        }
+//        Log.d(TAGTEST,  "pendingAnchorsSize:" + pendingAnchors.size() + ", myAcnhorsSize:" + myAnchors.size() + ", partnerAnchorsSize:" + partnerAnchors.size() + ", sharedAnchorsSize:" + sharedAnchors.size());
+//        for (Anchor anchor: pendingAnchors.keySet()) {
+//            Log.d(TAGTEST,  "pendingAnchors:" + anchor + ", " + pendingAnchors.get(anchor));
+//        }
         for (Anchor anchor: myAnchors.keySet()) {
             Log.d(TAGTEST,  "myAnchors:" + anchor + ", " + anchor.getCloudAnchorId() + ", " + myAnchors.get(anchor));
         }
@@ -323,10 +324,22 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             Log.d(TAGTEST,  "partnerAnchors:" + anchor + ", " + anchor.getCloudAnchorId());
         }
 
+//        cnt = 0;
+//        for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
+//            if (sharedAnchor.getMargedPlane() instanceof SharedPlane) {
+//                Log.d(TAGTEST,  "margedPlane:" + sharedAnchor.getMyAnchor().getCloudAnchorId() + ", " + sharedAnchor.getPartnerAnchor().getCloudAnchorId());
+//                cnt++;
+//            }
+//        }
         cnt = 0;
-        for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
-            if (sharedAnchor.getMargedPlane() instanceof SharedPlane) {
-                Log.d(TAGTEST,  "margedPlane:" + sharedAnchor.getMyAnchor().getCloudAnchorId() + ", " + sharedAnchor.getPartnerAnchor().getCloudAnchorId());
+        for (Plane plane: planeAnchors.keySet()) {
+            if (planeAnchors.get(plane).getMargedPlane() instanceof SharedPlane) {
+                float[] margedMyPlaneXAxis = planeAnchors.get(plane).getMyAnchor().getPose().getXAxis();
+                float[] margedMyPlaneZAxis = planeAnchors.get(plane).getMyAnchor().getPose().getZAxis();
+                float[] margedPartnerPlaneXAxis = planeAnchors.get(plane).getPartnerAnchor().getPose().getXAxis();
+                float[] margedPartnerPlaneZAxis = planeAnchors.get(plane).getPartnerAnchor().getPose().getZAxis();
+                Log.d(TAGSTROKE,  "margedMyPlane: " + plane + ", " + planeAnchors.get(plane).getMyAnchor().getCloudAnchorId() + ", (" + margedMyPlaneXAxis[0] + ", " + margedMyPlaneXAxis[1] + ", " + margedMyPlaneXAxis[2] + "), "+ ", (" + margedMyPlaneZAxis[0] + ", " + margedMyPlaneZAxis[1] + ", " + margedMyPlaneZAxis[2] + ")");
+                Log.d(TAGSTROKE,  "margedPartnerPlane: " + plane + ", " + planeAnchors.get(plane).getPartnerAnchor().getCloudAnchorId() + ", (" + margedPartnerPlaneXAxis[0] + ", " + margedPartnerPlaneXAxis[1] + ", " + margedPartnerPlaneXAxis[2] + "), "+ ", (" + margedPartnerPlaneZAxis[0] + ", " + margedPartnerPlaneZAxis[1] + ", " + margedPartnerPlaneZAxis[2] + ")");
                 cnt++;
             }
         }
@@ -384,11 +397,15 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                         for(Anchor anchor: plane.getAnchors()) {
                                 Log.d(TAG, "getAnchor: " + anchor + ", " + anchor.getCloudAnchorId());
                         }
-                        float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
-                        float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
-                        float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
-                        float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
-                        float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
+                        // ワールド座標系から平面のローカル座標への変換
+                        float[] hitMinusPlaneCenter = Vector.minus(hit.getHitPose().getTranslation(), planePose.getTranslation());
+                        float hitOnPlaneCoordX = Vector.dot(planePose.getXAxis(), hitMinusPlaneCenter);
+                        float hitOnPlaneCoordZ = Vector.dot(planePose.getZAxis(), hitMinusPlaneCenter);
+//                        float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
+//                        float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
+//                        float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
+//                        float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
+//                        float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
                         int drawerStyle = 1;
                         int color = Color.BLUE;
                         TextureDrawer drawer = null;
@@ -433,7 +450,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //                        setNewAnchor(newAnchor, newCoordinate);
 //                        anchors.add(newAnchor);
 //                        snackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
-                        Log.d(TAG, hitOnPlaneCoordX + ", " + -hitOnPlaneCoordZ);
+                        Log.d(TAGSTROKE, "hit.getHitPose().getTranslation(): " + hit.getHitPose().getTranslation());
+                        Log.d(TAGSTROKE, "hitOnPlaneCoord: " + hitOnPlaneCoordX + ", " + -hitOnPlaneCoordZ);
                         break; // Only handle the first valid hit.
                     }
                 }
@@ -579,9 +597,9 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //            Log.d(TAG,  "MargedPlaneSize:" + cnt);
 
 
-            for (Plane plane : session.getAllTrackables(Plane.class)) {
-                Log.d(TAGPLANE,  "Plane:" + plane + ", " + plane.getCenterPose() + ", " + plane.getSubsumedBy());
-            }
+//            for (Plane plane : session.getAllTrackables(Plane.class)) {
+//                Log.d(TAGPLANE,  "Plane:" + plane + ", " + plane.getCenterPose() + ", " + plane.getSubsumedBy());
+//            }
 
             for (Plane newPlane : frame.getUpdatedTrackables(Plane.class)) {
                 Log.d(TAGPLANE, "UpdatePlane:" + newPlane + ", " + newPlane.getCenterPose() + ", " + newPlane.getSubsumedBy());
@@ -591,20 +609,22 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //            Log.d(TAG,  "UpdatePlaneSize:" + frame.getUpdatedTrackables(PlaneJSON.class).size());
             if (hostListener != null) {
                 for (Plane newPlane : frame.getUpdatedTrackables(Plane.class)) {
-                Log.d(TAGTEST,  "UpdatePlane:" + newPlane + ", " + newPlane.getCenterPose() + ", " + newPlane.getSubsumedBy());
+//                Log.d(TAGTEST,  "UpdatePlane:" + newPlane + ", " + newPlane.getCenterPose() + ", " + newPlane.getSubsumedBy());
                     if (newPlane.getSubsumedBy() == null) {
                         boolean flag = false;
                         Plane oldPlane = null;
                         for (Map.Entry<Plane, SharedAnchor> planeAnchorEntry : planeAnchors.entrySet()) {
-                            Plane plane = planeAnchorEntry.getValue().getMargedPlane();
+                            SharedAnchor sharedAnchor = planeAnchorEntry.getValue();
+                            Plane plane = sharedAnchor.getMargedPlane();
                             if (plane.getSubsumedBy() != null && plane.getSubsumedBy().equals(newPlane)) {
                                 Log.d(TAGTEST, "planeAnchorSubsumed." + newPlane);
                                 flag = true;
                                 // 既にSharedAnchorsに入っているplaneがSharedPlaneだったときもPlaneだったときも
                                 // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
-                                planeAnchorEntry.getValue().updatePlane(newPlane);
-                                FloatBuffer currentPolygon = ((SharedPlane) planeAnchorEntry.getValue().getMargedPlane()).getCurrentPolygon();
-                                hostListener.onStorePolygon(planeAnchorEntry.getValue().getMyAnchor().getCloudAnchorId(), currentPolygon);
+                                sharedAnchor.updatePlane(newPlane);
+                                FloatBuffer currentPolygon = ((SharedPlane) sharedAnchor.getMargedPlane()).getCurrentPolygon();
+                                hostListener.onStorePolygon(sharedAnchor.getMyAnchor().getCloudAnchorId(), currentPolygon);
+                                sharedAnchor.setPrevPolygon(currentPolygon);
                                 oldPlane = planeAnchorEntry.getKey();
                                 break;
                             }
@@ -665,7 +685,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //                                        pendingAnchorEntry.setValue(plane);
 //                                    pendingAnchors.put(pendingAnchorEntry.getKey(), plane);
 //                                } else {
-                                    Log.d(TAGTEST, "pendingAnchors remove:" + pendingAnchorEntry.getKey());
+                                    Log.d(TAGTEST, ", pendingAnchors.remove, " + pendingAnchorEntry.getValue());
                                     pendingAnchors.remove(pendingAnchorEntry.getKey());
 //                                }
                             }
@@ -676,17 +696,31 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                                 if (!flag) {
                                     Anchor hostAnchor = cloudManager.hostCloudAnchor(newPlane.createAnchor(newPlane.getCenterPose()), hostListener, null);
                                     pendingAnchors.put(hostAnchor, newPlane);
-                                    Log.d(TAGTEST, "pendingAnchors.put:" + hostAnchor.getCloudAnchorId() + ", " + newPlane + newPlane.getSubsumedBy());
+                                    Log.d(TAGTEST, ", pendingAnchors.put, " + hostAnchor.getCloudAnchorId() + ", " + newPlane + ", " + newPlane.getSubsumedBy());
                                     snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "pendingAnchor put.");
                                 }
                             } else {
                                 // 既にplaneAnchors含まれている同じ平面のpolygon情報のみが更新された場合
-                                hostListener.onStorePolygon(planeAnchors.get(newPlane).getMyAnchor().getCloudAnchorId(), newPlane.getPolygon());
-                                Log.d(TAGTEST, "else");
+                                SharedAnchor sharedAnchor = planeAnchors.get(newPlane);
+                                if (!sharedAnchor.getPrevPolygon().equals(newPlane.getPolygon())) {
+                                    hostListener.onStorePolygon(planeAnchors.get(newPlane).getMyAnchor().getCloudAnchorId(), newPlane.getPolygon());
+                                    sharedAnchor.setPrevPolygon(newPlane.getPolygon());
+                                }
+//                                Log.d(TAGTEST, "else");
                                 // REST marged?
                             }
                         }
                     }
+                }
+
+                for (Anchor anchor: myAnchors.keySet()) {
+                    Log.d(TAGANCHOR,  ", myAnchorPose, " + anchor.getCloudAnchorId() + ", " + anchor.getPose() + ", (" + anchor.getPose().getXAxis().toString() + ", " + anchor.getPose().getZAxis().toString() + ")");
+                }
+                for (Anchor anchor: partnerAnchors) {
+                    Log.d(TAGANCHOR,  ", partnerPose, " + anchor.getCloudAnchorId() + ", " + anchor.getPose() + ", (" + anchor.getPose().getXAxis().toString() + ", " + anchor.getPose().getZAxis().toString() + ")");
+                }
+                for (Anchor anchor: session.getAllAnchors()) {
+                    Log.d(TAGANCHOR,  ", getAllAnchors, " + anchor.getCloudAnchorId() + ", " + anchor.getPose() + ", (" + anchor.getPose().getXAxis().toString() + ", " + anchor.getPose().getZAxis().toString() + ")");
                 }
 
                 for (Anchor myAnchor: myAnchors.keySet()) {
@@ -699,9 +733,10 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //                            Log.d(TAGTEST, "?sharedAnchors?" + Math.abs(Vector.dot(sub, myPose.getYAxis())) + ", " + Vector.length(sub));
                             if (Math.abs(Vector.dot(sub, myPose.getYAxis())) < 0.15 && Vector.length(sub) < 1.0) {
                                 Plane myPlane = myAnchors.get(myAnchor);
+                                String partnerAnchorId = partnerAnchor.getCloudAnchorId();
                                 SharedAnchor sharedAnchor = new SharedAnchor(myAnchor, partnerAnchor, myPlane);
-                                sharedAnchors.put(partnerAnchor.getCloudAnchorId(), sharedAnchor);
-                                Log.d(TAGTEST, "sharedAnchors.put:" + partnerAnchor.getCloudAnchorId());
+                                sharedAnchors.put(partnerAnchorId, sharedAnchor);
+                                Log.d(TAGTEST, "sharedAnchors.put:" + partnerAnchorId);
                                 if (!(myPlane instanceof SharedPlane)) {
                                     planeAnchors.put(myPlane, sharedAnchor);
                                 } else {
@@ -712,6 +747,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                                 partnerAnchors.remove(partnerAnchor);
                                 snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Shared Plane.");
                                 hostListener.onStorePolygon(myAnchor.getCloudAnchorId(), myPlane.getPolygon());
+                                sharedAnchors.get(partnerAnchorId).setPrevPolygon(myPlane.getPolygon());
                             }
                         }
                     }
@@ -949,16 +985,30 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                             Anchor partnerAnchor = sharedAnchor.getPartnerAnchor();
                             Pose myPose = myAnchor.getPose();
                             Pose partnerPose = partnerAnchor.getPose();
-                            Pose myInversePose = myPose.inverse();
+//                            Pose myInversePose = myPose.inverse();
                             SharedPlane margedPlane = (SharedPlane) sharedAnchor.getMargedPlane();
                             if (newStroke.size() > margedPlane.getStroke().size()) {
                                 for (int i = margedPlane.getStroke().size(); i < newStroke.size(); i++) {
                                     PointTex2D partnerLocal = newStroke.get(i);
-                                    float[] partnerRotated = partnerPose.rotateVector(new float[]{partnerLocal.getX(), 0f, partnerLocal.getY()});
-                                    float[] world = partnerPose.transformPoint(partnerRotated);
-                                    float[] myTransformedPose = myInversePose.transformPoint(world);
-                                    float[] myLocal = myInversePose.rotateVector(myTransformedPose);
-                                    margedPlane.addStroke(myLocal[0], myLocal[2]);
+                                    Log.d(TAGSTROKE, i + " partnerLocal: " + partnerLocal.getX() + ", " + partnerLocal.getY());
+//                                    float[] partnerRotated = partnerPose.rotateVector(new float[]{partnerLocal.getX(), 0f, partnerLocal.getY()});
+//                                    float[] world = partnerPose.transformPoint(partnerRotated);
+//                                    float[] myTransformedPose = myInversePose.transformPoint(world);
+//                                    float[] myLocal = myInversePose.rotateVector(myTransformedPose);
+//                                    margedPlane.addStroke(myLocal[0], myLocal[2]);
+                                    float[] partnerRotated = Vector.add(
+                                            Vector.scale(partnerPose.getXAxis(), partnerLocal.getX()),
+                                            Vector.scale(partnerPose.getZAxis(), partnerLocal.getY()));
+                                    float[] world = Vector.add(partnerRotated, partnerPose.getTranslation());
+                                    float[] myCenter = myPose.getTranslation();
+                                    float[] myAxisX = myPose.getXAxis();
+                                    float[] myAxisZ = myPose.getZAxis();
+                                    float[] relativeToMe = Vector.minus(world, myCenter);
+                                    float myLocalX = Vector.dot(relativeToMe, myAxisX);
+                                    float myLocalZ = Vector.dot(relativeToMe, myAxisZ);
+                                    margedPlane.addStroke(myLocalX, myLocalZ);
+                                    Log.d(TAGSTROKE, i + " myLocal: " + myLocalX + ", " + myLocalZ);
+
                                 }
                             }
                         }
@@ -1097,8 +1147,11 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             cloudAnchorId = anchor.getCloudAnchorId();
             this.coordinate = coordinate;
             setNewAnchor(anchor, coordinate);
-            checkAndMaybeShare();
-            myAnchors.put(anchor, pendingAnchors.remove(anchor));
+            if (pendingAnchors.get(anchor) != null) {
+                checkAndMaybeShare();
+                myAnchors.put(anchor, pendingAnchors.remove(anchor));
+            }
+            cloudAnchorId = null;
             Log.d(TAGTEST, "myAnchors.put:" + anchor + ", " + anchor.getCloudAnchorId() + ", (" + anchor.getPose().getTranslation()[0] + ", " + anchor.getPose().getTranslation()[1] + ", " + anchor.getPose().getTranslation()[2] + ") ," + myAnchors.get(anchor));
         }
 
@@ -1110,7 +1163,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             serviceManager.storeAnchorIdInRoom(roomCode, cloudAnchorId);
 //            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_cloud_id_shared));
             snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "myAnchor put.");
-            cloudAnchorId = null;
         }
 
         @Override
@@ -1159,7 +1211,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                 return;
             }
             float[] polyArray = polygon.array();
-            Log.d(TAGTEST, "storePolygonInRoom:" + cloudAnchorId);
+//            Log.d(TAGTEST, "storePolygonInRoom:" + cloudAnchorId);
             serviceManager.storePolygonInRoom(roomCode, cloudAnchorId, polyArray);
             snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Polygon.");
         }
