@@ -4,6 +4,7 @@ import com.google.ar.core.Anchor;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 
+import org.ntlab.graffiti.common.geometry.GeometryUtil;
 import org.ntlab.graffiti.common.geometry.Vector;
 
 import java.nio.FloatBuffer;
@@ -59,7 +60,7 @@ public class SharedPlane extends Plane {
         float[] partnerXAxis = partnerPose.getXAxis();
         float[] partnerZAxis = partnerPose.getZAxis();
         for (PointPlane2D p: partnerPolygon) {
-            float[] target3D = Vector.add(Vector.add(partnerCenter, Vector.scale(partnerXAxis, p.x)), Vector.scale(partnerZAxis, p.z));
+            float[] target3D = GeometryUtil.localToWorld(p.x, p.z, partnerCenter, partnerXAxis, partnerZAxis);
             float[] target2D = getPlaneLocal2D(target3D);
             margedPoints.add(new PointPlane2D(target2D[0], target2D[1]));
         }
@@ -79,7 +80,7 @@ public class SharedPlane extends Plane {
         float[] currentPolygon = myNewPolygonBuf.array();
         this.currentPolygon = FloatBuffer.allocate(currentPolygon.length * 2);
         for (int i = 0; i < currentPolygon.length; i += 2) {
-            float[] target3D = Vector.add(Vector.add(currentCenter, Vector.scale(currentXAxis, currentPolygon[i])), Vector.scale(currentZAxis, currentPolygon[i+1]));
+            float[] target3D = GeometryUtil.localToWorld(currentPolygon[i], currentPolygon[i+1], currentCenter, currentXAxis, currentZAxis);
             float[] target2D = getPlaneLocal2D(target3D);
             margedPoints.add(new PointPlane2D(target2D[0], target2D[1]));
             this.currentPolygon.put(target2D[0]);
@@ -170,8 +171,7 @@ public class SharedPlane extends Plane {
         float[] planePos3D = originalPlane.getCenterPose().getTranslation();
         float[] planeAxisX = originalPlane.getCenterPose().getXAxis();
         float[] planeAxisZ = originalPlane.getCenterPose().getZAxis();
-        float[] planeToTarget3D = Vector.minus(targetPos3D, planePos3D);
-        return new float[]{Vector.dot(planeToTarget3D, planeAxisX), Vector.dot(planeToTarget3D, planeAxisZ)};
+        return GeometryUtil.worldToLocal(targetPos3D, planePos3D, planeAxisX, planeAxisZ);
     }
 
     public boolean equals(Object another) {
