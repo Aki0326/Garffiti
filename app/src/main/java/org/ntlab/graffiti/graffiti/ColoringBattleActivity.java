@@ -55,6 +55,7 @@ import org.ntlab.graffiti.R;
 import org.ntlab.graffiti.common.drawer.CircleDrawer;
 import org.ntlab.graffiti.common.drawer.RectangleDrawer;
 import org.ntlab.graffiti.common.drawer.TextureDrawer;
+import org.ntlab.graffiti.common.geometry.GeometryUtil;
 import org.ntlab.graffiti.common.geometry.Vector;
 import org.ntlab.graffiti.common.helpers.TapHelper;
 import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
@@ -396,18 +397,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                     if (plane != null && plane.getSubsumedBy() == null) {
                         // Check if any plane was hit, and if it was hit inside the plane polygon
                         Pose planePose = plane.getCenterPose();
-                        for(Anchor anchor: plane.getAnchors()) {
-                                Log.d(TAG, "getAnchor: " + anchor + ", " + anchor.getCloudAnchorId());
-                        }
                         // ワールド座標系から平面のローカル座標への変換
-                        float[] hitMinusPlaneCenter = Vector.minus(hit.getHitPose().getTranslation(), planePose.getTranslation());
-                        float hitOnPlaneCoordX = Vector.dot(planePose.getXAxis(), hitMinusPlaneCenter);
-                        float hitOnPlaneCoordZ = Vector.dot(planePose.getZAxis(), hitMinusPlaneCenter);
-//                        float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
-//                        float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
-//                        float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
-//                        float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
-//                        float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
+                        float[] hitOnPlaneCoord = GeometryUtil.worldToLocal(hit.getHitPose().getTranslation(), planePose.getTranslation(), planePose.getXAxis(), planePose.getZAxis());
                         int drawerStyle = 1;
                         int color = Color.BLUE;
                         TextureDrawer drawer = null;
@@ -420,7 +411,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                                 break;
                         }
                         Preconditions.checkNotNull(hostListener, "The host listener cannot be null.");
-                        PointF newCoordinate = new PointF(hitOnPlaneCoordX, -hitOnPlaneCoordZ);
+                        PointF newCoordinate = new PointF(hitOnPlaneCoord[0], -hitOnPlaneCoord[1]);
 //                        Anchor newAnchor = null;
                         List<Anchor> anchor = plane.getAnchors().stream().collect(toList());
                         if(anchor.size() == 0) {
@@ -441,10 +432,12 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                         snackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
                         if (color == Color.TRANSPARENT) {
 //                            newCoordinate = graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
-                            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, plane, drawer);
+//                            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, plane, drawer);
+                            graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
                         } else {
 //                            newCoordinate = graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
-                            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, plane, drawer);
+//                            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, plane, drawer);
+                            graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
                         }
 //                        hostListener.onStoreStroke(plane, hitOnPlaneCoordX, -hitOnPlaneCoordZ);
                         hostListener.onStoreStroke(plane, hit.getHitPose().getTranslation());
@@ -454,7 +447,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //                        anchors.add(newAnchor);
 //                        snackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
                         Log.d(TAGSTROKE, "hit.getHitPose().getTranslation(): " + hit.getHitPose().getTranslation());
-                        Log.d(TAGSTROKE, "hitOnPlaneCoord: " + hitOnPlaneCoordX + ", " + -hitOnPlaneCoordZ);
+                        Log.d(TAGSTROKE, "hitOnPlaneCoord: " + hitOnPlaneCoord[0] + ", " + -hitOnPlaneCoord[1]);
+//                        Log.d(TAGSTROKE, "hitOnPlaneCoord: " + hitOnPlaneCoordX + ", " + -hitOnPlaneCoordZ);
                         break; // Only handle the first valid hit.
                     }
                 }
@@ -987,33 +981,24 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                         if (cloudAnchor.getPlane() != null) sharedAnchor.margePlane(cloudAnchor.getPlane().getPolygon());
                         if(sharedAnchor.getMargedPlane() instanceof SharedPlane) {
                             // 座標変換 stroke
-//                            Anchor myAnchor = sharedAnchor.getMyAnchor();
                             Anchor partnerAnchor = sharedAnchor.getPartnerAnchor();
-                            Pose myPose = ((SharedPlane) sharedAnchor.getMargedPlane()).getCurrentPlane().getCenterPose();
-                            Pose partnerPose = partnerAnchor.getPose();
-//                            Pose myInversePose = myPose.inverse();
+                            Pose myPlanePose = ((SharedPlane) sharedAnchor.getMargedPlane()).getCurrentPlane().getCenterPose();
+                            float[] myCenter = myPlanePose.getTranslation();
+                            float[] myXAxis = myPlanePose.getXAxis();
+                            float[] myZAxis = myPlanePose.getZAxis();
+                            Pose partnerAnchorPose = partnerAnchor.getPose();
+                            float[] partnerCenter = partnerAnchorPose.getTranslation();
+                            float[] pertnerXAxis = partnerAnchorPose.getXAxis();
+                            float[] partnerZAxis = partnerAnchorPose.getZAxis();
                             SharedPlane margedPlane = (SharedPlane) sharedAnchor.getMargedPlane();
                             if (newStroke.size() > margedPlane.getStroke().size()) {
                                 for (int i = margedPlane.getStroke().size(); i < newStroke.size(); i++) {
                                     PointTex2D partnerLocal = newStroke.get(i);
                                     Log.d(TAGSTROKE, i + " partnerLocal: " + partnerLocal.getX() + ", " + partnerLocal.getY());
-//                                    float[] partnerRotated = partnerPose.rotateVector(new float[]{partnerLocal.getX(), 0f, partnerLocal.getY()});
-//                                    float[] world = partnerPose.transformPoint(partnerRotated);
-//                                    float[] myTransformedPose = myInversePose.transformPoint(world);
-//                                    float[] myLocal = myInversePose.rotateVector(myTransformedPose);
-//                                    margedPlane.addStroke(myLocal[0], myLocal[2]);
-                                    float[] partnerRotated = Vector.add(
-                                            Vector.scale(partnerPose.getXAxis(), partnerLocal.getX()),
-                                            Vector.scale(partnerPose.getZAxis(), partnerLocal.getY()));
-                                    float[] world = Vector.add(partnerRotated, partnerPose.getTranslation());
-                                    float[] myCenter = myPose.getTranslation();
-                                    float[] myAxisX = myPose.getXAxis();
-                                    float[] myAxisZ = myPose.getZAxis();
-                                    float[] relativeToMe = Vector.minus(world, myCenter);
-                                    float myLocalX = Vector.dot(relativeToMe, myAxisX);
-                                    float myLocalZ = Vector.dot(relativeToMe, myAxisZ);
-                                    margedPlane.addStroke(myLocalX, -myLocalZ);
-                                    Log.d(TAGSTROKE, i + " myLocal: " + myLocalX + ", " + myLocalZ);
+                                    float[] world = GeometryUtil.localToWorld(partnerLocal.getX(), partnerLocal.getY(), partnerCenter, pertnerXAxis, partnerZAxis);
+                                    float[] planeLocal = GeometryUtil.worldToLocal(world, myCenter, myXAxis, myZAxis);
+                                    margedPlane.addStroke(planeLocal[0], -planeLocal[1]);
+                                    Log.d(TAGSTROKE, i + " myLocal: " + planeLocal[0] + ", " + -planeLocal[1]);
 
                                 }
                             }
@@ -1024,14 +1009,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                             anchor.getCloudAnchorId().equals(cloudAnchorId);
                         }
                     }
-//                        for (PointTex2D partnerLocal: stroke) {
-//                            float[] partnerRotated = partnerPose.rotateVector(new float[] {partnerLocal.getX(), 0f, partnerLocal.getY()});
-//                            float[] world = partnerPose.transformPoint(partnerRotated);
-//                            float[] myTransformedPose = myInversePose.transformPoint(world);
-//                            float[] myLocal = myInversePose.rotateVector(myTransformedPose);
-//                            SharedPlane sharedPlane = (SharedPlane) sharedAnchor.getMargedPlane();
-//                            sharedPlane.addStroke(myLocal[0], myLocal[2]);
-//                        }
                 }
         );
 
@@ -1230,12 +1207,10 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             float[] anchorZAxis = anchorPose.getZAxis();
 
             for (int i = 0; i < planePolygon.length; i += 2) {
-                float[] world = Vector.add(Vector.add(planePosition, Vector.scale(planeXAxis, planePolygon[i])), Vector.scale(planeZAxis, planePolygon[i + 1]));
-                float[] worldMinusAnchor = Vector.minus(world, anchorPosition);
-                float anchorCoordX = Vector.dot(worldMinusAnchor, anchorXAxis);
-                float anchorCoordZ = Vector.dot(worldMinusAnchor, anchorZAxis);
-                polyArray[i] = anchorCoordX;
-                polyArray[i + 1] = anchorCoordZ;
+                float[] world = GeometryUtil.localToWorld(planePolygon[i], planePolygon[i + 1], planePosition, planeXAxis, planeZAxis);
+                float[] anchorLocal = GeometryUtil.worldToLocal(world, anchorPosition, anchorXAxis, anchorZAxis);
+                polyArray[i] = anchorLocal[0];
+                polyArray[i + 1] = anchorLocal[1];
             }
 //            Log.d(TAGTEST, "storePolygonInRoom:" + cloudAnchorId);
             serviceManager.storePolygonInRoom(roomCode, cloudAnchorId, polyArray);
@@ -1249,8 +1224,9 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 
             Anchor myAnchor;
             Pose myAnchorPose;
-            float hitOnMyAnchorCoordX = 0;
-            float hitOnMyAnchorCoordZ = 0;
+            float[] hitOnMyAnchorCoord = new float[2];
+//            float hitOnMyAnchorCoordX = 0;
+//            float hitOnMyAnchorCoordZ = 0;
 
             String cloudAnchorId = null;
             // Check if the hit was within the plane's polygon.
@@ -1260,9 +1236,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                 myAnchorPose = myAnchor.getPose();
                 cloudAnchorId = myAnchor.getCloudAnchorId();
                 // ワールド座標系から平面のローカル座標への変換
-                float[] hitMinusMyAnchor = Vector.minus(hitPosition, myAnchorPose.getTranslation());
-                hitOnMyAnchorCoordX = Vector.dot(myAnchorPose.getXAxis(), hitMinusMyAnchor);
-                hitOnMyAnchorCoordZ = Vector.dot(myAnchorPose.getZAxis(), hitMinusMyAnchor);
+                hitOnMyAnchorCoord = GeometryUtil.worldToLocal(hitPosition, myAnchorPose.getTranslation(), myAnchorPose.getXAxis(), myAnchorPose.getZAxis());
             } else {
                 if (myAnchors.containsValue(hitPlane)) {
                     for (Anchor anchor : myAnchors.keySet()) {
@@ -1272,9 +1246,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                             myAnchorPose = myAnchor.getPose();
                             cloudAnchorId = myAnchor.getCloudAnchorId();
                             // ワールド座標系から平面のローカル座標への変換
-                            float[] hitMinusMyAnchor = Vector.minus(hitPosition, myAnchorPose.getTranslation());
-                            hitOnMyAnchorCoordX = Vector.dot(myAnchorPose.getXAxis(), hitMinusMyAnchor);
-                            hitOnMyAnchorCoordZ = Vector.dot(myAnchorPose.getZAxis(), hitMinusMyAnchor);
+                            hitOnMyAnchorCoord = GeometryUtil.worldToLocal(hitPosition, myAnchorPose.getTranslation(), myAnchorPose.getXAxis(), myAnchorPose.getZAxis());
                             break;
                         }
                     }
@@ -1283,8 +1255,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                     return;
                 }
             }
-
-            serviceManager.storeStrokeInRoom(roomCode, cloudAnchorId, hitOnMyAnchorCoordX, hitOnMyAnchorCoordZ);
+//            serviceManager.storeStrokeInRoom(roomCode, cloudAnchorId, hitOnMyAnchorCoordX, hitOnMyAnchorCoordZ);
+            serviceManager.storeStrokeInRoom(roomCode, cloudAnchorId, hitOnMyAnchorCoord[0], hitOnMyAnchorCoord[1]);
             snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Stroke.");
         }
 
