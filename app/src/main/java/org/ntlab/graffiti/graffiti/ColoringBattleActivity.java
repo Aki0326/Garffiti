@@ -86,10 +86,8 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -145,8 +143,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     private static final String ALLOW_SHARE_IMAGES_KEY = "ALLOW_SHARE_IMAGES";
 
     private Session session;
-
-    private Set<Anchor> anchors = new HashSet<>();
 
     // Cloud Anchor Components.
     private WebServiceManager webServiceManager;
@@ -407,7 +403,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                     } else {
                         graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
                     }
-                    hostListener.onStoreStroke(plane, hit.getHitPose().getTranslation());
+                    storeStroke(plane, hit.getHitPose().getTranslation());
                     Log.d(TAGSTROKE, "hit.getHitPose().getTranslation(): " + hit.getHitPose().getTranslation());
                     Log.d(TAGSTROKE, "hitOnPlaneCoord: " + hitOnPlaneCoord[0] + ", " + -hitOnPlaneCoord[1]);
                     break; // Only handle the first valid hit.
@@ -580,8 +576,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                                 // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
                                 sharedAnchor.updatePlane(newPlane);
                                 FloatBuffer currentPolygon = ((SharedPlane) plane).getCurrentPolygon();
-//                                hostListener.onStorePolygon(sharedAnchor.getMyAnchor().getCloudAnchorId(), currentPolygon);
-                                hostListener.onStorePolygon(sharedAnchor.getMyAnchor(), plane);
+//                                storePolygon(sharedAnchor.getMyAnchor().getCloudAnchorId(), currentPolygon);
+                                storePolygon(sharedAnchor.getMyAnchor(), plane);
                                 sharedAnchor.setPrevPolygon(currentPolygon);
                                 oldPlane = planeAnchorEntry.getKey();
                                 break;
@@ -662,7 +658,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                                 // 既にplaneAnchors含まれている同じ平面のpolygon情報のみが更新された場合
                                 SharedAnchor sharedAnchor = planeAnchors.get(newPlane);
                                 if (!sharedAnchor.getPrevPolygon().equals(newPlane.getPolygon())) {
-                                    hostListener.onStorePolygon(planeAnchors.get(newPlane).getMyAnchor(), newPlane);
+                                    storePolygon(planeAnchors.get(newPlane).getMyAnchor(), newPlane);
                                     sharedAnchor.setPrevPolygon(newPlane.getPolygon());
                                 }
 //                                Log.d(TAGTEST, "else");
@@ -705,8 +701,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                                 myAnchors.remove(myAnchor);
                                 partnerAnchors.remove(partnerAnchor);
                                 snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Shared Plane.");
-//                                hostListener.onStorePolygon(myAnchor.getCloudAnchorId(), myPlane.getPolygon());
-                                hostListener.onStorePolygon(myAnchor, myPlane);
+//                                storePolygon(myAnchor.getCloudAnchorId(), myPlane.getPolygon());
+                                storePolygon(myAnchor, myPlane);
                                 sharedAnchors.get(partnerAnchorId).setPrevPolygon(myPlane.getPolygon());
                             }
                         }
@@ -727,19 +723,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             // Visualize graffiti.
             graffitiRenderer.adjustTextureAxis(frame, camera);
             graffitiRenderer.draw(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
-
-            // Check if the anchor can be visualized or not, and get its pose if it can be.
-            boolean shouldDrawAnchor = false;
-//            synchronized (anchorLock) {
-//                if(anchor != null) {
-//                    if (!anchor.getCloudAnchorId().isEmpty() && anchor.getTrackingState() == TrackingState.TRACKING && !anchors.contains(anchor)) {
-//                        // Get the current pose of an Anchor in world space. The Anchor pose is updated
-//                        // during calls to session.update() as ARCore refines its estimate of the world.
-//                        anchors.add(anchor);
-//                        shouldDrawAnchor = true;
-//                    }
-//                }
-//            }
 
             for (SharedAnchor sharedAnchor: sharedAnchors.values()) {
                 // BUG when simply plane
@@ -771,6 +754,70 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 //             Avoid crashing the application due to unhandled exceptions.
             Log.e(TAG, "Exception on the OpenGL thread", t);
         }
+    }
+
+    private void storePolygon(Anchor anchor, Plane plane) {
+        String cloudAnchorId = anchor.getCloudAnchorId();
+        FloatBuffer polygon = plane.getPolygon();
+        if (cloudAnchorId == null) {
+            return;
+        }
+        float[] planePolygon = polygon.array();
+        float[] polyArray = new float[planePolygon.length];
+        Pose planeCenter = plane.getCenterPose();
+        float[] planePosition = planeCenter.getTranslation();
+        float[] planeXAxis = planeCenter.getXAxis();
+        float[] planeZAxis = planeCenter.getZAxis();
+        Pose anchorPose = anchor.getPose();
+        float[] anchorPosition = anchorPose.getTranslation();
+        float[] anchorXAxis = anchorPose.getXAxis();
+        float[] anchorZAxis = anchorPose.getZAxis();
+
+        for (int i = 0; i < planePolygon.length; i += 2) {
+            float[] world = GeometryUtil.localToWorld(planePolygon[i], planePolygon[i + 1], planePosition, planeXAxis, planeZAxis);
+            float[] anchorLocal = GeometryUtil.worldToLocal(world, anchorPosition, anchorXAxis, anchorZAxis);
+            polyArray[i] = anchorLocal[0];
+            polyArray[i + 1] = anchorLocal[1];
+        }
+        Log.d(TAGTEST, "storePolygonInRoom:" + cloudAnchorId);
+        webServiceManager.storePolygonInRoom(cloudAnchorId, polyArray);
+        snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Polygon.");
+    }
+
+    private void storeStroke(Plane hitPlane, float[] hitPosition) {
+        Anchor myAnchor;
+        Pose myAnchorPose;
+        float[] hitOnMyAnchorCoord = new float[2];
+
+        String cloudAnchorId = null;
+        // Check if the hit was within the plane's polygon.
+        if(hitPlane instanceof SharedPlane) {
+            SharedAnchor sharedAnchor = planeAnchors.get(hitPlane);
+            myAnchor = sharedAnchor.getMyAnchor();
+            myAnchorPose = myAnchor.getPose();
+            cloudAnchorId = myAnchor.getCloudAnchorId();
+            // ワールド座標系から平面のローカル座標への変換
+            hitOnMyAnchorCoord = GeometryUtil.worldToLocal(hitPosition, myAnchorPose.getTranslation(), myAnchorPose.getXAxis(), myAnchorPose.getZAxis());
+        } else {
+            if (myAnchors.containsValue(hitPlane)) {
+                for (Anchor anchor : myAnchors.keySet()) {
+                    Plane plane = myAnchors.get(anchor);
+                    if (plane.equals(hitPlane)) {
+                        myAnchor = anchor;
+                        myAnchorPose = myAnchor.getPose();
+                        cloudAnchorId = myAnchor.getCloudAnchorId();
+                        // ワールド座標系から平面のローカル座標への変換
+                        hitOnMyAnchorCoord = GeometryUtil.worldToLocal(hitPosition, myAnchorPose.getTranslation(), myAnchorPose.getXAxis(), myAnchorPose.getZAxis());
+                        break;
+                    }
+                }
+            } else {
+                snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "No Store Stroke.");
+                return;
+            }
+        }
+        webServiceManager.storeStrokeInRoom(cloudAnchorId, hitOnMyAnchorCoord[0], hitOnMyAnchorCoord[1]);
+        snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Stroke.");
     }
 
     @Override
@@ -886,81 +933,36 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     /** Callback function invoked when the user presses the OK button in the Resolve Dialog. */
     private void onRoomCodeEntered(Long roomCode) {
         AnchorListener cloudAnchorListener = new AnchorListener();
-        cloudAnchorListener.setRoomCode(roomCode);
         hostListener = cloudAnchorListener;
-        WebServiceListener webServiceListener = new WebServiceListener(cloudAnchorListener);
-        webServiceManager.registerNewListenerForRoom(roomCode, webServiceListener);
-
-//        webServiceManager.registerNewListenerForRoom(roomCode,
-//                (cloudAnchorId, cloudAnchor) -> {
-//                    // When the cloud anchor ID is available from Firebase.
-//                    Preconditions.checkNotNull(cloudAnchorListener, "The Cloud Anchor listener cannot be null.");
-//                    anchorManager.resolveAnchor(cloudAnchorId, cloudAnchorListener, SystemClock.uptimeMillis());
-//                },
-//                (cloudAnchorId, cloudAnchor) -> {
-//                    // When the cloud anchor ID is available from Firebase.
-//                    Preconditions.checkNotNull(cloudAnchorListener, "The Cloud Anchor listener cannot be null.");
-//                    SharedAnchor sharedAnchor = sharedAnchors.get(cloudAnchorId);
-//                    List<PointTex2D> newStroke = cloudAnchor.getStroke();
-//                    if (sharedAnchor != null) {
-//                        //BUG strokeも同時に入っている
-//                        if (cloudAnchor.getPlane() != null) sharedAnchor.margePlane(cloudAnchor.getPlane().getPolygon());
-//                        if(sharedAnchor.getMargedPlane() instanceof SharedPlane) {
-//                            // 座標変換 stroke
-//                            Anchor partnerAnchor = sharedAnchor.getPartnerAnchor();
-//                            Pose myPlanePose = ((SharedPlane) sharedAnchor.getMargedPlane()).getCurrentPlane().getCenterPose();
-//                            float[] myCenter = myPlanePose.getTranslation();
-//                            float[] myXAxis = myPlanePose.getXAxis();
-//                            float[] myZAxis = myPlanePose.getZAxis();
-//                            Pose partnerAnchorPose = partnerAnchor.getPose();
-//                            float[] partnerCenter = partnerAnchorPose.getTranslation();
-//                            float[] pertnerXAxis = partnerAnchorPose.getXAxis();
-//                            float[] partnerZAxis = partnerAnchorPose.getZAxis();
-//                            SharedPlane margedPlane = (SharedPlane) sharedAnchor.getMargedPlane();
-//                            if (newStroke.size() > margedPlane.getStroke().size()) {
-//                                for (int i = margedPlane.getStroke().size(); i < newStroke.size(); i++) {
-//                                    PointTex2D partnerLocal = newStroke.get(i);
-//                                    Log.d(TAGSTROKE, i + " partnerLocal: " + partnerLocal.getX() + ", " + partnerLocal.getY());
-//                                    float[] world = GeometryUtil.localToWorld(partnerLocal.getX(), partnerLocal.getY(), partnerCenter, pertnerXAxis, partnerZAxis);
-//                                    float[] planeLocal = GeometryUtil.worldToLocal(world, myCenter, myXAxis, myZAxis);
-//                                    margedPlane.addStroke(planeLocal[0], -planeLocal[1]);
-//                                    Log.d(TAGSTROKE, i + " myLocal: " + planeLocal[0] + ", " + -planeLocal[1]);
-//
-//                                }
-//                            }
-//                        }
-//                    } else {
-//                        //myAnchor
-//                        for (Anchor anchor: partnerAnchors) {
-//                            anchor.getCloudAnchorId().equals(cloudAnchorId);
-//                        }
-//                    }
-//                }
-//        );
+        WebServiceUpdateListener webServiceListener = new WebServiceUpdateListener(cloudAnchorListener);
+//        Preconditions.checkState(roomCode == null, "The room code cannot have been set before.");
+        roomCodeText.setText(String.valueOf(roomCode));
+        snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_on_room_code_available, roomCode));
+        webServiceManager.createRoom(roomCode, webServiceListener);
     }
 
     /**
      * Listens for both a new room code and an anchor ID, and shares the anchor ID in Firebase with
      * the room code when both are available.
      */
-    public final class WebServiceListener implements WebServiceManager.CloudAnchorListener {
-        private AnchorListener cloudAnchorListener;
+    public final class WebServiceUpdateListener implements WebServiceManager.RoomUpdateListener {
+        private AnchorListener anchorListener;
 
-        public WebServiceListener(AnchorListener cloudAnchorListener) {
-            this.cloudAnchorListener = cloudAnchorListener;
+        public WebServiceUpdateListener(AnchorListener anchorListener) {
+            this.anchorListener = anchorListener;
         }
 
         @Override
         public void onNewCloudAnchor(String cloudAnchorId, CloudAnchor cloudAnchor) {
             // When the cloud anchor ID is available from Firebase.
-            Preconditions.checkNotNull(cloudAnchorListener, "The Cloud Anchor listener cannot be null.");
-            anchorManager.resolveAnchor(cloudAnchorId, cloudAnchorListener, SystemClock.uptimeMillis());
+            Preconditions.checkNotNull(anchorListener, "The Cloud Anchor listener cannot be null.");
+            anchorManager.resolveAnchor(cloudAnchorId, anchorListener, SystemClock.uptimeMillis());
         }
 
         @Override
         public void onUpdateCloudAnchor(String cloudAnchorId, CloudAnchor cloudAnchor) {
             // When the cloud anchor ID is available from Firebase.
-            Preconditions.checkNotNull(cloudAnchorListener, "The Cloud Anchor listener cannot be null.");
+            Preconditions.checkNotNull(anchorListener, "The Cloud Anchor listener cannot be null.");
             SharedAnchor sharedAnchor = sharedAnchors.get(cloudAnchorId);
             List<PointTex2D> newStroke = cloudAnchor.getStroke();
             if (sharedAnchor != null) {
@@ -1004,16 +1006,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
      * the room code when both are available.
      */
     public final class AnchorListener implements AnchorManager.AnchorHostListener, AnchorManager.AnchorResolveListener {
-        private Long roomCode;
-        private String cloudAnchorId;
-
-        public void setRoomCode (Long newRoomCode) {
-            Preconditions.checkState(roomCode == null, "The room code cannot have been set before.");
-            roomCode = newRoomCode;
-            roomCodeText.setText(String.valueOf(roomCode));
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_on_room_code_available, roomCode));
-            checkAndMaybeShare();
-        }
 
         @Override
         public void onHostTaskComplete(Anchor anchor) {
@@ -1023,24 +1015,17 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                 snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_host_error, cloudState));
                 return;
             }
-            Preconditions.checkState(cloudAnchorId == null, "The cloud anchor ID cannot have been set before.");
-            anchors.add(anchor);
-            cloudAnchorId = anchor.getCloudAnchorId();
+            String cloudAnchorId = anchor.getCloudAnchorId();
+//            Preconditions.checkState(cloudAnchorId == null, "The cloud anchor ID cannot have been set before.");
             if (pendingAnchors.get(anchor) != null) {
-                checkAndMaybeShare();
-                myAnchors.put(anchor, pendingAnchors.remove(anchor));
+                if (cloudAnchorId != null) {
+                    webServiceManager.storeAnchorIdInRoom(cloudAnchorId);
+                    myAnchors.put(anchor, pendingAnchors.remove(anchor));
+                    snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "myAnchor put.");
+//                    snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_cloud_id_shared));
+                    Log.d(TAGTEST, "myAnchors.put:" + anchor + ", " + anchor.getCloudAnchorId() + ", (" + anchor.getPose().getTranslation()[0] + ", " + anchor.getPose().getTranslation()[1] + ", " + anchor.getPose().getTranslation()[2] + ") ," + myAnchors.get(anchor));
+                }
             }
-            cloudAnchorId = null;
-            Log.d(TAGTEST, "myAnchors.put:" + anchor + ", " + anchor.getCloudAnchorId() + ", (" + anchor.getPose().getTranslation()[0] + ", " + anchor.getPose().getTranslation()[1] + ", " + anchor.getPose().getTranslation()[2] + ") ," + myAnchors.get(anchor));
-        }
-
-        private void checkAndMaybeShare() {
-            if (roomCode == null || cloudAnchorId == null) {
-                return;
-            }
-            webServiceManager.storeAnchorIdInRoom(roomCode, cloudAnchorId);
-//            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_cloud_id_shared));
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "myAnchor put.");
         }
 
         @Override
@@ -1048,7 +1033,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             // When the anchor has been resolved, or had a final error state.
             CloudAnchorState cloudState = anchor.getCloudAnchorState();
             if (cloudState.isError()) {
-                Log.w(TAG, "The anchor in room " + roomCode + " could not be resolved. The error state was " + cloudState);
                 snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_error, cloudState));
                 return;
             }
@@ -1081,74 +1065,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         public void onShowResolveMessage() {
             snackbarHelper.setMaxLines(4);
             snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_no_result_yet));
-        }
-
-        private void onStorePolygon(Anchor anchor, Plane plane) {
-            String cloudAnchorId = anchor.getCloudAnchorId();
-            FloatBuffer polygon = plane.getPolygon();
-            if (roomCode == null || cloudAnchorId == null) {
-                return;
-            }
-            float[] planePolygon = polygon.array();
-            float[] polyArray = new float[planePolygon.length];
-            Pose planeCenter = plane.getCenterPose();
-            float[] planePosition = planeCenter.getTranslation();
-            float[] planeXAxis = planeCenter.getXAxis();
-            float[] planeZAxis = planeCenter.getZAxis();
-            Pose anchorPose = anchor.getPose();
-            float[] anchorPosition = anchorPose.getTranslation();
-            float[] anchorXAxis = anchorPose.getXAxis();
-            float[] anchorZAxis = anchorPose.getZAxis();
-
-            for (int i = 0; i < planePolygon.length; i += 2) {
-                float[] world = GeometryUtil.localToWorld(planePolygon[i], planePolygon[i + 1], planePosition, planeXAxis, planeZAxis);
-                float[] anchorLocal = GeometryUtil.worldToLocal(world, anchorPosition, anchorXAxis, anchorZAxis);
-                polyArray[i] = anchorLocal[0];
-                polyArray[i + 1] = anchorLocal[1];
-            }
-            Log.d(TAGTEST, "storePolygonInRoom:" + cloudAnchorId);
-            webServiceManager.storePolygonInRoom(roomCode, cloudAnchorId, polyArray);
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Polygon.");
-        }
-
-        private void onStoreStroke(Plane hitPlane, float[] hitPosition) {
-            if (roomCode == null) {
-                return;
-            }
-
-            Anchor myAnchor;
-            Pose myAnchorPose;
-            float[] hitOnMyAnchorCoord = new float[2];
-
-            String cloudAnchorId = null;
-            // Check if the hit was within the plane's polygon.
-            if(hitPlane instanceof SharedPlane) {
-                SharedAnchor sharedAnchor = planeAnchors.get(hitPlane);
-                myAnchor = sharedAnchor.getMyAnchor();
-                myAnchorPose = myAnchor.getPose();
-                cloudAnchorId = myAnchor.getCloudAnchorId();
-                // ワールド座標系から平面のローカル座標への変換
-                hitOnMyAnchorCoord = GeometryUtil.worldToLocal(hitPosition, myAnchorPose.getTranslation(), myAnchorPose.getXAxis(), myAnchorPose.getZAxis());
-            } else {
-                if (myAnchors.containsValue(hitPlane)) {
-                    for (Anchor anchor : myAnchors.keySet()) {
-                        Plane plane = myAnchors.get(anchor);
-                        if (plane.equals(hitPlane)) {
-                            myAnchor = anchor;
-                            myAnchorPose = myAnchor.getPose();
-                            cloudAnchorId = myAnchor.getCloudAnchorId();
-                            // ワールド座標系から平面のローカル座標への変換
-                            hitOnMyAnchorCoord = GeometryUtil.worldToLocal(hitPosition, myAnchorPose.getTranslation(), myAnchorPose.getXAxis(), myAnchorPose.getZAxis());
-                            break;
-                        }
-                    }
-                } else {
-                    snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "No Store Stroke.");
-                    return;
-                }
-            }
-            webServiceManager.storeStrokeInRoom(roomCode, cloudAnchorId, hitOnMyAnchorCoord[0], hitOnMyAnchorCoord[1]);
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Stroke.");
         }
 
     }
