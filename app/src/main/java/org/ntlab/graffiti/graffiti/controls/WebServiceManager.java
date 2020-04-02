@@ -1,30 +1,20 @@
-package org.ntlab.graffiti.graffiti;
+package org.ntlab.graffiti.graffiti.controls;
 
 import android.graphics.PointF;
 import android.util.Log;
 
-import com.google.ar.core.Anchor;
-import com.google.ar.core.Plane;
 import com.google.common.base.Preconditions;
 
-import org.ntlab.graffiti.R;
 import org.ntlab.graffiti.common.helpers.SnackbarHelper;
 import org.ntlab.graffiti.entities.CloudAnchor;
-import org.ntlab.graffiti.entities.PointTex2D;
 import org.ntlab.graffiti.entities.Room;
-import org.ntlab.graffiti.entities.SharedAnchor;
-import org.ntlab.graffiti.resources.RoomsService;
 
 import java.io.IOException;
-import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -35,27 +25,19 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
-public class ServiceManager {
-//    private static final String TAG = ColoringBattleActivity.class.getSimpleName() + "." + ServiceManager.class.getSimpleName();
-    private static final String TAG = ColoringBattleActivity.class.getSimpleName() + "Shared";
+public class WebServiceManager {
+    private static final String TAG = WebServiceManager.class.getSimpleName();
 
     private Map<String, Room> rooms = new HashMap<>();
 
-    /** Listener for a new room code. */
-    interface RoomCodeListener {
-
-        /** Invoked when a new room code is available from Firebase. */
-        void onNewRoomCode(Long newRoomCode);
-
-        /** Invoked if a Firebase Database Error happened while fetching the room code. */
-//        void onError(DatabaseError error);
-    }
-
-    /** Listener for a new cloud anchor ID. */
-    interface CloudAnchorIdListener {
+    /** Listener for a new cloud anchor. */
+    public interface CloudAnchorListener {
 
         /** Invoked when a new cloud anchor ID is available. */
-        void onNewCloudAnchorId(String cloudAnchorId, CloudAnchor cloudAnchor, PointF coordinate);
+        void onNewCloudAnchor(String cloudAnchorId, CloudAnchor cloudAnchor);
+
+        /** Invoked when a update cloud anchor ID is available. */
+        void onUpdateCloudAnchor(String cloudAnchorId, CloudAnchor cloudAnchor);
     }
 
     // Names of the nodes used in the Firebase Database
@@ -74,7 +56,7 @@ public class ServiceManager {
     private static final Timestamp LATEST = null;
 
     private final Retrofit retrofit;
-    private final RoomsService roomsService;
+    private final RoomsAPI roomsAPI;
 
 //    private final FirebaseApp app;
 //    private final DatabaseReference hotspotListRef;
@@ -101,9 +83,9 @@ public class ServiceManager {
 
 
     /**
-     * Default constructor for the ServiceManager.
+     * Default constructor for the WebServiceManager.
      */
-    ServiceManager() {
+    public WebServiceManager() {
         //retrofitの処理
         retrofit = new Retrofit.Builder()
 //                .baseUrl("http://192.168.2.109:8080/garffitiserver/")
@@ -113,7 +95,7 @@ public class ServiceManager {
                 .build();
 
         //interfaceから実装を取得
-        roomsService = retrofit.create(RoomsService.class);
+        roomsAPI = retrofit.create(RoomsAPI.class);
 
 //        app = FirebaseApp.initializeApp(context);
         if (retrofit != null) {
@@ -156,13 +138,13 @@ public class ServiceManager {
 //                            return;
 //                        }
 //                        Long roomCode = currentData.getValue(Long.class);
-//                        listener.onNewRoomCode(roomCode);
+//                        listener.setRoomCode(roomCode);
 //                    }
 //                });
 //    }
 
     /** Stores the given anchor ID in the given room code. */
-    synchronized void storeAnchorIdInRoom(Long roomCode, String cloudAnchorId) {
+    public synchronized void storeAnchorIdInRoom(Long roomCode, String cloudAnchorId) {
         Preconditions.checkNotNull(retrofit, "Retrofit was null");
         String roomId = String.valueOf(roomCode);
         cloudAnchorIds.add(cloudAnchorId);
@@ -181,7 +163,7 @@ public class ServiceManager {
 //        DatabaseReference indexRef = drawRef.child(String.valueOf(coordinates.get(cloudAnchorId).size()));
 //        indexRef.child(X).setValue(coordinate.x);
 //        indexRef.child(Y).setValue(coordinate.y);
-        Call<Void> updateCloudAnchorCall = roomsService.updateCloudAnchor(roomId, cloudAnchorId, DISPLAY_NAME_VALUE);
+        Call<Void> updateCloudAnchorCall = roomsAPI.updateCloudAnchor(roomId, cloudAnchorId, DISPLAY_NAME_VALUE);
 
         //サーバからのレスポンス
         updateCloudAnchorCall.enqueue(new Callback<Void>() {
@@ -215,11 +197,11 @@ public class ServiceManager {
     }
 
     /** Stores the given polygon in the given room code, cloudAnchorId. */
-    synchronized void storePolygonInRoom(Long roomCode, String cloudAnchorId, float[] polygon) {
+    public synchronized void storePolygonInRoom(Long roomCode, String cloudAnchorId, float[] polygon) {
         Preconditions.checkNotNull(retrofit, "Retrofit was null");
         String roomId = String.valueOf(roomCode);
 
-        Call<Void> updatePlaneCall = roomsService.updatePlane(roomId, cloudAnchorId, polygon);
+        Call<Void> updatePlaneCall = roomsAPI.updatePlane(roomId, cloudAnchorId, polygon);
 
         //サーバからのレスポンス
         updatePlaneCall.enqueue(new Callback<Void>() {
@@ -251,11 +233,11 @@ public class ServiceManager {
     }
 
     /** Stores the given stroke in the given room code, cloudAnchorId. */
-    synchronized void storeStrokeInRoom(Long roomCode, String cloudAnchorId, float texX, float texY) {
+    public synchronized void storeStrokeInRoom(Long roomCode, String cloudAnchorId, float texX, float texY) {
         Preconditions.checkNotNull(retrofit, "Retrofit was null");
         String roomId = String.valueOf(roomCode);
 
-        Call<Void> strokeCall = roomsService.stroke(roomId, cloudAnchorId, texX, texY);
+        Call<Void> strokeCall = roomsAPI.stroke(roomId, cloudAnchorId, texX, texY);
 
         //サーバからのレスポンス
         strokeCall.enqueue(new Callback<Void>() {
@@ -289,7 +271,7 @@ public class ServiceManager {
      * the room code is changed.
      */
     // read
-//    void registerNewListenerForRoom(Long roomCode, CloudAnchorIdListener listener) {
+//    void registerNewListenerForRoom(Long roomCode, CloudAnchorListener listener) {
 //        Preconditions.checkNotNull(app, "Firebase App was null");
 //        clearRoomListener();
 //        currentRoomRef = hotspotListRef.child(String.valueOf(roomCode));
@@ -303,7 +285,7 @@ public class ServiceManager {
 //                            String anchorId = String.valueOf(valObj);
 //                            PointF coordinate = new PointF(Float.parseFloat(String.valueOf(xObj)), Float.parseFloat(String.valueOf(yObj)));
 //                            if (!anchorId.isEmpty()) {
-//                                listener.onNewCloudAnchorId(anchorId, coordinate);
+//                                listener.onNewCloudAnchor(anchorId, coordinate);
 //                            }
 //                        }
 //                    }
@@ -320,11 +302,11 @@ public class ServiceManager {
      * Registers a new listener for the given room code. The listener is invoked whenever the data for
      * the room code is changed.
      */
-    void registerNewListenerForRoom(Long roomCode, CloudAnchorIdListener onNewListener, CloudAnchorIdListener onUpdateListener) {
+    public void registerNewListenerForRoom(Long roomCode, CloudAnchorListener cloudAnchorListener) {
         Preconditions.checkNotNull(retrofit, "Retrofit was null");
 //        clearRoomListener();
         String roomId = String.valueOf(roomCode);
-        Call<Void> createRoomCall = roomsService.createRoom(roomId);
+        Call<Void> createRoomCall = roomsAPI.createRoom(roomId);
 //        Log.d(TAG, roomId);
         //サーバからのレスポンス
         createRoomCall.enqueue(new Callback<Void>() {
@@ -342,7 +324,7 @@ public class ServiceManager {
                             @Override
                             public void run() {
 //                                Log.d(TAG, "Timer run!");
-                                final Call<Map<String, Timestamp>> getRoomCall = roomsService.getRoom(roomId);
+                                final Call<Map<String, Timestamp>> getRoomCall = roomsAPI.getRoom(roomId);
                                 Response<Map<String, Timestamp>> getRoomResponse;
                                 try {
                                     getRoomResponse = getRoomCall.execute();
@@ -353,7 +335,7 @@ public class ServiceManager {
                                             Map<String, Timestamp> anchorToTimestamp = getRoomResponse.body();
                                             for (String anchorId : anchorToTimestamp.keySet()) {
                                                 CloudAnchor cashedCloudAnchor = room.getCloudAnchor(anchorId);
-                                                final Call<CloudAnchor> getCloudAnchorCall = roomsService.getCloudAnchor(roomId, anchorId);
+                                                final Call<CloudAnchor> getCloudAnchorCall = roomsAPI.getCloudAnchor(roomId, anchorId);
                                                 if (cashedCloudAnchor == null) {
                                                     room.putCloudAnchor(anchorId, new CloudAnchor(DISPLAY_NAME_VALUE, LATEST));
                                                     getCloudAnchorCall.enqueue(new Callback<CloudAnchor>() {
@@ -363,7 +345,8 @@ public class ServiceManager {
                                                                 CloudAnchor cloudAnchor = response.body();
                                                                 Log.d(TAG, "Success getCloudAnchor connection " + anchorId + " .");
                                                                 room.putCloudAnchor(anchorId, cloudAnchor);
-                                                                onNewListener.onNewCloudAnchorId(anchorId, cloudAnchor, null);
+                                                                cloudAnchorListener.onNewCloudAnchor(anchorId, cloudAnchor);
+
                                                             } else {
                                                                 room.removeCloudAnchor(anchorId);
                                                                 try {
@@ -393,7 +376,7 @@ public class ServiceManager {
                                                                 CloudAnchor cloudAnchor = response.body();
                                                                 Log.d(TAG, "Success getCloudAnchor connection " + anchorId + " .");
                                                                 room.putCloudAnchor(anchorId, cloudAnchor);
-                                                                onUpdateListener.onNewCloudAnchorId(anchorId, cloudAnchor, null);
+                                                                cloudAnchorListener.onUpdateCloudAnchor(anchorId, cloudAnchor);
                                                             } else {
                                                                 cashedCloudAnchor.setUpdateTimestamp(backupUpdateTimestamp);
                                                                 try {
@@ -482,7 +465,7 @@ public class ServiceManager {
 //                                        for (PointTex2D drawCoordinate: result.getCloudAnchors().get(cloudAnchorId).getStroke()) {
 //                                            PointF coordinate = new PointF(drawCoordinate.getX(), drawCoordinate.getY());
 //                                            cloudAnchorIds.add(cloudAnchorId);
-//                                            listener.onNewCloudAnchorId(cloudAnchorId, coordinate);
+//                                            listener.onNewCloudAnchor(cloudAnchorId, coordinate);
 //                                        }
 //                                    }
 //                                }
@@ -526,7 +509,7 @@ public class ServiceManager {
 //                                    Object yObj = dataSnapshot.child(Y).getValue();
 //                                    PointF coordinate = new PointF(Float.parseFloat(String.valueOf(xObj)), Float.parseFloat(String.valueOf(yObj)));
 //                                    cloudAnchorIds.add(cloudAnchorId);
-//                                    listener.onNewCloudAnchorId(cloudAnchorId, coordinate);
+//                                    listener.onNewCloudAnchor(cloudAnchorId, coordinate);
 //                                }
 //
 //                                @Override
@@ -588,7 +571,7 @@ public class ServiceManager {
 //                    if(!cloudAnchorIds.contains(anchorId) && !anchorId.isEmpty()) {
 //                        PointF coordinate = new PointF(Float.parseFloat(String.valueOf(xObj)), Float.parseFloat(String.valueOf(yObj)));
 //                        cloudAnchorIds.add(anchorId);
-//                        listener.onNewCloudAnchorId(anchorId, coordinate);
+//                        listener.onNewCloudAnchor(anchorId, coordinate);
 //                    }
 //                }
 //            }
@@ -617,7 +600,7 @@ public class ServiceManager {
 //                            if(!cloudAnchorIds.contains(anchorId) && !anchorId.isEmpty()) {
 //                                PointF coordinate = new PointF(Float.parseFloat(String.valueOf(xObj)), Float.parseFloat(String.valueOf(yObj)));
 //                                cloudAnchorIds.add(anchorId);
-//                                listener.onNewCloudAnchorId(anchorId, coordinate);
+//                                listener.onNewCloudAnchor(anchorId, coordinate);
 //                            }
 //                        }
 //                    }
@@ -636,7 +619,7 @@ public class ServiceManager {
 ////                    if(!cloudAnchorIds.contains(anchorId) && !anchorId.isEmpty()) {
 ////                        PointF coordinate = new PointF(Float.parseFloat(String.valueOf(xObj)), Float.parseFloat(String.valueOf(yObj)));
 ////                        cloudAnchorIds.add(anchorId);
-////                        listener.onNewCloudAnchorId(anchorId, coordinate);
+////                        listener.onNewCloudAnchor(anchorId, coordinate);
 ////                    }
 ////                }
 //            }
@@ -665,9 +648,9 @@ public class ServiceManager {
 
     /**
      * Resets the current room listener registered using {@link #registerNewListenerForRoom(Long,
-     * CloudAnchorIdListener, CloudAnchorIdListener)}.
+     * CloudAnchorListener, CloudAnchorListener)}.
      */
-    void clearRoomListener() {
+    public void clearRoomListener() {
         if (scheduledThreadPoolExecutor != null) {
             scheduledThreadPoolExecutor.shutdown();
         }
