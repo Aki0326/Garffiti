@@ -1,12 +1,10 @@
-package org.ntlab.graffiti.resources;
+package org.ntlab.graffiti.graffiti.controls;
 
 import org.ntlab.graffiti.entities.CloudAnchor;
-import org.ntlab.graffiti.entities.PointPlane2D;
 import org.ntlab.graffiti.entities.Room;
 
 import java.sql.Timestamp;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nullable;
@@ -20,7 +18,7 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
-public interface RoomsService {
+public interface RoomsAPI {
     @GET("rooms")
     Call<Collection<Room>> getRooms();
 
