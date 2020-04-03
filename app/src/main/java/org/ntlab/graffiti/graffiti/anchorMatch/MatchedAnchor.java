@@ -11,13 +11,13 @@ import java.util.Collection;
 public class MatchedAnchor {
     private Anchor myAnchor;
     private Anchor partnerAnchor;
-    private Plane margedPlane;
+    private Plane mergedPlane;
     private FloatBuffer prevPolygon;
 
-    public MatchedAnchor(Anchor myAnchor, Anchor partnerAnchor, Plane margedPlane) {
+    public MatchedAnchor(Anchor myAnchor, Anchor partnerAnchor, Plane mergedPlane) {
         this.myAnchor = myAnchor;
         this.partnerAnchor = partnerAnchor;
-        this.margedPlane = margedPlane;
+        this.mergedPlane = mergedPlane;
     }
     public Anchor getMyAnchor() {
         return myAnchor;
@@ -36,27 +36,27 @@ public class MatchedAnchor {
     }
 
     public void margePlane(Collection<PointPlane2D> polygon) {
-        if (!(margedPlane instanceof MargedPlane)) {
-            margedPlane = new MargedPlane(margedPlane);
+        if (!(mergedPlane instanceof MergedPlane)) {
+            mergedPlane = new MergedPlane(mergedPlane);
         }
-        ((MargedPlane) margedPlane).margePolygon(polygon, partnerAnchor.getPose());
+        ((MergedPlane) mergedPlane).mergePolygon(polygon, partnerAnchor.getPose());
     }
 
     public Plane updatePlane(Plane myNewPlane) {
-        if (!(margedPlane instanceof MargedPlane)) {
-            margedPlane = new MargedPlane(margedPlane);
+        if (!(mergedPlane instanceof MergedPlane)) {
+            mergedPlane = new MergedPlane(mergedPlane);
         }
-        ((MargedPlane) margedPlane).setCurrentPlane(myNewPlane);
-        ((MargedPlane) margedPlane).updatePolygon(myNewPlane.getPolygon());
-        return margedPlane;
+        ((MergedPlane) mergedPlane).setCurrentPlane(myNewPlane);
+        ((MergedPlane) mergedPlane).updatePolygon(myNewPlane.getPolygon());
+        return mergedPlane;
     }
 
     public void updatePolygon() {
-        ((MargedPlane) margedPlane).updatePolygon(((MargedPlane) margedPlane).getCurrentPlane().getPolygon());
+        ((MergedPlane) mergedPlane).updatePolygon(((MergedPlane) mergedPlane).getCurrentPlane().getPolygon());
     }
 
-    public Plane getMargedPlane() {
-        return margedPlane;
+    public Plane getmergedPlane() {
+        return mergedPlane;
     }
     public FloatBuffer getPrevPolygon() {
         return prevPolygon;
