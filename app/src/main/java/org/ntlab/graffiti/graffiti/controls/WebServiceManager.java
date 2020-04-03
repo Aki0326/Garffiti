@@ -58,7 +58,7 @@ public class WebServiceManager {
         retrofit = new Retrofit.Builder()
 //                .baseUrl("http://192.168.2.109:8080/garffitiserver/")
                 .baseUrl("http://localhost:8080/garffitiserver/")
-//                .baseUrl("http://nitta-lab-www.is.konan-u.ac.jp/garffitiserver/")
+//                .baseUrl("http://nitta-lab-www.is.konan-u.ac.jp:8080/garffitiserver/")
                 .addConverterFactory(JacksonConverterFactory.create())
                 .build();
 

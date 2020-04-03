@@ -91,7 +91,7 @@ public class AnchorManager {
     }
 
     /** Should be called after a {@link Session#update()} call. */
-    public synchronized void onUpdate() {
+    public synchronized void update() {
         Preconditions.checkNotNull(session, "The session cannot be null.");
         Iterator<Map.Entry<Anchor, AnchorHostListener>> hostIter = pendingHostAnchors.entrySet().iterator();
         while (hostIter.hasNext()) {

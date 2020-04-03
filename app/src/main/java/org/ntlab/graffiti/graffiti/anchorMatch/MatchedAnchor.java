@@ -1,18 +1,20 @@
-package org.ntlab.graffiti.entities;
+package org.ntlab.graffiti.graffiti.anchorMatch;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Plane;
 
+import org.ntlab.graffiti.entities.PointPlane2D;
+
 import java.nio.FloatBuffer;
 import java.util.Collection;
 
-public class SharedAnchor {
+public class MatchedAnchor {
     private Anchor myAnchor;
     private Anchor partnerAnchor;
     private Plane margedPlane;
     private FloatBuffer prevPolygon;
 
-    public SharedAnchor(Anchor myAnchor, Anchor partnerAnchor, Plane margedPlane) {
+    public MatchedAnchor(Anchor myAnchor, Anchor partnerAnchor, Plane margedPlane) {
         this.myAnchor = myAnchor;
         this.partnerAnchor = partnerAnchor;
         this.margedPlane = margedPlane;
@@ -34,22 +36,23 @@ public class SharedAnchor {
     }
 
     public void margePlane(Collection<PointPlane2D> polygon) {
-        if (!(margedPlane instanceof SharedPlane)) {
-            margedPlane = new SharedPlane(margedPlane);
+        if (!(margedPlane instanceof MargedPlane)) {
+            margedPlane = new MargedPlane(margedPlane);
         }
-        ((SharedPlane) margedPlane).margePolygon(polygon, partnerAnchor.getPose());
+        ((MargedPlane) margedPlane).margePolygon(polygon, partnerAnchor.getPose());
     }
 
-    public void updatePlane(Plane myNewPlane) {
-        if (!(margedPlane instanceof SharedPlane)) {
-            margedPlane = new SharedPlane(margedPlane);
+    public Plane updatePlane(Plane myNewPlane) {
+        if (!(margedPlane instanceof MargedPlane)) {
+            margedPlane = new MargedPlane(margedPlane);
         }
-        ((SharedPlane) margedPlane).setCurrentPlane(myNewPlane);
-        ((SharedPlane) margedPlane).updatePolygon(myNewPlane.getPolygon());
+        ((MargedPlane) margedPlane).setCurrentPlane(myNewPlane);
+        ((MargedPlane) margedPlane).updatePolygon(myNewPlane.getPolygon());
+        return margedPlane;
     }
 
     public void updatePolygon() {
-        ((SharedPlane) margedPlane).updatePolygon(((SharedPlane) margedPlane).getCurrentPlane().getPolygon());
+        ((MargedPlane) margedPlane).updatePolygon(((MargedPlane) margedPlane).getCurrentPlane().getPolygon());
     }
 
     public Plane getMargedPlane() {
