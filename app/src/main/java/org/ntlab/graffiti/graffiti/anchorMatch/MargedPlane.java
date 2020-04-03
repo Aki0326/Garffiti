@@ -1,4 +1,4 @@
-package org.ntlab.graffiti.entities;
+package org.ntlab.graffiti.graffiti.anchorMatch;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Plane;
@@ -6,6 +6,8 @@ import com.google.ar.core.Pose;
 
 import org.ntlab.graffiti.common.geometry.GeometryUtil;
 import org.ntlab.graffiti.common.geometry.Vector;
+import org.ntlab.graffiti.entities.PointPlane2D;
+import org.ntlab.graffiti.entities.PointTex2D;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -13,7 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class SharedPlane extends Plane {
+public class MargedPlane extends Plane {
     private Plane originalPlane;
     private Plane currentPlane;
     private FloatBuffer margedPolygon = null;
@@ -21,7 +23,7 @@ public class SharedPlane extends Plane {
     private List<PointTex2D> stroke = new ArrayList<>();
     private int drawnStrokeIndex = 0;
 
-    public SharedPlane(Plane originalPlane) {
+    public MargedPlane(Plane originalPlane) {
         this.originalPlane = originalPlane;
         this.currentPlane = originalPlane;
     }
@@ -60,7 +62,7 @@ public class SharedPlane extends Plane {
         float[] partnerXAxis = partnerPose.getXAxis();
         float[] partnerZAxis = partnerPose.getZAxis();
         for (PointPlane2D p: partnerPolygon) {
-            float[] target3D = GeometryUtil.localToWorld(p.x, p.z, partnerCenter, partnerXAxis, partnerZAxis);
+            float[] target3D = GeometryUtil.localToWorld(p.getX(), p.getZ(), partnerCenter, partnerXAxis, partnerZAxis);
             float[] target2D = getPlaneLocal2D(target3D);
             margedPoints.add(new PointPlane2D(target2D[0], target2D[1]));
         }
@@ -105,7 +107,7 @@ public class SharedPlane extends Plane {
         ArrayList<PointPlane2D> convexFull = new ArrayList<>();
         PointPlane2D minPoint = null;
         for (PointPlane2D p: margedPoints) {
-            if (minPoint == null || p.z < minPoint.z || (p.z == minPoint.z && p.x < minPoint.x)) {
+            if (minPoint == null || p.getZ() < minPoint.getZ() || (p.getZ() == minPoint.getZ() && p.getX() < minPoint.getX())) {
                 minPoint = p;
             }
         }
@@ -129,8 +131,8 @@ public class SharedPlane extends Plane {
         margedPolygon = FloatBuffer.allocate(convexFull.size() * 2);
         Collections.reverse(convexFull);
         for (PointPlane2D p: convexFull) {
-            margedPolygon.put(p.x);
-            margedPolygon.put(p.z);
+            margedPolygon.put(p.getX());
+            margedPolygon.put(p.getZ());
         }
         margedPolygon.position(0);
     }

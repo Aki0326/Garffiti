@@ -1,15 +1,15 @@
 package org.ntlab.graffiti.entities;
 
 public class PointPlane2D {
-    float x;
-    float z;
+    private float x;
+    private float z;
 
     public PointPlane2D() {
     }
 
     public PointPlane2D(float x, float z) {
-        this.x = x;
-        this.z = z;
+        this.setX(x);
+        this.setZ(z);
     }
 
     public float getX() {
@@ -30,6 +30,6 @@ public class PointPlane2D {
 
 
     public float[] array() {
-        return new float[]{x, z};
+        return new float[]{getX(), getZ()};
     }
 }
