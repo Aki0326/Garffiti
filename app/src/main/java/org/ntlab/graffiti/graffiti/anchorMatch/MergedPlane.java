@@ -15,15 +15,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class MargedPlane extends Plane {
+public class MergedPlane extends Plane {
     private Plane originalPlane;
     private Plane currentPlane;
-    private FloatBuffer margedPolygon = null;
+    private FloatBuffer mergedPolygon = null;
     private FloatBuffer currentPolygon = null;
     private List<PointTex2D> stroke = new ArrayList<>();
     private int drawnStrokeIndex = 0;
 
-    public MargedPlane(Plane originalPlane) {
+    public MergedPlane(Plane originalPlane) {
         this.originalPlane = originalPlane;
         this.currentPlane = originalPlane;
     }
@@ -56,26 +56,26 @@ public class MargedPlane extends Plane {
         return currentPlane;
     }
 
-    public void margePolygon(Collection<PointPlane2D> partnerPolygon, Pose partnerPose) {
-        ArrayList<PointPlane2D> margedPoints = new ArrayList<>();
+    public void mergePolygon(Collection<PointPlane2D> partnerPolygon, Pose partnerPose) {
+        ArrayList<PointPlane2D> mergedPoints = new ArrayList<>();
         float[] partnerCenter = partnerPose.getTranslation();
         float[] partnerXAxis = partnerPose.getXAxis();
         float[] partnerZAxis = partnerPose.getZAxis();
         for (PointPlane2D p: partnerPolygon) {
             float[] target3D = GeometryUtil.localToWorld(p.getX(), p.getZ(), partnerCenter, partnerXAxis, partnerZAxis);
             float[] target2D = getPlaneLocal2D(target3D);
-            margedPoints.add(new PointPlane2D(target2D[0], target2D[1]));
+            mergedPoints.add(new PointPlane2D(target2D[0], target2D[1]));
         }
         float[] myPolygon = originalPlane.getPolygon().array();
         for (int i = 0; i < myPolygon.length; i += 2) {
-            margedPoints.add(new PointPlane2D(myPolygon[i], myPolygon[i+1]));
+            mergedPoints.add(new PointPlane2D(myPolygon[i], myPolygon[i+1]));
         }
-        margePolygonSub(margedPoints);
+        mergePolygonSub(mergedPoints);
     }
 
     public void updatePolygon(FloatBuffer myNewPolygonBuf) {
         Pose currentPose = currentPlane.getCenterPose();
-        ArrayList<PointPlane2D> margedPoints = new ArrayList<>();
+        ArrayList<PointPlane2D> mergedPoints = new ArrayList<>();
         float[] currentCenter = currentPose.getTranslation();
         float[] currentXAxis = currentPose.getXAxis();
         float[] currentZAxis = currentPose.getZAxis();
@@ -84,37 +84,37 @@ public class MargedPlane extends Plane {
         for (int i = 0; i < currentPolygon.length; i += 2) {
             float[] target3D = GeometryUtil.localToWorld(currentPolygon[i], currentPolygon[i+1], currentCenter, currentXAxis, currentZAxis);
             float[] target2D = getPlaneLocal2D(target3D);
-            margedPoints.add(new PointPlane2D(target2D[0], target2D[1]));
+            mergedPoints.add(new PointPlane2D(target2D[0], target2D[1]));
             this.currentPolygon.put(target2D[0]);
             this.currentPolygon.put(target2D[1]);
         }
         this.currentPolygon.position(0);
 
         FloatBuffer oldPolygon = null;
-        if (margedPolygon == null) {
+        if (mergedPolygon == null) {
             oldPolygon = originalPlane.getPolygon();
         } else {
-            oldPolygon = margedPolygon;
+            oldPolygon = mergedPolygon;
         }
         float[] myPolygon = oldPolygon.array();
         for (int i = 0; i < myPolygon.length; i += 2) {
-            margedPoints.add(new PointPlane2D(myPolygon[i], myPolygon[i+1]));
+            mergedPoints.add(new PointPlane2D(myPolygon[i], myPolygon[i+1]));
         }
-        margePolygonSub(margedPoints);
+        mergePolygonSub(mergedPoints);
     }
 
-    private void margePolygonSub(ArrayList<PointPlane2D> margedPoints) {
+    private void mergePolygonSub(ArrayList<PointPlane2D> mergedPoints) {
         ArrayList<PointPlane2D> convexFull = new ArrayList<>();
         PointPlane2D minPoint = null;
-        for (PointPlane2D p: margedPoints) {
+        for (PointPlane2D p: mergedPoints) {
             if (minPoint == null || p.getZ() < minPoint.getZ() || (p.getZ() == minPoint.getZ() && p.getX() < minPoint.getX())) {
                 minPoint = p;
             }
         }
         do {
             convexFull.add(minPoint);
-            PointPlane2D nextPoint = margedPoints.get(0);
-            for (PointPlane2D p: margedPoints) {
+            PointPlane2D nextPoint = mergedPoints.get(0);
+            for (PointPlane2D p: mergedPoints) {
                 if (p != nextPoint) {
                     float[] ab = Vector.minus(nextPoint.array(), minPoint.array());
                     float[] ac = Vector.minus(p.array(), minPoint.array());
@@ -125,23 +125,23 @@ public class MargedPlane extends Plane {
                 }
             }
             minPoint = nextPoint;
-            margedPoints.remove(minPoint);
+            mergedPoints.remove(minPoint);
         } while (minPoint != convexFull.get(0));
 
-        margedPolygon = FloatBuffer.allocate(convexFull.size() * 2);
+        mergedPolygon = FloatBuffer.allocate(convexFull.size() * 2);
         Collections.reverse(convexFull);
         for (PointPlane2D p: convexFull) {
-            margedPolygon.put(p.getX());
-            margedPolygon.put(p.getZ());
+            mergedPolygon.put(p.getX());
+            mergedPolygon.put(p.getZ());
         }
-        margedPolygon.position(0);
+        mergedPolygon.position(0);
     }
 
     public FloatBuffer getPolygon() {
-        if (margedPolygon == null) {
+        if (mergedPolygon == null) {
             return currentPlane.getPolygon();
         }
-        return margedPolygon;
+        return mergedPolygon;
     }
 
     public FloatBuffer getCurrentPolygon() {
@@ -153,13 +153,13 @@ public class MargedPlane extends Plane {
     public boolean isPoseInPolygon(Pose target) {
         float[] targetPos3D = target.getTranslation();
         float[] targetPos2D = getPlaneLocal2D(targetPos3D);
-        for (int i = 0; i < margedPolygon.capacity(); i += 2) {
-            float[] curVertex = new float[]{margedPolygon.get(i), margedPolygon.get(i + 1)};
+        for (int i = 0; i < mergedPolygon.capacity(); i += 2) {
+            float[] curVertex = new float[]{mergedPolygon.get(i), mergedPolygon.get(i + 1)};
             float[] nextVertex = null;
-            if (i == margedPolygon.capacity() - 2) {
-                nextVertex = new float[]{margedPolygon.get(0), margedPolygon.get(0)};
+            if (i == mergedPolygon.capacity() - 2) {
+                nextVertex = new float[]{mergedPolygon.get(0), mergedPolygon.get(0)};
             } else {
-                nextVertex = new float[]{margedPolygon.get(i + 2), margedPolygon.get(i + 3)};
+                nextVertex = new float[]{mergedPolygon.get(i + 2), mergedPolygon.get(i + 3)};
             }
             float[] curToNext = Vector.minus(nextVertex, curVertex);
             float[] curToTarget = Vector.minus(targetPos2D, curVertex);
