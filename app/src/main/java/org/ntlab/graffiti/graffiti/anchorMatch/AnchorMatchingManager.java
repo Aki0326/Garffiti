@@ -41,20 +41,20 @@ public class AnchorMatchingManager {
         public void onUpdatePlaneAfterMatched(MatchedAnchor matchedAnchor, Plane plane);
     }
 
-    public Plane getMargedPlaneByPlane(Plane plane) {
-        // Check if the hit was within the plane's or margedPlane's polygon.
+    public Plane getmergedPlaneByPlane(Plane plane) {
+        // Check if the hit was within the plane's or mergedPlane's polygon.
         MatchedAnchor matchedAnchor = planeAnchors.get(plane);
-        if (matchedAnchor == null || matchedAnchor.getMargedPlane() == null) {
+        if (matchedAnchor == null || matchedAnchor.getmergedPlane() == null) {
             return plane;
         } else {
-            Plane margedPlane = matchedAnchor.getMargedPlane();
-            return margedPlane;
+            Plane mergedPlane = matchedAnchor.getmergedPlane();
+            return mergedPlane;
         }
     }
 
     public Anchor getMyAnchorByPlane(Plane hitPlane) {
         // Check if the hit was within the plane's polygon.
-        if(hitPlane instanceof MargedPlane) {
+        if(hitPlane instanceof MergedPlane) {
             MatchedAnchor matchedAnchor = planeAnchors.get(hitPlane);
             return matchedAnchor.getMyAnchor();
         } else {
@@ -70,16 +70,16 @@ public class AnchorMatchingManager {
         }
     }
 
-    public Collection<MargedPlane> getDrawnPlanes() {
-        Collection<MargedPlane> margedPlanes = new ArrayList<>();
+    public Collection<MergedPlane> getDrawnPlanes() {
+        Collection<MergedPlane> mergedPlanes = new ArrayList<>();
         for (MatchedAnchor matchedAnchor : matchedAnchors.values()) {
             // BUG when simply plane
-            if (matchedAnchor.getMargedPlane() instanceof MargedPlane) {
-                MargedPlane margedPlane = (MargedPlane) matchedAnchor.getMargedPlane();
-                margedPlanes.add(margedPlane);
+            if (matchedAnchor.getmergedPlane() instanceof MergedPlane) {
+                MergedPlane mergedPlane = (MergedPlane) matchedAnchor.getmergedPlane();
+                mergedPlanes.add(mergedPlane);
             }
         }
-        return margedPlanes;
+        return mergedPlanes;
     }
 
     public void updateState(Collection<Plane> updatePlanes, UpdateAnchorListener updateAnchorListener, UpdatePlaneListener updatePlaneListener) {
@@ -91,14 +91,14 @@ public class AnchorMatchingManager {
                 Plane oldPlane = null;
                 for (Map.Entry<Plane, MatchedAnchor> planeAnchorEntry : planeAnchors.entrySet()) {
                     MatchedAnchor matchedAnchor = planeAnchorEntry.getValue();
-                    Plane plane = matchedAnchor.getMargedPlane();
+                    Plane plane = matchedAnchor.getmergedPlane();
                     if (plane.getSubsumedBy() != null && plane.getSubsumedBy().equals(newPlane)) {
                         Log.d(TAGTEST, "planeAnchorSubsumed." + newPlane);
                         flag = true;
-                        // 既にMatchedAnchorsに入っているplaneがMargedPlaneだったときもPlaneだったときも
+                        // 既にMatchedAnchorsに入っているplaneがmergedPlaneだったときもPlaneだったときも
                         // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
                         plane = matchedAnchor.updatePlane(newPlane);
-                        FloatBuffer currentPolygon = ((MargedPlane) plane).getCurrentPolygon();
+                        FloatBuffer currentPolygon = ((MergedPlane) plane).getCurrentPolygon();
                         updatePlaneListener.onUpdatePlaneAfterMatched(matchedAnchor, plane);
                         matchedAnchor.setPrevPolygon(currentPolygon);
                         oldPlane = planeAnchorEntry.getKey();
@@ -115,11 +115,11 @@ public class AnchorMatchingManager {
                         flag = true;
                         // 座標変換 myAnchor座標系でのnewPlaneの位置を求めたい newPlane->myAnchor + margePlane
                         Plane plane = myAnchorEntry.getValue();
-                        if (!(plane instanceof MargedPlane)) {
-                            plane = new MargedPlane(plane);
+                        if (!(plane instanceof MergedPlane)) {
+                            plane = new MergedPlane(plane);
                         }
-                        ((MargedPlane) plane).setCurrentPlane(newPlane);
-                        ((MargedPlane) plane).updatePolygon(newPlane.getPolygon());
+                        ((MergedPlane) plane).setCurrentPlane(newPlane);
+                        ((MergedPlane) plane).updatePolygon(newPlane.getPolygon());
                         myAnchors.put(myAnchorEntry.getKey(), plane);
 //                                } else {
 //                                    Log.d(TAGTEST, "myAnchors remove:" + myAnchorEntry.getKey());
@@ -152,11 +152,11 @@ public class AnchorMatchingManager {
                         flag = true;
                         // 座標変換
 //                                    Plane plane = pendingAnchorEntry.getValue();
-//                                    if (!(plane instanceof MargedPlane)) {
-//                                        plane = new MargedPlane(plane);
+//                                    if (!(plane instanceof MergedPlane)) {
+//                                        plane = new MergedPlane(plane);
 //                                    }
-//                                    ((MargedPlane) plane).setCurrentPlane(newPlane);
-//                                    ((MargedPlane) plane).updatePolygon(newPlane.getPolygon());
+//                                    ((MergedPlane) plane).setCurrentPlane(newPlane);
+//                                    ((MergedPlane) plane).updatePolygon(newPlane.getPolygon());
 //                                        pendingAnchorEntry.setValue(plane);
 //                                    pendingAnchors.put(pendingAnchorEntry.getKey(), plane);
 //                                } else {
@@ -181,7 +181,7 @@ public class AnchorMatchingManager {
                             matchedAnchor.setPrevPolygon(newPlane.getPolygon());
                         }
 //                                Log.d(TAGTEST, "else");
-                        // REST marged?
+                        // REST merged?
                     }
                 }
             }
@@ -201,10 +201,10 @@ public class AnchorMatchingManager {
                         MatchedAnchor matchedAnchor = new MatchedAnchor(myAnchor, partnerAnchor, myPlane);
                         matchedAnchors.put(partnerAnchorId, matchedAnchor);
                         Log.d(TAGTEST, "matchedAnchors.put:" + partnerAnchorId);
-                        if (!(myPlane instanceof MargedPlane)) {
+                        if (!(myPlane instanceof MergedPlane)) {
                             planeAnchors.put(myPlane, matchedAnchor);
                         } else {
-                            planeAnchors.put(((MargedPlane) myPlane).getCurrentPlane(), matchedAnchor);
+                            planeAnchors.put(((MergedPlane) myPlane).getCurrentPlane(), matchedAnchor);
                         }
                         Log.d(TAGTEST, "planeAnchors.put:" + myAnchor.getCloudAnchorId());
                         myAnchors.remove(myAnchor);
@@ -259,10 +259,10 @@ public class AnchorMatchingManager {
         if (matchedAnchor != null) {
             //BUG strokeも同時に入っている
             if (cloudAnchor.getPlane() != null) matchedAnchor.margePlane(cloudAnchor.getPlane().getPolygon());
-            if(matchedAnchor.getMargedPlane() instanceof MargedPlane) {
+            if(matchedAnchor.getmergedPlane() instanceof MergedPlane) {
                 // 座標変換 stroke
                 Anchor partnerAnchor = matchedAnchor.getPartnerAnchor();
-                Pose myPlanePose = ((MargedPlane) matchedAnchor.getMargedPlane()).getCurrentPlane().getCenterPose();
+                Pose myPlanePose = ((MergedPlane) matchedAnchor.getmergedPlane()).getCurrentPlane().getCenterPose();
                 float[] myCenter = myPlanePose.getTranslation();
                 float[] myXAxis = myPlanePose.getXAxis();
                 float[] myZAxis = myPlanePose.getZAxis();
@@ -270,14 +270,14 @@ public class AnchorMatchingManager {
                 float[] partnerCenter = partnerAnchorPose.getTranslation();
                 float[] pertnerXAxis = partnerAnchorPose.getXAxis();
                 float[] partnerZAxis = partnerAnchorPose.getZAxis();
-                MargedPlane margedPlane = (MargedPlane) matchedAnchor.getMargedPlane();
-                if (newStroke.size() > margedPlane.getStroke().size()) {
-                    for (int i = margedPlane.getStroke().size(); i < newStroke.size(); i++) {
+                MergedPlane mergedPlane = (MergedPlane) matchedAnchor.getmergedPlane();
+                if (newStroke.size() > mergedPlane.getStroke().size()) {
+                    for (int i = mergedPlane.getStroke().size(); i < newStroke.size(); i++) {
                         PointTex2D partnerLocal = newStroke.get(i);
                         Log.d(TAGSTROKE, i + " partnerLocal: " + partnerLocal.getX() + ", " + partnerLocal.getY());
                         float[] world = GeometryUtil.localToWorld(partnerLocal.getX(), partnerLocal.getY(), partnerCenter, pertnerXAxis, partnerZAxis);
                         float[] planeLocal = GeometryUtil.worldToLocal(world, myCenter, myXAxis, myZAxis);
-                        margedPlane.addStroke(planeLocal[0], -planeLocal[1]);
+                        mergedPlane.addStroke(planeLocal[0], -planeLocal[1]);
                         Log.d(TAGSTROKE, i + " myLocal: " + planeLocal[0] + ", " + -planeLocal[1]);
                     }
                 }
@@ -316,26 +316,26 @@ public class AnchorMatchingManager {
 
 //        cnt = 0;
 //        for (MatchedAnchor sharedAnchor: matchedAnchors.values()) {
-//            if (sharedAnchor.getMargedPlane() instanceof MargedPlane) {
-//                Log.d(TAGTEST,  "margedPlane:" + sharedAnchor.getMyAnchor().getCloudAnchorId() + ", " + sharedAnchor.getPartnerAnchor().getCloudAnchorId());
+//            if (sharedAnchor.getmergedPlane() instanceof MergedPlane) {
+//                Log.d(TAGTEST,  "mergedPlane:" + sharedAnchor.getMyAnchor().getCloudAnchorId() + ", " + sharedAnchor.getPartnerAnchor().getCloudAnchorId());
 //                cnt++;
 //            }
 //        }
         cnt = 0;
         for (Plane plane: planeAnchors.keySet()) {
-            if (planeAnchors.get(plane).getMargedPlane() instanceof MargedPlane) {
+            if (planeAnchors.get(plane).getmergedPlane() instanceof MergedPlane) {
                 float[] planeXAxis = plane.getCenterPose().getXAxis();
                 float[] planeZAxis = plane.getCenterPose().getZAxis();
-                float[] margedMyPlaneXAxis = planeAnchors.get(plane).getMyAnchor().getPose().getXAxis();
-                float[] margedMyPlaneZAxis = planeAnchors.get(plane).getMyAnchor().getPose().getZAxis();
-                float[] margedPartnerPlaneXAxis = planeAnchors.get(plane).getPartnerAnchor().getPose().getXAxis();
-                float[] margedPartnerPlaneZAxis = planeAnchors.get(plane).getPartnerAnchor().getPose().getZAxis();
-                Log.d(TAGSTROKE,  "margedMyPlane: " + plane + ", " + planeAnchors.get(plane).getMyAnchor().getCloudAnchorId() + ", (" + margedMyPlaneXAxis[0] + ", " + margedMyPlaneXAxis[1] + ", " + margedMyPlaneXAxis[2] + "), "+ "(" + margedMyPlaneZAxis[0] + ", " + margedMyPlaneZAxis[1] + ", " + margedMyPlaneZAxis[2] + "), (" + planeXAxis[0] + ", " + planeXAxis[1] + ", " + planeXAxis[2] + "), (" + planeZAxis[0] + ", " + planeZAxis[1] + ", " + planeZAxis[2] + "), ");
-                Log.d(TAGSTROKE,  "margedPartnerPlane: " + plane + ", " + planeAnchors.get(plane).getPartnerAnchor().getCloudAnchorId() + ", (" + margedPartnerPlaneXAxis[0] + ", " + margedPartnerPlaneXAxis[1] + ", " + margedPartnerPlaneXAxis[2] + "), "+ "(" + margedPartnerPlaneZAxis[0] + ", " + margedPartnerPlaneZAxis[1] + ", " + margedPartnerPlaneZAxis[2] + ")");
+                float[] mergedMyPlaneXAxis = planeAnchors.get(plane).getMyAnchor().getPose().getXAxis();
+                float[] mergedMyPlaneZAxis = planeAnchors.get(plane).getMyAnchor().getPose().getZAxis();
+                float[] mergedPartnerPlaneXAxis = planeAnchors.get(plane).getPartnerAnchor().getPose().getXAxis();
+                float[] mergedPartnerPlaneZAxis = planeAnchors.get(plane).getPartnerAnchor().getPose().getZAxis();
+                Log.d(TAGSTROKE,  "mergedMyPlane: " + plane + ", " + planeAnchors.get(plane).getMyAnchor().getCloudAnchorId() + ", (" + mergedMyPlaneXAxis[0] + ", " + mergedMyPlaneXAxis[1] + ", " + mergedMyPlaneXAxis[2] + "), "+ "(" + mergedMyPlaneZAxis[0] + ", " + mergedMyPlaneZAxis[1] + ", " + mergedMyPlaneZAxis[2] + "), (" + planeXAxis[0] + ", " + planeXAxis[1] + ", " + planeXAxis[2] + "), (" + planeZAxis[0] + ", " + planeZAxis[1] + ", " + planeZAxis[2] + "), ");
+                Log.d(TAGSTROKE,  "mergedPartnerPlane: " + plane + ", " + planeAnchors.get(plane).getPartnerAnchor().getCloudAnchorId() + ", (" + mergedPartnerPlaneXAxis[0] + ", " + mergedPartnerPlaneXAxis[1] + ", " + mergedPartnerPlaneXAxis[2] + "), "+ "(" + mergedPartnerPlaneZAxis[0] + ", " + mergedPartnerPlaneZAxis[1] + ", " + mergedPartnerPlaneZAxis[2] + ")");
                 cnt++;
             }
         }
-        Log.d(TAGTEST,  "MargedPlaneSize:" + cnt);
+        Log.d(TAGTEST,  "mergedPlaneSize:" + cnt);
 
     }
 

@@ -59,7 +59,7 @@ import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
 import org.ntlab.graffiti.entities.CloudAnchor;
 import org.ntlab.graffiti.graffiti.anchorMatch.AnchorMatchingManager;
-import org.ntlab.graffiti.graffiti.anchorMatch.MargedPlane;
+import org.ntlab.graffiti.graffiti.anchorMatch.MergedPlane;
 import org.ntlab.graffiti.graffiti.anchorMatch.MatchedAnchor;
 import org.ntlab.graffiti.entities.PointTex2D;
 import org.ntlab.graffiti.graffiti.PrivacyNoticeDialogFragment.HostResolveListener;
@@ -377,8 +377,8 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     private Plane getPlaneWithHit(HitResult hit) {
         Trackable trackable = hit.getTrackable();
         if (trackable instanceof Plane) {
-            // Check if the hit was within the plane's or margedPlane's polygon.
-            Plane plane = anchorMatchingManager.getMargedPlaneByPlane((Plane) trackable);
+            // Check if the hit was within the plane's or mergedPlane's polygon.
+            Plane plane = anchorMatchingManager.getmergedPlaneByPlane((Plane) trackable);
             if (plane.isPoseInPolygon(hit.getHitPose())) {
                 return plane;
             } else {
@@ -532,13 +532,13 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             graffitiRenderer.adjustTextureAxis(frame, camera);
             graffitiRenderer.draw(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
 
-            for (MargedPlane margedPlane: anchorMatchingManager.getDrawnPlanes()) {
-                List<PointTex2D> stroke = margedPlane.getStroke();
-                if (stroke.size() > margedPlane.getDrawnStrokeIndex()) {
-                    for (int i = margedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
-                        graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, margedPlane, new CircleDrawer(Color.RED));
+            for (MergedPlane mergedPlane : anchorMatchingManager.getDrawnPlanes()) {
+                List<PointTex2D> stroke = mergedPlane.getStroke();
+                if (stroke.size() > mergedPlane.getDrawnStrokeIndex()) {
+                    for (int i = mergedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
+                        graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
                     }
-                    margedPlane.drawnStroke(stroke.size());
+                    mergedPlane.drawnStroke(stroke.size());
                 }
             }
 
