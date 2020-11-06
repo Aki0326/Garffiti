@@ -9,9 +9,9 @@ ARCoreを用いて平面・垂直面に落書きできるアプリ
 現在制作途中です．
 GitHub, Google Playストアでも公開しています．
   
-  - GitHub @Aki0326 (https://github.com/Aki0326/gARffiti)
+  - [GitHub @Aki0326](https://github.com/Aki0326/gARffiti)
 
-- Google PlayストアgARffiti<修正中>(https://play.google.com/store/apps/details?id=org.ntlab.graffiti&hl=ja)
+- [Google PlayストアgARffiti<修正中>](https://play.google.com/store/apps/details?id=org.ntlab.graffiti&hl=ja)
 ## Requirement
 - Android Studio 3.5.3
 
