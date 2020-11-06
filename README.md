@@ -8,7 +8,7 @@ ARCoreを用いて平面・垂直面に落書きできるアプリ
 落書きは, 検出した水平面・垂直面に固定されているため, 動き回って落書きする体験ができます. 
 
 現在制作途中です．
-GitBucketから移行してきました(a-hongoとAki0326は同一人物です). 
+GitBucketから移行してきました(Aki0326とAki Hongoは同一人物です). 
 GitHub, Google Playストアでも公開しています．
   
   - [GitHub @Aki0326](https://github.com/Aki0326/gARffiti)
