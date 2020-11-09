@@ -44,8 +44,8 @@ GitHub, Google Playストアでも公開しています．
 - ARCore
   https://developers.google.com/ar
 
-- Aki0326/Garffiti/app/src/main/res/drawable-xxhdpi/
-  photoAC (https://www.photo-ac.com/)
+- Aki0326/Garffiti/app/src/main/res/drawable-xxhdpi/  
+  photoAC (https://www.photo-ac.com/)  
   justaline-android (https://github.com/googlecreativelab/justaline-android)
   
 - Garffiti/app/src/main/assets/musics/
