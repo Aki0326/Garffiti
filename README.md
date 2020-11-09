@@ -42,7 +42,9 @@ GitHub, Google Playストアでも公開しています．
 - Android端末のAPI 24以降(Pixel 3では動作確認済み)
 
 ## Usage
-編集中
+プロジェクトをビルドするには, ダウンロードしてAndroid Studio3.1以降で開きます. 
+アプリを起動すると, ARCoreがまだインストールされていない場合はGoogle Playストアでインストールするように求められます. 
+また, 端末付属カメラへの使用許可を求められます([プライバシーポリシー](https://photos.app.goo.gl/3HR5E2rffET9aUCj8)). 
 
 ## References
 - ARCore
