@@ -20,6 +20,10 @@ gARffitiを起動するとモード選択画面が表示されます. モード�
 - 写真ギャラリーモード  
 写真ギャラリーモードでは, らくがきモードで保存した画面のスクリーンショット写真の一覧を閲覧できます. 
 
+<div align="center">
+<img src="https://github.com/Aki0326/Garffiti/blob/developer_console/app/src/main/res/drawable-xxhdpi/mode_select.png" alt="モード選択画面" title="モード選択画面" width="200"><img src="https://github.com/Aki0326/Garffiti/blob/developer_console/app/src/main/res/drawable-xxhdpi/graffiti_mode.png" alt="らくがきモードのスクリーンショット" title="らくがきモードのスクリーンショット" width="200">
+</div>
+
 現在制作途中です．
 GitBucketから移行してきました(Aki0326とAki Hongoは同一人物です). 
 GitHub, Google Playストアでも公開しています．
