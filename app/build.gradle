@@ -56,4 +56,5 @@ dependencies {
 //    implementation 'com.google.firebase:firebase-core:17.2.2'
     implementation 'com.google.guava:guava:27.0.1-android'
     implementation 'com.google.android.gms:play-services-auth:17.0.0'
+    implementation 'androidx.fragment:fragment:1.2.4'
 }

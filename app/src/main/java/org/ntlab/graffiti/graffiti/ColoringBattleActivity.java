@@ -81,7 +81,8 @@ import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
-import com.google.common.base.Preconditions;
+import com.google.ar.sceneform.utilities.Preconditions;
+
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.List;
