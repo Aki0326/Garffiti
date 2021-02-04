@@ -87,10 +87,6 @@
     <!-- This tag indicates that this application requires ARCore.  This results in the Google Play
          Store downloading and installing ARCore along with the application. -->
     <meta-data android:name="com.google.ar.core" android:value="required" />
-<!--    firebase-->
-    <meta-data
-        android:name="com.google.android.ar.API_KEY"
-        android:value="AIzaSyBw3ewp58HtevWzdb5JVqBliLq9DU_9Wmg"/>
     <!-- BroadcastReceiverの登録 -->
     <receiver
         android:name="org.ntlab.graffiti.common.helpers.ReceiverHelper">
