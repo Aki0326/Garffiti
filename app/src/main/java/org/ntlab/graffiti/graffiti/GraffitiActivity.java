@@ -31,6 +31,7 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Environment;
@@ -59,6 +60,12 @@ import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+import com.google.ar.core.exceptions.CameraNotAvailableException;
+import com.google.ar.core.exceptions.UnavailableApkTooOldException;
+import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
+import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
+import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
+import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 
 import org.ntlab.graffiti.R;
 import org.ntlab.graffiti.common.drawer.CircleDrawer;
@@ -83,12 +90,6 @@ import org.ntlab.graffiti.common.rendering.TestRenderer;
 import org.ntlab.graffiti.common.views.BrushSizeSelector;
 import org.ntlab.graffiti.common.views.ColorSelector;
 import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
-import com.google.ar.core.exceptions.CameraNotAvailableException;
-import com.google.ar.core.exceptions.UnavailableApkTooOldException;
-import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
-import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
-import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
-import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -117,7 +118,6 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
   private GLSurfaceView surfaceView;
 
   private boolean installRequested;
-
   private Session session;
   private final SnackbarHelper messageSnackbarHelper = new SnackbarHelper();
   private DisplayRotationHelper displayRotationHelper;
@@ -181,6 +181,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_graffiti);
+
     surfaceView = findViewById(R.id.surfaceview);
     displayRotationHelper = new DisplayRotationHelper(/*context=*/ this);
 
@@ -366,6 +367,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
   // ユーザーの許可を受け取る（スクリーンショット）
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
     if (REQUEST_MEDIA_PROJECTION == requestCode) {
       if (resultCode != RESULT_OK) {
         // 拒否された
@@ -374,13 +376,27 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         return;
       }
       // 許可された結果を受け取る
-      setUpMediaProjection(resultCode, data);
+      Intent intent = new Intent(this, GraffitiActivity.class);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//        startForegroundService(data);
+        setUpMediaProjection(resultCode, data);
+      }
     }
   }
 
   private void setUpMediaProjection(int code, Intent intent) {
-    mProjection = mpManager.getMediaProjection(code, intent);
-    setUpVirtualDisplay();
+    if (intent != null) {
+//      new Handler().postDelayed(new Runnable() {
+//        final int tmpCode = code;
+//        final Intent tmpIntent = intent;
+//        @Override
+//        public void run() {
+          //ここに実行したい処理を記述
+          mProjection = mpManager.getMediaProjection(code, intent);
+          setUpVirtualDisplay();
+//        }
+//        }, 1000);
+    }
   }
 
   private void setUpVirtualDisplay() {

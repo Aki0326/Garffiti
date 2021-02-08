@@ -1,9 +1,7 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.2"
+    compileSdkVersion 28
 
     defaultConfig {
         applicationId "org.ntlab.graffiti"
@@ -11,7 +9,7 @@ android {
         // AR Optional apps must declare minSdkVersion >= 14.
         // AR Required apps must declare minSdkVersion >= 24.
         minSdkVersion 24
-        targetSdkVersion 29
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
     }
@@ -28,15 +26,16 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.0.2'
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation 'com.google.android.material:material:1.0.0'
-
     // ARCore library
-    implementation 'com.google.ar:core:1.10.0'
+    implementation 'com.google.ar:core:1.22.0'
 
     // Alternatively, use ArSceneView without the UX dependency.
-    implementation "com.google.ar.sceneform:core:1.10.0"
+//    implementation "com.google.ar.sceneform:core:1.17.1"
+
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'com.google.android.material:material:1.1.0'
+    implementation 'androidx.fragment:fragment:1.2.5'
 
     // Obj - a simple Wavefront OBJ file loader
     // https://github.com/javagl/Obj
@@ -44,7 +43,6 @@ dependencies {
 
     // picture
     implementation 'com.squareup.picasso:picasso:2.3.3'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
 
     // Retrofit
     implementation "com.squareup.retrofit2:retrofit:2.5.0"
@@ -52,9 +50,12 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-jackson:2.5.0'
 
     //firebase
-//    implementation 'com.google.firebase:firebase-database:19.2.0'
+    implementation 'com.google.firebase:firebase-database:16.0.5'
 //    implementation 'com.google.firebase:firebase-core:17.2.2'
+    // Override conflicting Firebase support-media-compat:26.1.0 dependency.
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+
     implementation 'com.google.guava:guava:27.0.1-android'
-    implementation 'com.google.android.gms:play-services-auth:17.0.0'
-    implementation 'androidx.fragment:fragment:1.2.4'
 }
+
+apply plugin: 'com.google.gms.google-services'
