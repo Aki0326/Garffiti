@@ -2,6 +2,7 @@ package org.ntlab.graffiti.common.geometry;
 
 /**
  * Geometry to compute vector.
+ *  @author n-nitta
  */
 public class Vector {
     public static float dot(float[] vec1, float[] vec2) {

@@ -3,6 +3,10 @@ package org.ntlab.graffiti.entities;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ *
+ * @author a-hongo
+ */
 public class Room {
     String roomId;
     Map<String, CloudAnchor> cloudAnchors = new HashMap<>();

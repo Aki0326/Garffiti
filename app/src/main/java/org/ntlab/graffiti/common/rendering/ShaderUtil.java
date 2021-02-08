@@ -22,7 +22,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-/** Shader helper functions. */
+/**
+ * Shader helper functions.
+ * @author a-hongo
+ */
 public class ShaderUtil {
   /**
    * Converts a raw text file, saved as a resource, into an OpenGL ES shader.

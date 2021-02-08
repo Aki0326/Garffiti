@@ -12,6 +12,7 @@ import org.ntlab.graffiti.common.helpers.TimeoutHelper;
 
 /**
  * This ShowPhotoActivity shows the selected picture.
+ * @author a-hongo
  */
 public class ShowPhotoActivity  extends AppCompatActivity {
     private static final String TAG = ShowPhotoActivity.class.getSimpleName();

@@ -10,15 +10,17 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 
-import org.ntlab.graffiti.graffiti.Graffiti;
-import org.ntlab.graffiti.graffiti.ShowPhotoActivity;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
+
+import org.ntlab.graffiti.graffiti.Graffiti;
+import org.ntlab.graffiti.graffiti.ShowPhotoActivity;
 
 import java.util.ArrayList;
 
 /**
  * This class adaptors the grid view. It contains ShowPhotoActivity.
+ * @author a-hongo
  */
 public class GridAdapter extends BaseAdapter {
     private Context context;

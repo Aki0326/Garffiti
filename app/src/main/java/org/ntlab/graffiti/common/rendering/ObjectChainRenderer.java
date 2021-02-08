@@ -644,6 +644,7 @@ import java.nio.FloatBuffer;
 
 /**
  * This class renders the line shader like just a line. Not currently using.
+ * @author a-hongo
  */
 public class ObjectChainRenderer {
     private static final String TAG = ObjectChainRenderer.class.getSimpleName();

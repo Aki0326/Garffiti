@@ -1,5 +1,6 @@
 /*
- * Copyright 2017 Google Inc. All Rights Reserved.
+ * Copyright 2017 Google LLC
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +25,9 @@ import android.provider.Settings;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-/** Helper to ask camera permission. */
+/** Helper to ask camera permission.
+ * @author a-hongo
+ */
 public final class CameraPermissionHelper {
   private static final int CAMERA_PERMISSION_CODE = 0;
   private static final String REQUIRED_PERMISSIONS[] = {

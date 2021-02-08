@@ -9,7 +9,8 @@ import android.widget.RelativeLayout;
 import org.ntlab.graffiti.R;
 
 /**
- * This class controll the camera button.
+ * This class control the camera button.
+ * @author a-hongo
  */
 class CameraButton extends RelativeLayout implements View.OnClickListener {
     private static final String TAG = CameraButton.class.getSimpleName();

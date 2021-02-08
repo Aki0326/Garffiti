@@ -11,12 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-
-/**
- * Created by Kat on 11/13/17.
- * Custom view for selecting brush size
- */
 package org.ntlab.graffiti.common.views;
 
 import android.animation.Animator;
@@ -35,8 +29,11 @@ import org.ntlab.graffiti.R;
 import java.io.IOException;
 
 /**
- * This class selects brush size.
+ * Custom view for selecting brush size
+ * Created by Kat on 11/13/17.
+ * @author a-hongo
  */
+
 public class BrushSizeSelector extends RelativeLayout implements View.OnClickListener {
 
     private static final String TAG = BrushSizeSelector.class.getSimpleName();

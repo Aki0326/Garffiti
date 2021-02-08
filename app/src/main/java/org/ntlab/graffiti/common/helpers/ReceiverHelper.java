@@ -8,6 +8,7 @@ import org.ntlab.graffiti.graffiti.ModeSelectActivity;
 
 /**
  * Helper to receive the broadcast intent.
+ * @author a-hongo
  */
 public class ReceiverHelper extends BroadcastReceiver {
 

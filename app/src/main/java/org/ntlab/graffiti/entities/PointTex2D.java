@@ -1,5 +1,9 @@
 package org.ntlab.graffiti.entities;
 
+/**
+ *
+ * @author a-hongo
+ */
 public class PointTex2D {
     float x;
     float y;

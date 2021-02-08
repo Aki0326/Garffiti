@@ -3,6 +3,10 @@ package org.ntlab.graffiti.entities;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ *
+ * @author a-hongo
+ */
 public class PlaneJSON {
     Collection<PointPlane2D> polygon = new ArrayList<>();
 
