@@ -5,7 +5,8 @@ import android.view.View;
 import androidx.annotation.Nullable;
 
 /**
- * This class controll the plane discovery.
+ * This class control the plane discovery.
+ * @author a-hongo
  */
 public class PlaneDiscoveryController{
     private @Nullable

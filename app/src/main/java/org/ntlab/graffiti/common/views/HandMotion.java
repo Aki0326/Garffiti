@@ -10,7 +10,10 @@ import androidx.appcompat.widget.AppCompatImageView;
 
 import org.ntlab.graffiti.R;
 
-/** This view contains the hand motion instructions with animation. */
+/**
+ * This view contains the hand motion instructions with animation.
+ *  @author a-hongo
+ */
 public class HandMotion  extends AppCompatImageView {
     private HandMotionAnimation animation;
     private static final long ANIMATION_SPEED_MS = 2500;

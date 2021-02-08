@@ -13,6 +13,7 @@ import java.nio.ShortBuffer;
 
 /**
  * This class renders the line raycast. Not currently using.
+ * @author a-hongo
  */
 public class RaycastRenderer {
     private static final String TAG = RaycastRenderer.class.getSimpleName();

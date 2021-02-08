@@ -27,7 +27,10 @@ import androidx.fragment.app.DialogFragment;
 
 import org.ntlab.graffiti.R;
 
-/** A DialogFragment for the Privacy Notice Dialog Box. */
+/**
+ * A DialogFragment for the Privacy Notice Dialog Box.
+ * @author a-hongo
+ */
 public class PrivacyNoticeDialogFragment extends DialogFragment {
 
     /** Listener for weather to start a host or resolve operation. */

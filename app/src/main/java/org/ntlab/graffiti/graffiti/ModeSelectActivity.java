@@ -18,6 +18,7 @@ import java.io.IOException;
 
 /**
  * This ModeSelectActivity selects mode.
+ * @author a-hongo
  */
 public class ModeSelectActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener {
     public static final String TAG = ModeSelectActivity.class.getSimpleName();

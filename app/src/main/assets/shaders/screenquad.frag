@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ *
+ * @author a-hongo
+ */
 #extension GL_OES_EGL_image_external : require
 
 precision mediump float;

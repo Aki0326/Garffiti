@@ -4,13 +4,12 @@ import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 
 /**
  * Helper to play the music.
+ * @author a-hongo
  */
 public class MusicPlayerHelper {
     private MediaPlayer mediaPlayer;

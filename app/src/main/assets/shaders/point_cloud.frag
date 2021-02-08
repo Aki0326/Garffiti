@@ -12,7 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/**
+ *
+ * @author a-hongo
+ */
 precision mediump float;
 varying vec4 v_Color;
 

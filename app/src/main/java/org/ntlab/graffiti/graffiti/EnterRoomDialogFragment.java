@@ -29,7 +29,10 @@ import com.google.common.base.Preconditions;
 
 import org.ntlab.graffiti.R;
 
-/** A DialogFragment for enter the room Dialog Box. */
+/**
+ * A DialogFragment for enter the room Dialog Box.
+ * @author a-hongo
+ */
 public class EnterRoomDialogFragment extends DialogFragment {
     interface OkListener {
         /**

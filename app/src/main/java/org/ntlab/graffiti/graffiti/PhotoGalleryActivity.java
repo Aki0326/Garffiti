@@ -29,6 +29,7 @@ import java.util.List;
 
 /**
  * This PhotoGalleryActivity show list of pictures.
+ * @author a-hongo
  */
 public class PhotoGalleryActivity extends AppCompatActivity {
     private static final String TAG = PhotoGalleryActivity.class.getSimpleName();

@@ -7,8 +7,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
@@ -21,6 +19,7 @@ import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+
 import org.ntlab.graffiti.common.drawer.TextureDrawer;
 import org.ntlab.graffiti.common.geometry.Vector;
 
@@ -39,6 +38,7 @@ import java.util.Map;
 
 /**
  * This class renders the AR Graffiti.
+ * @author n-nitta, a-hongo
  */
 public class GraffitiRenderer {
     private static final String TAG = GraffitiRenderer.class.getSimpleName();

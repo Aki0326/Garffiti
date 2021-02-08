@@ -8,6 +8,7 @@ import org.ntlab.graffiti.graffiti.ModeSelectActivity;
 
 /**
  * Helper to timeout.
+ * @author a-hongo
  */
 public class TimeoutHelper {
     private static long START_TIME = 600000; // 10m
