@@ -48,40 +48,39 @@ import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
+import com.google.ar.core.exceptions.CameraNotAvailableException;
+import com.google.ar.core.exceptions.UnavailableApkTooOldException;
+import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
+import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
+import com.google.common.base.Preconditions;
 
 import org.ntlab.graffiti.R;
 import org.ntlab.graffiti.common.drawer.CircleDrawer;
 import org.ntlab.graffiti.common.drawer.RectangleDrawer;
 import org.ntlab.graffiti.common.drawer.TextureDrawer;
 import org.ntlab.graffiti.common.geometry.GeometryUtil;
-import org.ntlab.graffiti.common.helpers.TapHelper;
-import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
-import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
-import org.ntlab.graffiti.entities.CloudAnchor;
-import org.ntlab.graffiti.graffiti.anchorMatch.AnchorMatchingManager;
-import org.ntlab.graffiti.graffiti.anchorMatch.MergedPlane;
-import org.ntlab.graffiti.graffiti.anchorMatch.MatchedAnchor;
-import org.ntlab.graffiti.entities.PointTex2D;
-import org.ntlab.graffiti.graffiti.PrivacyNoticeDialogFragment.HostResolveListener;
-import org.ntlab.graffiti.graffiti.PrivacyNoticeDialogFragment.NoticeDialogListener;
 import org.ntlab.graffiti.common.helpers.CameraPermissionHelper;
 import org.ntlab.graffiti.common.helpers.DisplayRotationHelper;
 import org.ntlab.graffiti.common.helpers.FullScreenHelper;
 import org.ntlab.graffiti.common.helpers.SnackbarHelper;
+import org.ntlab.graffiti.common.helpers.TapHelper;
 import org.ntlab.graffiti.common.helpers.TrackingStateHelper;
 import org.ntlab.graffiti.common.rendering.BackgroundRenderer;
+import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.rendering.ObjectRenderer;
 import org.ntlab.graffiti.common.rendering.ObjectRenderer.BlendMode;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
 import org.ntlab.graffiti.common.rendering.PointCloudRenderer;
+import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
+import org.ntlab.graffiti.entities.CloudAnchor;
+import org.ntlab.graffiti.entities.PointTex2D;
+import org.ntlab.graffiti.graffiti.PrivacyNoticeDialogFragment.HostResolveListener;
+import org.ntlab.graffiti.graffiti.PrivacyNoticeDialogFragment.NoticeDialogListener;
+import org.ntlab.graffiti.graffiti.anchorMatch.AnchorMatchingManager;
+import org.ntlab.graffiti.graffiti.anchorMatch.MatchedAnchor;
+import org.ntlab.graffiti.graffiti.anchorMatch.MergedPlane;
 import org.ntlab.graffiti.graffiti.controls.AnchorManager;
 import org.ntlab.graffiti.graffiti.controls.WebServiceManager;
-
-import com.google.ar.core.exceptions.CameraNotAvailableException;
-import com.google.ar.core.exceptions.UnavailableApkTooOldException;
-import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
-import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
-import com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
@@ -93,9 +92,10 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * Main Activity for the Cloud Anchor Example
  *
- * <p>This is a simple example that shows how to host and resolve anchors using ARCore Cloud Anchors
+ * This is a simple example that shows how to host and resolve anchors using ARCore Cloud Anchors
  * API calls. This app only has at most one anchor at a time, to focus more on the cloud aspect of
  * anchors.
+ * @author a-hongo
  */
 public class ColoringBattleActivity extends AppCompatActivity implements GLSurfaceView.Renderer, NoticeDialogListener {
     private static final String TAG = ColoringBattleActivity.class.getSimpleName();

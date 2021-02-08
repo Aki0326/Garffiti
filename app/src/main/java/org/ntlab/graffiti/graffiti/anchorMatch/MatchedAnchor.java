@@ -8,6 +8,10 @@ import org.ntlab.graffiti.entities.PointPlane2D;
 import java.nio.FloatBuffer;
 import java.util.Collection;
 
+/**
+ *
+ * @author a-hongo
+ */
 public class MatchedAnchor {
     private Anchor myAnchor;
     private Anchor partnerAnchor;

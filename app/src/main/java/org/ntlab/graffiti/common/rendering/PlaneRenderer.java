@@ -38,7 +38,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Renders the detected AR planes. */
+/**
+ * Renders the detected AR planes.
+ *  @author a-hongo
+ */
 public class PlaneRenderer {
   private static final String TAG = PlaneRenderer.class.getSimpleName();
 

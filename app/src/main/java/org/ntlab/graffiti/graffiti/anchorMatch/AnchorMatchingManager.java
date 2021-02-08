@@ -18,6 +18,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ *
+ * @author a-hongo
+ */
 public class AnchorMatchingManager {
     private static final String TAGTEST = AnchorMatchingManager.class.getSimpleName();
     private static final String TAGSTROKE = AnchorMatchingManager.class.getSimpleName() + "Stroke";

@@ -28,6 +28,7 @@ import java.util.Map;
 
 /**
  * This class renders the enclosure of plane. Not currently using.
+ * @author a-hongo
  */
 public class TestRenderer {
     private static final String TAG = TestRenderer.class.getSimpleName();

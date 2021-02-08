@@ -6,6 +6,10 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 
+/**
+ * Draw in the shape of a circle.
+ * @author a-hongo
+ */
 public class CircleDrawer extends TextureDrawer {
 
     public CircleDrawer(int color) {

@@ -9,6 +9,7 @@ import org.ntlab.graffiti.common.helpers.WriteLogThreadHelper;
 
 /**
  * This class is main application of graffiti.
+ * @author a-hongo
  */
 public class Graffiti extends Application {
     private final String TAG = Graffiti.class.getSimpleName();

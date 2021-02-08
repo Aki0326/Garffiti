@@ -12,7 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/**
+ *
+ * @author a-hongo
+ */
 attribute vec4 a_Position;
 attribute vec2 a_TexCoord;
 

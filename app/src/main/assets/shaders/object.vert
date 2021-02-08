@@ -12,7 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/**
+ *
+ * @author a-hongo
+ */
 uniform mat4 u_ModelView;
 uniform mat4 u_ModelViewProjection;
 

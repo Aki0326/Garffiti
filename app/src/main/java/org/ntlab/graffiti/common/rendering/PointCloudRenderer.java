@@ -21,7 +21,10 @@ import android.opengl.Matrix;
 import com.google.ar.core.PointCloud;
 import java.io.IOException;
 
-/** Renders a point cloud. */
+/**
+ * Renders a point cloud.
+ * @author a-hongo
+ */
 public class PointCloudRenderer {
   private static final String TAG = PointCloud.class.getSimpleName();
 

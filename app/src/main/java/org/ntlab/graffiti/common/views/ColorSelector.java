@@ -14,6 +14,7 @@ import java.io.IOException;
 
 /**
  * This class selects the color of brush.
+ * @author a-hongo
  */
 public class ColorSelector extends RelativeLayout implements View.OnClickListener{
     private static final String TAG = ColorSelector.class.getSimpleName();

@@ -1,5 +1,9 @@
 package org.ntlab.graffiti.entities;
 
+/**
+ *
+ * @author a-hongo
+ */
 public class PointPlane2D {
     private float x;
     private float z;

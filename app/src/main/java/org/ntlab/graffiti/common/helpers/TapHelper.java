@@ -1,5 +1,6 @@
 /*
- * Copyright 2017 Google Inc. All Rights Reserved.
+ * Copyright 2017 Google LLC
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,6 +27,7 @@ import java.util.concurrent.BlockingQueue;
 /**
  * Helper to detect taps using Android GestureDetector, and pass the taps between UI thread and
  * render thread.
+ * @author a-hongo, n-nitta
  */
 public final class TapHelper implements OnTouchListener {
     private final GestureDetector gestureDetector;

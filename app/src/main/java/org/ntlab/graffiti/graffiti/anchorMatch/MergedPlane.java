@@ -15,6 +15,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ *
+ * @author a-hongo
+ */
 public class MergedPlane extends Plane {
     private Plane originalPlane;
     private Plane currentPlane;

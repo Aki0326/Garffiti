@@ -1,3 +1,7 @@
+/**
+ *
+ * @author a-hongo
+ */
 precision highp float;
 
 attribute vec3 position;

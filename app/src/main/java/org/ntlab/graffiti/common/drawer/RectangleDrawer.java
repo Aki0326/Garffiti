@@ -6,6 +6,10 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 
+/**
+ * Draw in the shape of a rectangle.
+ * @author a-hongo
+ */
 public class RectangleDrawer extends TextureDrawer {
 
     public RectangleDrawer(int color) {

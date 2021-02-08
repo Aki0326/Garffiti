@@ -2,6 +2,10 @@ package org.ntlab.graffiti.common.drawer;
 
 import android.graphics.Canvas;
 
+/**
+ * Abstract class of drawing shape.
+ * @author a-hongo
+ */
 abstract public class TextureDrawer {
     protected int color;
 

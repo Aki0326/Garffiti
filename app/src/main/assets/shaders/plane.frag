@@ -12,7 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/**
+ *
+ * @author a-hongo
+ */
 precision highp float;
 uniform sampler2D u_Texture;
 uniform vec4 u_dotColor;
