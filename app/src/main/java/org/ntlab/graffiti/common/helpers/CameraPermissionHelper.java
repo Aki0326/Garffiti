@@ -25,7 +25,7 @@ import android.provider.Settings;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-/** Helper to ask camera permission.
+/** Helper to ask write external storage & camera permission.
  * @author a-hongo
  */
 public final class CameraPermissionHelper {
@@ -38,8 +38,7 @@ public final class CameraPermissionHelper {
   /** Check to see we have the necessary permissions for this app. */
   public static boolean hasCameraPermission(Activity activity) {
     for (String p : REQUIRED_PERMISSIONS) {
-      if (ContextCompat.checkSelfPermission(activity, p) !=
-              PackageManager.PERMISSION_GRANTED) {
+      if (ContextCompat.checkSelfPermission(activity, p) != PackageManager.PERMISSION_GRANTED) {
         return false;
       }
     }
@@ -48,8 +47,7 @@ public final class CameraPermissionHelper {
 
   /** Check to see we have the necessary permissions for this app, and ask for them if we don't. */
   public static void requestCameraPermission(Activity activity) {
-    ActivityCompat.requestPermissions(activity, REQUIRED_PERMISSIONS,
-            CAMERA_PERMISSION_CODE);
+    ActivityCompat.requestPermissions(activity, REQUIRED_PERMISSIONS, CAMERA_PERMISSION_CODE);
   }
 
   /** Check to see if we need to show the rationale for this permission. */

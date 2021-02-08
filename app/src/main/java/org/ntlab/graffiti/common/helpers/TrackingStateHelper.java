@@ -1,5 +1,6 @@
 /*
- * Copyright 2019 Google Inc. All Rights Reserved.
+ * Copyright 2019 Google LLC
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,8 +22,7 @@ import com.google.ar.core.TrackingFailureReason;
 import com.google.ar.core.TrackingState;
 
 /** Gets human readibly tracking failure reasons and suggested actions. */
-public class TrackingStateHelper {
-
+public final class TrackingStateHelper {
     private static final String INSUFFICIENT_FEATURES_MESSAGE =
             "Can't find anything. Aim device at a surface with more texture or color.";
     private static final String EXCESSIVE_MOTION_MESSAGE = "Moving too fast. Slow down.";
@@ -74,8 +74,8 @@ public class TrackingStateHelper {
                 return EXCESSIVE_MOTION_MESSAGE;
             case INSUFFICIENT_FEATURES:
                 return INSUFFICIENT_FEATURES_MESSAGE;
-//            case CAMERA_UNAVAILABLE:
-//                return CAMERA_UNAVAILABLE_MESSAGE;
+            case CAMERA_UNAVAILABLE:
+                return CAMERA_UNAVAILABLE_MESSAGE;
         }
         return "Unknown tracking failure reason: " + reason;
     }

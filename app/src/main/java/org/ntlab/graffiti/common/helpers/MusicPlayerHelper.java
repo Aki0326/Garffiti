@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.util.Log;
 
 import java.io.IOException;
 
@@ -12,6 +13,7 @@ import java.io.IOException;
  * @author a-hongo
  */
 public class MusicPlayerHelper {
+    private static final String TAG = MusicPlayerHelper.class.getSimpleName();
     private MediaPlayer mediaPlayer;
 
     /**
@@ -58,9 +60,9 @@ public class MusicPlayerHelper {
         if (mediaPlayer == null) {
             // audio ファイルを読出し
             if (musicSetup(context, filePath, isLoop)) {
-//                Toast.makeText(context, "Rread audio file", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "read audio file");
             } else {
-//                Toast.makeText(context, "Error: read audio file", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Error: read audio file");
                 return;
             }
         } else {
@@ -78,8 +80,7 @@ public class MusicPlayerHelper {
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-//                Toast.makeText(context, "end of audio", Toast.LENGTH_SHORT).show();
-//                Log.d("debug", "end of audio");
+                Log.d(TAG, "end of audio");
                 musicStop();
             }
         });
@@ -88,12 +89,9 @@ public class MusicPlayerHelper {
     /** Stop the music. */
     public void musicStop() {
         if(mediaPlayer != null) {
-            // 再生終了
-            mediaPlayer.stop();
-            // リセット
-            mediaPlayer.reset();
-            // リソースの解放
-            mediaPlayer.release();
+            mediaPlayer.stop(); // 再生終了
+            mediaPlayer.reset(); // リセット
+            mediaPlayer.release(); // リソースの解放
 
             mediaPlayer = null;
         }
