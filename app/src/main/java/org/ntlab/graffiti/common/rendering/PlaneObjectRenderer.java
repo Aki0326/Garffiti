@@ -18,7 +18,7 @@ package org.ntlab.graffiti.common.rendering;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
@@ -129,15 +129,15 @@ public class PlaneObjectRenderer {
         ShaderUtil.checkGLError(TAG, "before create");
 
         int vertexShader =
-                ShaderUtil.loadGLShader(TAG, context, GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
+                ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
         int passthroughShader =
-                ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME);
+                ShaderUtil.loadGLShader(TAG, context, GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME);
 
-        planeobjectProgram = GLES20.glCreateProgram();
-        GLES20.glAttachShader(planeobjectProgram, vertexShader);
-        GLES20.glAttachShader(planeobjectProgram, passthroughShader);
-        GLES20.glLinkProgram(planeobjectProgram);
-        GLES20.glUseProgram(planeobjectProgram);
+        planeobjectProgram = GLES30.glCreateProgram();
+        GLES30.glAttachShader(planeobjectProgram, vertexShader);
+        GLES30.glAttachShader(planeobjectProgram, passthroughShader);
+        GLES30.glLinkProgram(planeobjectProgram);
+        GLES30.glUseProgram(planeobjectProgram);
 
         ShaderUtil.checkGLError(TAG, "Program creation");
 
@@ -145,30 +145,30 @@ public class PlaneObjectRenderer {
         Bitmap textureBitmap =
                 BitmapFactory.decodeStream(context.getAssets().open(gridDistanceTextureName));
 
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glGenTextures(textures.length, textures, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        GLES30.glGenTextures(textures.length, textures, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[0]);
 
-        GLES20.glTexParameteri(
-                GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmap, 0);
-        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES30.glTexParameteri(
+                GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+        GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, textureBitmap, 0);
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
 
         ShaderUtil.checkGLError(TAG, "Texture loading");
 
-        planeobjectXZPositionAlphaAttribute = GLES20.glGetAttribLocation(planeobjectProgram, "a_XZPositionAlpha");
+        planeobjectXZPositionAlphaAttribute = GLES30.glGetAttribLocation(planeobjectProgram, "a_XZPositionAlpha");
 
-        planeobjectModelUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_Model");
-        planeobjectNormalUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_Normal");
+        planeobjectModelUniform = GLES30.glGetUniformLocation(planeobjectProgram, "u_Model");
+        planeobjectNormalUniform = GLES30.glGetUniformLocation(planeobjectProgram, "u_Normal");
         planeobjectModelViewProjectionUniform =
-                GLES20.glGetUniformLocation(planeobjectProgram, "u_ModelViewProjection");
-        textureUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_Texture");
-        lineColorUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_lineColor");
-        dotColorUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_dotColor");
-        gridControlUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_gridControl");
-        planeobjectUvMatrixUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_PlaneUvMatrix");
+                GLES30.glGetUniformLocation(planeobjectProgram, "u_ModelViewProjection");
+        textureUniform = GLES30.glGetUniformLocation(planeobjectProgram, "u_Texture");
+        lineColorUniform = GLES30.glGetUniformLocation(planeobjectProgram, "u_lineColor");
+        dotColorUniform = GLES30.glGetUniformLocation(planeobjectProgram, "u_dotColor");
+        gridControlUniform = GLES30.glGetUniformLocation(planeobjectProgram, "u_gridControl");
+        planeobjectUvMatrixUniform = GLES30.glGetUniformLocation(planeobjectProgram, "u_PlaneUvMatrix");
 
         ShaderUtil.checkGLError(TAG, "Program parameters");
     }
@@ -266,25 +266,25 @@ public class PlaneObjectRenderer {
 
         // Set the position of the plane
         vertexBuffer.rewind();
-        GLES20.glVertexAttribPointer(
+        GLES30.glVertexAttribPointer(
                 planeobjectXZPositionAlphaAttribute,
                 COORDS_PER_VERTEX,
-                GLES20.GL_FLOAT,
+                GLES30.GL_FLOAT,
                 false,
                 BYTES_PER_FLOAT * COORDS_PER_VERTEX,
                 vertexBuffer);
 
         // Set the Model and ModelViewProjection matrices in the shader.
-        GLES20.glUniformMatrix4fv(planeobjectModelUniform, 1, false, modelMatrix, 0);
-        GLES20.glUniform3f(planeobjectNormalUniform, planeNormal[0], planeNormal[1], planeNormal[2]);
-        GLES20.glUniformMatrix4fv(
+        GLES30.glUniformMatrix4fv(planeobjectModelUniform, 1, false, modelMatrix, 0);
+        GLES30.glUniform3f(planeobjectNormalUniform, planeNormal[0], planeNormal[1], planeNormal[2]);
+        GLES30.glUniformMatrix4fv(
                 planeobjectModelViewProjectionUniform, 1, false, modelViewProjectionMatrix, 0);
 
         // Draw the Model.
         indexBuffer.rewind();
-//        GLES20.glLineWidth(25f);
-        GLES20.glDrawElements(
-                GLES20.GL_TRIANGLE_FAN, indexBuffer.limit(), GLES20.GL_UNSIGNED_SHORT, indexBuffer);
+//        GLES30.glLineWidth(25f);
+        GLES30.glDrawElements(
+                GLES30.GL_TRIANGLE_FAN, indexBuffer.limit(), GLES30.GL_UNSIGNED_SHORT, indexBuffer);
         ShaderUtil.checkGLError(TAG, "Drawing plane");
     }
 
@@ -337,33 +337,33 @@ public class PlaneObjectRenderer {
         // Planes are drawn with additive blending, masked by the alpha channel for occlusion.
 
         // Start by clearing the alpha channel of the color buffer to 1.0.
-        GLES20.glClearColor(1, 1, 1, 1);
-        GLES20.glColorMask(false, false, false, true);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        GLES20.glColorMask(true, true, true, true);
+        GLES30.glClearColor(1, 1, 1, 1);
+        GLES30.glColorMask(false, false, false, true);
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
+        GLES30.glColorMask(true, true, true, true);
 
         // Disable depth write.
-        GLES20.glDepthMask(false);
+        GLES30.glDepthMask(false);
 
         // Additive blending, masked by alpha channel, clearing alpha channel.
-        GLES20.glEnable(GLES20.GL_BLEND);
-        GLES20.glBlendFuncSeparate(
-                GLES20.GL_DST_ALPHA, GLES20.GL_ONE, // RGB (src, dest)
-                GLES20.GL_ZERO, GLES20.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
+        GLES30.glEnable(GLES30.GL_BLEND);
+        GLES30.glBlendFuncSeparate(
+                GLES30.GL_DST_ALPHA, GLES30.GL_ONE, // RGB (src, dest)
+                GLES30.GL_ZERO, GLES30.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
 
         // Set up the shader.
-        GLES20.glUseProgram(planeobjectProgram);
+        GLES30.glUseProgram(planeobjectProgram);
 
         // Attach the texture.
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
-        GLES20.glUniform1i(textureUniform, 0);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[0]);
+        GLES30.glUniform1i(textureUniform, 0);
 
         // Shared fragment uniforms.
-        GLES20.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
+        GLES30.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
 
         // Enable vertex arrays
-        GLES20.glEnableVertexAttribArray(planeobjectXZPositionAlphaAttribute);
+        GLES30.glEnableVertexAttribArray(planeobjectXZPositionAlphaAttribute);
 
         ShaderUtil.checkGLError(TAG, "Setting up to draw planes");
 
@@ -389,8 +389,8 @@ public class PlaneObjectRenderer {
             // Set plane color. Computed deterministically from the PlaneJSON index.
             int colorIndex = planeobjectIndex % PLANE_COLORS_RGBA.length;
             colorRgbaToFloat(planeobjectColor, PLANE_COLORS_RGBA[colorIndex]);
-            GLES20.glUniform4fv(lineColorUniform, 1, planeobjectColor, 0);
-            GLES20.glUniform4fv(dotColorUniform, 1, planeobjectColor, 0);
+            GLES30.glUniform4fv(lineColorUniform, 1, planeobjectColor, 0);
+            GLES30.glUniform4fv(dotColorUniform, 1, planeobjectColor, 0);
 
             // Each plane will have its own angle offset from others, to make them easier to
             // distinguish. Compute a 2x2 rotation matrix from the angle.
@@ -401,16 +401,16 @@ public class PlaneObjectRenderer {
             planeobjectAngleUvMatrix[1] = -(float) Math.sin(angleRadians) * vScale;
             planeobjectAngleUvMatrix[2] = +(float) Math.sin(angleRadians) * uScale;
             planeobjectAngleUvMatrix[3] = +(float) Math.cos(angleRadians) * vScale;
-            GLES20.glUniformMatrix2fv(planeobjectUvMatrixUniform, 1, false, planeobjectAngleUvMatrix, 0);
+            GLES30.glUniformMatrix2fv(planeobjectUvMatrixUniform, 1, false, planeobjectAngleUvMatrix, 0);
 
             draw(cameraView, cameraPerspective, normal);
         }
 
         // Clean up the state we set
-        GLES20.glDisableVertexAttribArray(planeobjectXZPositionAlphaAttribute);
-        GLES20.glDisable(GLES20.GL_BLEND);
-        GLES20.glDepthMask(true);
-        GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        GLES30.glDisableVertexAttribArray(planeobjectXZPositionAlphaAttribute);
+        GLES30.glDisable(GLES30.GL_BLEND);
+        GLES30.glDepthMask(true);
+        GLES30.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         ShaderUtil.checkGLError(TAG, "Cleaning up after drawing planes");
     }

@@ -7,16 +7,18 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
-import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 
 import com.google.ar.core.Camera;
+import com.google.ar.core.Coordinates2d;
 import com.google.ar.core.Frame;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
+import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
 
@@ -27,7 +29,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,6 +40,7 @@ import java.util.Map;
 
 /**
  * This class renders the AR Graffiti.
+ *
  * @author n-nitta, a-hongo
  */
 public class GraffitiRenderer {
@@ -48,23 +51,29 @@ public class GraffitiRenderer {
     private static final String FRAGMENT_SHADER_NAME = "shaders/graffiti.frag";
 
     private static final int BYTES_PER_FLOAT = Float.SIZE / 8;
-    private static final int BYTES_PER_SHORT = Short.SIZE / 8;
+    private static final int BYTES_PER_INT = Integer.SIZE / 8;
+    //    private static final int BYTES_PER_SHORT = Short.SIZE / 8;
     private static final int COORDS_PER_VERTEX = 3; // x, z, alpha
 
     private static final int VERTS_PER_BOUNDARY_VERT = 2;
     private static final int INDICES_PER_BOUNDARY_VERT = 3;
     private static final int INITIAL_BUFFER_BOUNDARY_VERTS = 64;
 
-    private static final int INITIAL_VERTEX_BUFFER_SIZE_BYTES = BYTES_PER_FLOAT * COORDS_PER_VERTEX * VERTS_PER_BOUNDARY_VERT * INITIAL_BUFFER_BOUNDARY_VERTS;
+    private static final int INITIAL_VERTEX_BUFFER_SIZE_BYTES =
+            BYTES_PER_FLOAT * COORDS_PER_VERTEX * VERTS_PER_BOUNDARY_VERT * INITIAL_BUFFER_BOUNDARY_VERTS;
 
     private static final int INITIAL_INDEX_BUFFER_SIZE_BYTES =
-            BYTES_PER_SHORT
+            BYTES_PER_INT
                     * INDICES_PER_BOUNDARY_VERT
                     * INDICES_PER_BOUNDARY_VERT
                     * INITIAL_BUFFER_BOUNDARY_VERTS;
+//    private static final int INITIAL_INDEX_BUFFER_SIZE_BYTES =
+//            BYTES_PER_SHORT
+//                    * INDICES_PER_BOUNDARY_VERT
+//                    * INDICES_PER_BOUNDARY_VERT
+//                    * INITIAL_BUFFER_BOUNDARY_VERTS;
 
     private static final float FADE_RADIUS_M = 0.25f;
-
     // texture size
 //    private static final float DOTS_PER_METER = 20.0f;
     private static final float DOTS_PER_METER = 0.2f;
@@ -76,91 +85,314 @@ public class GraffitiRenderer {
     // occlusionShrink: occluded planes will fade out between alpha = 0 and 1/occlusionShrink
     private static final float[] GRID_CONTROL = {0.2f, 0.4f, 2.0f, 1.5f};
 
-    private int planeobjectProgram;
+    private Mesh mesh;
+    private IndexBuffer indexBufferObject;
+    private VertexBuffer vertexBufferObject;
+//    private Shader shader;
+//    private Texture cameraDepthTexture;
 
-    private int planeobjectXZPositionAlphaAttribute;
+    private int planeObjectProgram;
 
-    private int planeobjectModelViewProjectionUniform;
+    private int planeObjectXZPositionAlphaAttribute;
+
+    private int planeObjectModelViewUniform;
+    private int planeObjectModelViewProjectionUniform;
     private int textureUniform;
     private int lineColorUniform;
     private int dotColorUniform;
     private int gridControlUniform;
-    private int planeobjectUvMatrixUniform;
+    private int planeObjectUvMatrixUniform;
+
+    // Shader location: depth texture.
+    private int depthTextureUniform;
+    // Shader location: transform to depth uvs.
+    private int depthUvTransformUniform;
+    // Shader location: the aspect ratio of the depth texture.
+    private int depthAspectRatioUniform;
 
     private FloatBuffer vertexBuffer =
             ByteBuffer.allocateDirect(INITIAL_VERTEX_BUFFER_SIZE_BYTES)
                     .order(ByteOrder.nativeOrder())
                     .asFloatBuffer();
-    private ShortBuffer indexBuffer =
+    private IntBuffer indexBuffer =
             ByteBuffer.allocateDirect(INITIAL_INDEX_BUFFER_SIZE_BYTES)
                     .order(ByteOrder.nativeOrder())
-                    .asShortBuffer();
+                    .asIntBuffer();
+//    private ShortBuffer indexBuffer =
+//            ByteBuffer.allocateDirect(INITIAL_INDEX_BUFFER_SIZE_BYTES)
+//                    .order(ByteOrder.nativeOrder())
+//                    .asShortBuffer();
+
+    // Plane Object vertex buffer variables.
+//    private int vertexBufferId;
+//    private int verticesBaseAddress;
+//    private int indexBufferId;
+//    private int indexCount;
 
     // Temporary lists/matrices allocated here to reduce number of allocations for each frame.
+    private final float[] viewMatrix = new float[16];
     private final float[] modelMatrix = new float[16];
     private final float[] modelViewMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
-    private final float[] planeobjectColor = new float[4];
-    private final float[] planeobjectAngleUvMatrix = new float[4]; // 2x2 rotation matrix applied to uv coords.
+    private final float[] planeObjectColor = new float[4];
+    private final float[] planeObjectAngleUvMatrix = new float[4]; // 2x2 rotation matrix applied to uv coords.
 
-    private final Map<Plane, Integer> planeobjectIndexMap = new HashMap<>();
+    private final Map<Plane, Integer> planeObjectIndexMap = new HashMap<>();
 
-    private final int backgroundColor = Color.TRANSPARENT;      // テクスチャ背景色
     private Bitmap textureBitmap = null;
     private Bitmap textureBitmapToRecycle = null;
     private ArrayList<Bitmap> textureBitmaps = new ArrayList<Bitmap>();
     private ArrayList<Integer> textures = new ArrayList<Integer>(); //テキスチャID
     private HashMap<Plane, Integer> planeNo = new HashMap<Plane, Integer>();
     private HashMap<Plane, Pose> planePose = new HashMap<>();
+    private final int backgroundColor = Color.TRANSPARENT;      // テクスチャ背景色
 
-    public GraffitiRenderer() {}
+    private boolean calculateUVTransform = true;
+    private boolean useOcclusion = false;
+    private int depthTextureId;
+    private float aspectRatio = 0.0f;
+    private float[] uvTransform = null;
+
+
+    public GraffitiRenderer() {
+    }
 
     /**
      * Allocates and initializes OpenGL resources needed by the plane renderer. Must be called on the
      * OpenGL thread, typically in {@link GLSurfaceView.Renderer#onSurfaceCreated(GL10, EGLConfig)}.
      *
-     * @param context Needed to access shader source and texture PNG.
-     * @param gridDistanceTextureName Name of the PNG file containing the grid texture.
+     * @param context          Needed to access shader source and texture PNG.
+     * @param planeTextureName Name of the PNG file containing the plane texture.
      */
-    public void createOnGlThread(Context context, String gridDistanceTextureName)
+    public void createOnGlThread(Context context, String planeTextureName)
             throws IOException {
-        ShaderUtil.checkGLError(TAG, "before create");
+        // Read the texture.
+        textureBitmap = BitmapFactory.decodeStream(context.getAssets().open(planeTextureName));
+        textureBitmapToRecycle = textureBitmap.copy(textureBitmap.getConfig(), true);
+//        textureBitmapToRecycle.eraseColor(backgroundColor);
+//        ShaderUtil.checkGLError(TAG, "Failed to load texture");
+
+        // Generate the background texture.
+//        cameraDepthTexture =
+//                new Texture(
+//                        GLES30.GL_TEXTURE_2D,
+//                        GLES30.GL_CLAMP_TO_EDGE,
+//                        /*useMipmaps=*/ false);
+
+//        HashMap<String, String> defines = new HashMap<>();
+//        defines.put("USE_OCCLUSION", useOcclusion ? "1" : "0");
+        // This loads the shader code, and must be called on the GL thread.
+//        shader =
+//                Shader.createFromAssets(context, VERTEX_SHADER_NAME, FRAGMENT_SHADER_NAME, /*defines=*/ defines)
+////                        .setTexture("u_Texture", texture)
+////                        .setVec4("u_gridControl", GRID_CONTROL)
+////                        .setBlend(
+////                                GLES30.GL_DST_ALPHA, // RGB (src)
+////                                GLES30.GL_ONE, // RGB (dest)
+////                                GLES30.GL_ZERO, // ALPHA (src)
+////                                GLES30.GL_ONE_MINUS_SRC_ALPHA) // ALPHA (dest)
+////                        .setBlend(
+////                                GLES30.GL_SRC_ALPHA, // RGBA (src)
+////                                GLES30.GL_ONE_MINUS_SRC_ALPHA) // RGBA (dest)
+//                        .setBlend(
+//                                GLES30.GL_ONE, // RGBA (src)
+//                                GLES30.GL_ONE_MINUS_SRC_ALPHA); // RGBA (dest)
+////                        .setDepthWrite(false);
+        HashMap<String, Integer> defines = new HashMap<>();
+        defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
 
         int vertexShader =
-                ShaderUtil.loadGLShader(TAG, context, GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
-        int passthroughShader =
-                ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME);
+                ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
+        int fragmentSahder =
+                ShaderUtil.loadGLShader(TAG, context, GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME, defines);
 
-        planeobjectProgram = GLES20.glCreateProgram();
-        GLES20.glAttachShader(planeobjectProgram, vertexShader);
-        GLES20.glAttachShader(planeobjectProgram, passthroughShader);
-        GLES20.glLinkProgram(planeobjectProgram);
-        GLES20.glUseProgram(planeobjectProgram);
-
+        planeObjectProgram = GLES30.glCreateProgram();
+        GLES30.glAttachShader(planeObjectProgram, vertexShader);
+        GLES30.glAttachShader(planeObjectProgram, fragmentSahder);
+        GLES30.glLinkProgram(planeObjectProgram);
+        GLES30.glUseProgram(planeObjectProgram);
         ShaderUtil.checkGLError(TAG, "Program creation");
 
-        // Read the texture.
-        textureBitmap = BitmapFactory.decodeStream(context.getAssets().open(gridDistanceTextureName));
-        textureBitmapToRecycle = textureBitmap.copy(textureBitmap.getConfig(),true);
-        textureBitmapToRecycle.eraseColor(backgroundColor);
+        planeObjectXZPositionAlphaAttribute = GLES30.glGetAttribLocation(planeObjectProgram, "a_XZPositionAlpha");
 
-        ShaderUtil.checkGLError(TAG, "Texture loading");
+        planeObjectModelViewUniform =
+                GLES30.glGetUniformLocation(planeObjectProgram, "u_ModelView");
+        planeObjectModelViewProjectionUniform =
+                GLES30.glGetUniformLocation(planeObjectProgram, "u_ModelViewProjection");
+        planeObjectUvMatrixUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_PlaneUvMatrix");
 
-        planeobjectXZPositionAlphaAttribute = GLES20.glGetAttribLocation(planeobjectProgram, "a_XZPositionAlpha");
-
-        planeobjectModelViewProjectionUniform =
-                GLES20.glGetUniformLocation(planeobjectProgram, "u_ModelViewProjection");
-        textureUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_Texture");
-        lineColorUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_lineColor");
-        dotColorUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_dotColor");
-        gridControlUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_gridControl");
-        planeobjectUvMatrixUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_PlaneUvMatrix");
-
+        textureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_Texture");
+//        lineColorUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_lineColor");
+//        dotColorUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_dotColor");
+//        gridControlUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_gridControl");
         ShaderUtil.checkGLError(TAG, "Program parameters");
+
+        indexBufferObject = new IndexBuffer(/*entries=*/ null);
+        vertexBufferObject = new VertexBuffer(COORDS_PER_VERTEX, /*entries=*/ null);
+        VertexBuffer[] vertexBuffers = {vertexBufferObject};
+        mesh = new Mesh(GLES30.GL_TRIANGLE_FAN, indexBufferObject, vertexBuffers);
+
+//        int[] buffers = new int[2];
+//        GLES30.glGenBuffers(2, buffers, 0);
+//        vertexBufferId = buffers[0];
+//        indexBufferId = buffers[1];
     }
 
-    /** Updates the plane model transform matrix and extents. */
-    public void updatePlaneObjectParamaters(float[] planeobjectMatrix, float extentX, float extentZ, FloatBuffer boundary) {
+    /**
+     * Sets whether to use depth for occlusion. This reloads the shader code with new {@code
+     * #define}s, and must be called on the GL thread.
+     */
+    public void setUseOcclusion(Context context, boolean useOcclusion) throws IOException {
+//        if (shader != null) {
+        if (this.useOcclusion == useOcclusion) {
+            return;
+        }
+//            shader.close();
+//            shader = null;
+//        }
+//        HashMap<String, String> defines = new HashMap<>();
+//        defines.put("USE_OCCLUSION", useOcclusion ? "1" : "0");
+//        // This loads the shader code, and must be called on the GL thread.
+//        shader =
+//                Shader.createFromAssets(context, VERTEX_SHADER_NAME, FRAGMENT_SHADER_NAME, /*defines=*/ defines)
+////                        .setBlend(
+////                                GLES30.GL_SRC_ALPHA, // RGBA (src)
+////                                GLES30.GL_ONE_MINUS_SRC_ALPHA); // RGBA (dest)
+////                        .setBlend(
+////                                GLES30.GL_ONE, // RGBA (src)
+////                                GLES30.GL_ONE_MINUS_SRC_ALPHA); // RGBA (dest)
+//                        .setBlend(
+//                                GLES30.GL_ONE, // RGB (src)
+//                                GLES30.GL_ONE_MINUS_SRC_ALPHA, // RGB (dest)
+//                                GLES30.GL_ONE, // ALPHA (src)
+//                                GLES30.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (dest)
+////                        .setDepthWrite(false);
+        HashMap<String, Integer> defines = new HashMap<>();
+        defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
+
+        int vertexShader =
+                ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
+        int fragmentSahder =
+                ShaderUtil.loadGLShader(TAG, context, GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME, defines);
+
+        planeObjectProgram = GLES30.glCreateProgram();
+        GLES30.glAttachShader(planeObjectProgram, vertexShader);
+        GLES30.glAttachShader(planeObjectProgram, fragmentSahder);
+        GLES30.glLinkProgram(planeObjectProgram);
+        GLES30.glUseProgram(planeObjectProgram);
+        ShaderUtil.checkGLError(TAG, "Program creation");
+
+        planeObjectXZPositionAlphaAttribute = GLES30.glGetAttribLocation(planeObjectProgram, "a_XZPositionAlpha");
+
+        planeObjectModelViewUniform =
+                GLES30.glGetUniformLocation(planeObjectProgram, "u_ModelView");
+        planeObjectModelViewProjectionUniform =
+                GLES30.glGetUniformLocation(planeObjectProgram, "u_ModelViewProjection");
+        planeObjectUvMatrixUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_PlaneUvMatrix");
+
+        textureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_Texture");
+        ShaderUtil.checkGLError(TAG, "Program parameters");
+        if (useOcclusion) {
+//            shader
+//                    .setTexture("u_CameraDepthTexture", cameraDepthTexture)
+//                    .setFloat("u_DepthAspectRatio", aspectRatio);
+            depthTextureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_CameraDepthTexture");
+            depthUvTransformUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_DepthUvTransform");
+            depthAspectRatioUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_DepthAspectRatio");
+            ShaderUtil.checkGLError(TAG, "Program parameters");
+        }
+        this.useOcclusion = useOcclusion;
+    }
+
+    private void setUvTransformMatrix(float[] transform) {
+        this.uvTransform = transform;
+    }
+
+    public void setDepthTexture(int textureId, int width, int height) {
+        depthTextureId = textureId;
+        if (useOcclusion) {
+            aspectRatio = (float) width / (float) height;
+        }
+    }
+
+    /**
+     * Returns a transformation matrix that when applied to screen space uvs makes them match
+     * correctly with the quad texture coords used to render the camera feed. It takes into account
+     * device orientation.
+     */
+    private float[] getTextureTransformMatrix(Frame frame) {
+        float[] frameTransform = new float[6];
+        float[] uvTransform = new float[9];
+        // XY pairs of coordinates in NDC space that constitute the origin and points along the two
+        // principal axes.
+        float[] ndcBasis = {0, 0, 1, 0, 0, 1};
+//        float[] ndcBasis = {0, 0, 0, 1, 1, 0};
+
+        // Temporarily store the transformed points into outputTransform.
+        frame.transformCoordinates2d(
+                Coordinates2d.OPENGL_NORMALIZED_DEVICE_COORDINATES,
+                ndcBasis,
+                Coordinates2d.TEXTURE_NORMALIZED,
+                frameTransform);
+
+        // Convert the transformed points into an affine transform and transpose it.
+        float ndcOriginX = frameTransform[0];
+        float ndcOriginY = frameTransform[1];
+        uvTransform[0] = frameTransform[2] - ndcOriginX;
+        uvTransform[1] = frameTransform[3] - ndcOriginY;
+        uvTransform[2] = 0;
+        uvTransform[3] = frameTransform[4] - ndcOriginX;
+        uvTransform[4] = frameTransform[5] - ndcOriginY;
+        uvTransform[5] = 0;
+        uvTransform[6] = ndcOriginX;
+        uvTransform[7] = ndcOriginY;
+        uvTransform[8] = 1;
+
+        return uvTransform;
+    }
+
+    /**
+     * Updates the display geometry. This must be called every frame before calling either of
+     * GraffitiRenderer's draw methods.
+     *
+     * @param frame The current {@code Frame} as returned by {@link Session#update()}.
+     */
+    public void updateDisplayGeometry(Frame frame) {
+        if (frame.hasDisplayGeometryChanged() || calculateUVTransform) {
+            // If display rotation changed (also includes view size change), we need to re-query the UV
+            // coordinates for the screen rect, as they may have changed as well.
+            calculateUVTransform = false;
+            setUvTransformMatrix(getTextureTransformMatrix(frame));
+        }
+    }
+
+    /**
+     * Update depth texture with Image contents.
+     */
+//    public void updateCameraDepthTexture(Image image) {
+//        // SampleRender abstraction leaks here
+//        GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, cameraDepthTexture.getTextureId());
+//        GLES30.glTexImage2D(
+//                GLES30.GL_TEXTURE_2D,
+//                0,
+//                GLES30.GL_RG8,
+//                image.getWidth(),
+//                image.getHeight(),
+//                0,
+//                GLES30.GL_RG,
+//                GLES30.GL_UNSIGNED_BYTE,
+//                image.getPlanes()[0].getBuffer());
+//        if (useOcclusion) {
+//            aspectRatio = (float) image.getWidth() / (float) image.getHeight();
+//        }
+//    }
+
+    /**
+     * Updates the plane model transform matrix and extents.
+     */
+    public void updatePlaneObjectParamaters(
+            float[] planeobjectMatrix, float extentX, float extentZ, FloatBuffer boundary) {
         System.arraycopy(planeobjectMatrix, 0, modelMatrix, 0, 16);
         if (boundary == null) {
             vertexBuffer.limit(0);
@@ -195,22 +427,43 @@ public class GraffitiRenderer {
         vertexBuffer.rewind();
         vertexBuffer.limit(numVertices * COORDS_PER_VERTEX);
 
+//        // Load vertex buffer
+//        verticesBaseAddress = 0;
+//        final int totalBytes = verticesBaseAddress + 4 * vertexBuffer.limit();
+
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vertexBufferId);
+//        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, totalBytes, null, GLES30.GL_STATIC_DRAW);
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
+
         if (indexBuffer.capacity() < numIndices) {
             int size = indexBuffer.capacity();
             while (size < numIndices) {
                 size *= 2;
             }
+//            indexBuffer =
+//                    ByteBuffer.allocateDirect(BYTES_PER_SHORT * size)
+//                            .order(ByteOrder.nativeOrder())
+//                            .asShortBuffer();
             indexBuffer =
-                    ByteBuffer.allocateDirect(BYTES_PER_SHORT * size)
+                    ByteBuffer.allocateDirect(BYTES_PER_INT * size)
                             .order(ByteOrder.nativeOrder())
-                            .asShortBuffer();
+                            .asIntBuffer();
         }
         indexBuffer.rewind();
         indexBuffer.limit(numIndices);
 
+//        // Load index buffer
+//        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
+//        indexCount = indexBuffer.limit();
+//        GLES30.glBufferData(
+//                GLES30.GL_ELEMENT_ARRAY_BUFFER, 2 * indexCount, indexBuffer, GLES30.GL_STATIC_DRAW);
+//        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, 0);
+
         // Note: when either dimension of the bounding box is smaller than 2*FADE_RADIUS_M we
         // generate a bunch of 0-area triangles.  These don't get rendered though so it works
         // out ok.
+//        float xScale = Math.max((extentX - 2 * FADE_RADIUS_M) / extentX, 0.0f);
+//        float zScale = Math.max((extentZ - 2 * FADE_RADIUS_M) / extentZ, 0.0f);
         float xScale = Math.max((extentX - 2 * FADE_RADIUS_M) / extentX, 1.0f);
         float zScale = Math.max((extentZ - 2 * FADE_RADIUS_M) / extentZ, 1.0f);
 
@@ -247,6 +500,7 @@ public class GraffitiRenderer {
 
     /**
      * Draw the texture.
+     *
      * @param x
      * @param y
      * @param r
@@ -255,17 +509,19 @@ public class GraffitiRenderer {
      */
     public PointF drawTexture(float x, float y, int r, Trackable trackable, TextureDrawer drawer) {
         if (textureBitmap != null) {
-            Integer hitplaneobjectTextureNo = planeNo.get(trackable);
+            Integer hitPlaneObjectTextureNo = planeNo.get(trackable);
 
-            Log.d(TAG, "No. " + hitplaneobjectTextureNo);
-            int w = textureBitmaps.get(hitplaneobjectTextureNo).getWidth();
-            int h = textureBitmaps.get(hitplaneobjectTextureNo).getHeight();
-            int pixelX = (int)((x * DOTS_PER_METER + 0.5) * w);
-            int pixelY = (int)((y * DOTS_PER_METER + 0.5) * h);
+            Log.d(TAG, "allPlaneNumSize: " + textureBitmaps.size() + ", hitNo. " + hitPlaneObjectTextureNo);
+            if (hitPlaneObjectTextureNo == null || textureBitmaps.size() <= hitPlaneObjectTextureNo)
+                return null;
+            int w = textureBitmaps.get(hitPlaneObjectTextureNo).getWidth();
+            int h = textureBitmaps.get(hitPlaneObjectTextureNo).getHeight();
+            int pixelX = (int) ((x * DOTS_PER_METER + 0.5) * w);
+            int pixelY = (int) ((y * DOTS_PER_METER + 0.5) * h);
             pixelX = Math.floorMod(pixelX, w);
             pixelY = Math.floorMod(pixelY, h);
 
-            Bitmap bitmap = textureBitmaps.get(hitplaneobjectTextureNo);
+            Bitmap bitmap = textureBitmaps.get(hitPlaneObjectTextureNo);
             Canvas canvas = new Canvas(bitmap);
             Bitmap miniBitmap;
 
@@ -283,10 +539,10 @@ public class GraffitiRenderer {
 //            }
             miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
 
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
-            GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, pixelX - r, pixelY - r, miniBitmap, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(hitPlaneObjectTextureNo));
+            GLUtils.texSubImage2D(GLES30.GL_TEXTURE_2D, 0, pixelX - r, pixelY - r, miniBitmap, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
             return new PointF(pixelX, pixelY);
         }
         return null;
@@ -305,7 +561,7 @@ public class GraffitiRenderer {
 //                + cameraPose.getXAxis()[0] +","  + cameraPose.getXAxis()[1] +","  + cameraPose.getXAxis()[2] +","
 //                + cameraPose.getYAxis()[0] +","  + cameraPose.getYAxis()[1] +","  + cameraPose.getYAxis()[2]);
 
-        for (Plane p: frame.getUpdatedTrackables(Plane.class)) {
+        for (Plane p : frame.getUpdatedTrackables(Plane.class)) {
             Pose newPose = p.getCenterPose();
             Pose oldPose = planePose.get(p);
 
@@ -314,8 +570,9 @@ public class GraffitiRenderer {
 //                    + newPose.getYAxis()[0] +","  + newPose.getYAxis()[1] +","  + newPose.getYAxis()[2]);
 
             // 1. テクスチャを平面上で回転＆移動させるための行列の作成
+            if (!planeNo.containsKey(p)) return;
             Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
-            textureBitmapToRecycle.eraseColor(backgroundColor);
+//            textureBitmapToRecycle.eraseColor(backgroundColor);
             Canvas canvas = new Canvas(textureBitmapToRecycle);
 
             //  回転成分
@@ -341,10 +598,10 @@ public class GraffitiRenderer {
             canvas.drawBitmap(bitmap, adjustMatrix, new Paint());
 
             // 3. 転送
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(planeNo.get(p)));
-            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmapToRecycle, 0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeNo.get(p)));
+            GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, textureBitmapToRecycle, 0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
 
             textureBitmaps.set(planeNo.get(p), textureBitmapToRecycle);
             textureBitmapToRecycle = bitmap;        //  リサイクルに回す
@@ -353,7 +610,7 @@ public class GraffitiRenderer {
     }
 
     /**
-     * Draw the Garffiti.
+     * Draw the Graffiti.
      *
      * @param cameraView
      * @param cameraPerspective
@@ -362,35 +619,78 @@ public class GraffitiRenderer {
     private void draw(float[] cameraView, float[] cameraPerspective, float[] planeNormal) {
         // Build the ModelView and ModelViewProjection matrices
         // for calculating cube position and light.
+//        Matrix.multiplyMM(modelViewMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(modelViewMatrix, 0, cameraView, 0, modelMatrix, 0);
         Matrix.multiplyMM(modelViewProjectionMatrix, 0, cameraPerspective, 0, modelViewMatrix, 0);
 
+        // Populate the shader uniforms for this frame.
+//        shader.setMat4("u_ModelView", modelViewMatrix);
+//        shader.setMat4("u_ModelViewProjection", modelViewProjectionMatrix);
+//        shader.setMat2("u_PlaneUvMatrix", planeObjectAngleUvMatrix);
+//        shader.setVec3("u_Normal", normalVector);
+
+//        // Set the vertex attributes.
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vertexBufferId);
+
+        // Enable vertex arrays
+//        GLES30.glEnableVertexAttribArray(planeObjectXZPositionAlphaAttribute);
+//        GLError.maybeThrowGLException("Failed to enable vertex attribute array", "glEnableVertexAttribArray");
+
         // Set the position of the plane
         vertexBuffer.rewind();
-        GLES20.glVertexAttribPointer(
-                planeobjectXZPositionAlphaAttribute,
-                COORDS_PER_VERTEX,
-                GLES20.GL_FLOAT,
-                false,
-                BYTES_PER_FLOAT * COORDS_PER_VERTEX,
-                vertexBuffer);
+
+//        GLES30.glVertexAttribPointer(
+//                planeObjectXZPositionAlphaAttribute,
+//                COORDS_PER_VERTEX,
+//                GLES30.GL_FLOAT,
+//                false,
+//                BYTES_PER_FLOAT * COORDS_PER_VERTEX,
+//                vertexBuffer);
+//        GLES30.glVertexAttribPointer(
+//                planeObjectXZPositionAlphaAttribute,
+//                COORDS_PER_VERTEX,
+//                GLES30.GL_FLOAT,
+//                false,
+//                BYTES_PER_FLOAT * COORDS_PER_VERTEX,
+//                verticesBaseAddress);
+//        GLError.maybeThrowGLException("Failed to glVertexAttribPointer", "glVertexAttribPointer");
+
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
+//        GLError.maybeThrowGLException("Failed to glBindBuffer", "glBindBuffer");
 
         // Set the Model and ModelViewProjection matrices in the shader.
-        GLES20.glUniformMatrix4fv(
-                planeobjectModelViewProjectionUniform, 1, false, modelViewProjectionMatrix, 0);
+        GLES30.glUniformMatrix4fv(planeObjectModelViewUniform, 1, false, modelViewMatrix, 0);
+        GLES30.glUniformMatrix4fv(
+                planeObjectModelViewProjectionUniform, 1, false, modelViewProjectionMatrix, 0);
 
         // Draw the Model.
         indexBuffer.rewind();
-        GLES20.glDrawElements(
-                GLES20.GL_TRIANGLE_FAN, indexBuffer.limit(), GLES20.GL_UNSIGNED_SHORT, indexBuffer);
-        ShaderUtil.checkGLError(TAG, "Drawing plane");
+////        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
+////        GLES30.glDrawElements(
+////                GLES30.GL_TRIANGLE_FAN, indexCount, GLES30.GL_UNSIGNED_SHORT, 0);
+//        GLES30.glDrawElements(
+//                GLES30.GL_TRIANGLE_FAN, indexBuffer.limit(), GLES30.GL_UNSIGNED_INT, indexBuffer);
+//        GLError.maybeThrowGLException("Failed to glDrawElements", "glDrawElements");
+////        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, 0);
+//        ShaderUtil.checkGLError(TAG, "Drawing plane");
+
+        // Set the position of the plane
+        vertexBufferObject.set(vertexBuffer);
+        indexBufferObject.set(indexBuffer);
+
+//        shader.lowLevelUse();
+        mesh.lowLevelDraw();
+
+//        GLES30.glDisableVertexAttribArray(planeObjectXZPositionAlphaAttribute);
+//        GLError.maybeThrowGLException("Failed to disable vertex attribute array", "glDisableVertexAttribArray");
+
     }
 
-    static class SortablePlaneObject {
+    static class SortablePlane {
         final float distance;
         final Plane plane;
 
-        SortablePlaneObject(float distance, Plane plane) {
+        SortablePlane(float distance, Plane plane) {
             this.distance = distance;
             this.plane = plane;
         }
@@ -399,17 +699,17 @@ public class GraffitiRenderer {
     /**
      * Draws the collection of tracked planes, with closer planes hiding more distant ones.
      *
-     * @param updateObjectPlanes The collection of planes to draw.
-     * @param cameraPose The pose of the camera, as returned by {@link Camera#getPose()}
+     * @param updatePlanes      The collection of planes to draw.
+     * @param cameraPose        The pose of the camera, as returned by {@link Camera#getPose()}
      * @param cameraPerspective The projection matrix, as returned by {@link
-     *     Camera#getProjectionMatrix(float[], int, float, float)}
+     *                          Camera#getProjectionMatrix(float[], int, float, float)}
      */
-    public void draw(Collection<Plane> updateObjectPlanes, Pose cameraPose, float[] cameraPerspective) {
+    public void draw(Collection<Plane> updatePlanes, Pose cameraPose, float[] cameraPerspective) {
         // Planes must be sorted by distance from camera so that we draw closer planes first, and
         // they occlude the farther planes.
-        List<GraffitiRenderer.SortablePlaneObject> sortedPlaneObjects = new ArrayList<>();
+        List<SortablePlane> sortedPlanes = new ArrayList<>();
 
-        for (Plane plane : updateObjectPlanes) {
+        for (Plane plane : updatePlanes) {
             if (plane.getTrackingState() != TrackingState.TRACKING /*|| plane.getSubsumedBy() != null*/) {
                 continue;
             }
@@ -418,13 +718,13 @@ public class GraffitiRenderer {
             if (distance < 0) { // PlaneJSON is back-facing.
                 continue;
             }
-            sortedPlaneObjects.add(new SortablePlaneObject(distance, plane));
+            sortedPlanes.add(new SortablePlane(distance, plane));
         }
         Collections.sort(
-                sortedPlaneObjects,
-                new Comparator<GraffitiRenderer.SortablePlaneObject>() {
+                sortedPlanes,
+                new Comparator<SortablePlane>() {
                     @Override
-                    public int compare(GraffitiRenderer.SortablePlaneObject a, GraffitiRenderer.SortablePlaneObject b) {
+                    public int compare(SortablePlane a, SortablePlane b) {
                         return Float.compare(a.distance, b.distance);
                     }
                 });
@@ -434,108 +734,141 @@ public class GraffitiRenderer {
 
         // Planes are drawn with additive blending, masked by the alpha channel for occlusion.
 
+//        if (!sortedPlaneObjects.isEmpty()) {
         // Start by clearing the alpha channel of the color buffer to 1.0.
-        GLES20.glClearColor(1, 1, 1, 1);
-        GLES20.glColorMask(false, false, false, true);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        GLES20.glColorMask(true, true, true, true);
+//        GLES30.glClearColor(1, 1, 1, 1);
+//        GLError.maybeThrowGLException("Failed to set clear color", "glClearColor");
+        GLES30.glColorMask(false, false, false, true);
+        GLError.maybeThrowGLException("Failed to set color mask", "glColorMask");
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
+        GLError.maybeThrowGLException("Failed to clear framebuffer", "glClear");
+        GLES30.glColorMask(true, true, true, true);
+        GLError.maybeThrowGLException("Failed to set color mask", "glColorMask");
 
         // Disable depth write.
-        GLES20.glDepthMask(false);
+//        GLES30.glDepthMask(false);
+//        GLError.maybeThrowGLException("Failed to set depth write mask", "glDepthMask");
 
-        // Additive blending, masked by alpha channel, clearing alpha channel.
-        GLES20.glEnable(GLES20.GL_BLEND);
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        GLES30.glDepthMask(true);
+        GLError.maybeThrowGLException("Failed to set depth write mask", "glDepthMask");
 
-//        GLES20.glBlendFuncSeparate(
-//                GLES20.GL_DST_ALPHA, GLES20.GL_ONE, // RGB (src, dest)
-//                GLES20.GL_ZERO, GLES20.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
+//         Additive blending, masked by alpha channel, clearing alpha channel.
+        GLES30.glEnable(GLES30.GL_BLEND);
+        GLError.maybeThrowGLException("Failed to enable blending", "glEnable");
+//        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
+        GLES30.glBlendFunc(GLES30.GL_ONE, GLES30.GL_ONE_MINUS_SRC_ALPHA);
+        GLError.maybeThrowGLException("Failed to set blend mode", "glBlendFunc");
+
+//        GLES30.glBlendFuncSeparate(
+//                GLES30.GL_DST_ALPHA, GLES30.GL_ONE, // RGB (src, dest)
+//                GLES30.GL_ZERO, GLES30.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
 
         // Set up the shader.
-        GLES20.glUseProgram(planeobjectProgram);
+        GLES30.glUseProgram(planeObjectProgram);
+        GLError.maybeThrowGLException("Failed to use program", "glUseProgram");
 
 //        drawCircle((int)(Math.random() * textureBitmap.getWidth()), (int)(Math.random() * textureBitmap.getHeight()), Color.BLUE);
 
         // Shared fragment uniforms.
-        GLES20.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
+//            GLES30.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
+//            GLError.maybeThrowGLException("Failed to set shader uniform 4f", "glUniform4fv");
 
-        // Enable vertex arrays
-        GLES20.glEnableVertexAttribArray(planeobjectXZPositionAlphaAttribute);
-
-        ShaderUtil.checkGLError(TAG, "Setting up to draw planes");
-
-        for (GraffitiRenderer.SortablePlaneObject sortedPlaneObject : sortedPlaneObjects) {
+        for (SortablePlane sortedPlaneObject : sortedPlanes) {
             Plane plane = sortedPlaneObject.plane;
-            float[] planeobjectMatrix = new float[16];
-            plane.getCenterPose().toMatrix(planeobjectMatrix, 0);
+            float[] planeMatrix = new float[16];
+            plane.getCenterPose().toMatrix(planeMatrix, 0);
 
             float[] normal = new float[3];
             // Get transformed Y axis of plane's coordinate system.
             plane.getCenterPose().getTransformedAxis(1, 1.0f, normal, 0);
 
             updatePlaneObjectParamaters(
-                    planeobjectMatrix, plane.getExtentX(), plane.getExtentZ(), plane.getPolygon());
+                    planeMatrix, plane.getExtentX(), plane.getExtentZ(), plane.getPolygon());
 
             // Get plane index. Keep a map to assign same indices to same planes.
-            Integer planeobjectIndex = planeobjectIndexMap.get(plane);
+            Integer planeobjectIndex = planeObjectIndexMap.get(plane);
             if (planeobjectIndex == null) {
-                planeobjectIndex = planeobjectIndexMap.size();
-                planeobjectIndexMap.put(plane, planeobjectIndex);
+                planeobjectIndex = planeObjectIndexMap.size();
+                planeObjectIndexMap.put(plane, planeobjectIndex);
 
                 planeNo.put(plane, planeobjectIndex);
                 planePose.put(plane, plane.getCenterPose());
 
-                GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+                GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
 
                 int textureArray[] = new int[1];
 
-                GLES20.glGenTextures(textureArray.length, textureArray, 0);
+                GLES30.glGenTextures(textureArray.length, textureArray, 0);
                 textures.add(textureArray[0]);
-                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(planeobjectIndex));
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
-                GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeobjectIndex));
+                GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR);
+                GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
 
                 Bitmap tmp = textureBitmap.copy(textureBitmap.getConfig(), true);
-                tmp.eraseColor(backgroundColor);
+//                tmp.eraseColor(backgroundColor);
                 textureBitmaps.add(tmp);
-                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmaps.get(planeobjectIndex), 0);
-                GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
-                GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+                GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, textureBitmaps.get(planeobjectIndex), 0);
+                GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+
+                // Occlusion parameters.
+                if (useOcclusion) {
+                    // Attach the depth texture.
+                    GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+                    GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTextureId);
+
+//                    shader.setFloat("u_DepthAspectRatio", aspectRatio);
+//                    shader.setMat3("u_DepthUvTransform", uvTransform);
+                }
             }
 
             // Attach the texture.
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(planeobjectIndex));
-            GLES20.glUniform1i(textureUniform, 0);
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeobjectIndex));
+            GLES30.glUniform1i(textureUniform, 0);
+
+            // Occlusion parameters.
+            if (useOcclusion) {
+                // Attach the depth texture.
+                GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTextureId);
+                GLES30.glUniform1i(depthTextureUniform, 1);
+
+                // Set the depth texture uv transform.
+                GLES30.glUniform1f(depthAspectRatioUniform, aspectRatio);
+                GLES30.glUniformMatrix3fv(depthUvTransformUniform, 1, false, uvTransform, 0);
+            }
 
             // Set plane color. Computed deterministically from the PlaneJSON index.
             int colorIndex = planeobjectIndex % PLANE_COLORS_RGBA.length;
-            colorRgbaToFloat(planeobjectColor, PLANE_COLORS_RGBA[colorIndex]);
-            GLES20.glUniform4fv(lineColorUniform, 1, planeobjectColor, 0);
-            GLES20.glUniform4fv(dotColorUniform, 1, planeobjectColor, 0);
+            colorRgbaToFloat(planeObjectColor, PLANE_COLORS_RGBA[colorIndex]);
+//                GLES30.glUniform4fv(lineColorUniform, 1, planeObjectColor, 0);
+//                GLES30.glUniform4fv(dotColorUniform, 1, planeObjectColor, 0);
 
             // Each plane will have its own angle offset from others, to make them easier to
             // distinguish. Compute a 2x2 rotation matrix from the angle.
             float angleRadians = 0.0f;   //planeobjectIndex * 0.1f/*44*/;
             float uScale = DOTS_PER_METER;
             float vScale = DOTS_PER_METER /* EQUILATERAL_TRIANGLE_SCALE*/;
-            planeobjectAngleUvMatrix[0] = +(float) Math.cos(angleRadians) * uScale;
-            planeobjectAngleUvMatrix[1] = -(float) Math.sin(angleRadians) * vScale;
-            planeobjectAngleUvMatrix[2] = +(float) Math.sin(angleRadians) * uScale;
-            planeobjectAngleUvMatrix[3] = +(float) Math.cos(angleRadians) * vScale;
+            planeObjectAngleUvMatrix[0] = +(float) Math.cos(angleRadians) * uScale;
+            planeObjectAngleUvMatrix[1] = -(float) Math.sin(angleRadians) * vScale;
+            planeObjectAngleUvMatrix[2] = +(float) Math.sin(angleRadians) * uScale;
+            planeObjectAngleUvMatrix[3] = +(float) Math.cos(angleRadians) * vScale;
 
-            GLES20.glUniformMatrix2fv(planeobjectUvMatrixUniform, 1, false, planeobjectAngleUvMatrix, 0);
+            GLES30.glUniformMatrix2fv(planeObjectUvMatrixUniform, 1, false, planeObjectAngleUvMatrix, 0);
 
             draw(cameraView, cameraPerspective, normal);
         }
 
-        // Clean up the state we set
-        GLES20.glDisableVertexAttribArray(planeobjectXZPositionAlphaAttribute);
-        GLES20.glDisable(GLES20.GL_BLEND);
-        GLES20.glDepthMask(true);
-        GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        GLES30.glDisable(GLES30.GL_BLEND);
+        GLError.maybeThrowGLException("Failed to disable blending", "glDisable");
+//        GLES30.glDepthMask(true);
+//        GLError.maybeThrowGLException("Failed to set depth write mask", "glDepthMask");
 
-        ShaderUtil.checkGLError(TAG, "Cleaning up after drawing planes");
+        // Clean up the state we set
+//        GLES30.glClearColor(0f, 0f, 0f, 1f);
+//        GLError.maybeThrowGLException("Failed to set clear color", "glClearColor");
+//        }
     }
 
     // Calculate the normal distance to plane from cameraPose, the given planePose should have y axis
