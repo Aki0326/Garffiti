@@ -1,5 +1,7 @@
+#version 300 es
 /*
- * Copyright 2017 Google Inc. All Rights Reserved.
+ * Copyright 2017 Google LLC
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,16 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- *
- * @author a-hongo
- */
-#extension GL_OES_EGL_image_external : require
-
+#extension GL_OES_EGL_image_external_essl3 : require
 precision mediump float;
-varying vec2 v_TexCoord;
-uniform samplerExternalOES sTexture;
 
-void main() {
-    gl_FragColor = texture2D(sTexture, v_TexCoord);
-}
+uniform samplerExternalOES u_CameraColorTexture;
+
+in vec2 v_CameraTexCoord;
+
+layout(location = 0) out vec4 o_FragColor;
+
+void main() { o_FragColor = texture(u_CameraColorTexture, v_CameraTexCoord); }

@@ -19,6 +19,9 @@
          only being visible in the Google Play Store on devices that support ARCore. -->
   <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
   <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+  <!-- Tell the system this app requires OpenGL ES 3.0. -->
+<!--  <uses-feature android:glEsVersion="0x00030000" android:required="true" />-->
+  <uses-feature android:name="com.google.ar.core.depth" />
 
   <application
       android:name="org.ntlab.graffiti.graffiti.Graffiti"
