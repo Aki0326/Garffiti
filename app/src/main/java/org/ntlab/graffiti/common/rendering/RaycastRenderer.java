@@ -1,7 +1,7 @@
 package org.ntlab.graffiti.common.rendering;
 
 import android.content.Context;
-import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 
@@ -64,13 +64,13 @@ public class RaycastRenderer {
     public void createOnGlThread(Context context) throws IOException {
         ShaderUtil.checkGLError(TAG, "before create");
 
-        final int vertexShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_CODE);
-        final int fragmentShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_CODE);
+        final int vertexShader = ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_CODE);
+        final int fragmentShader = ShaderUtil.loadGLShader(TAG, context, GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_CODE);
 
-        program = GLES20.glCreateProgram();
-        GLES20.glAttachShader(program, vertexShader);
-        GLES20.glAttachShader(program, fragmentShader);
-        GLES20.glLinkProgram(program);
+        program = GLES30.glCreateProgram();
+        GLES30.glAttachShader(program, vertexShader);
+        GLES30.glAttachShader(program, fragmentShader);
+        GLES30.glLinkProgram(program);
 
         ShaderUtil.checkGLError(TAG, "Program creation");
 
@@ -97,21 +97,21 @@ public class RaycastRenderer {
         ShaderUtil.checkGLError(TAG, "Before draw");
 
 
-        GLES20.glUseProgram(program);
-        mPositionHandle = GLES20.glGetAttribLocation(program, "vPosition");
-        GLES20.glEnableVertexAttribArray(mPositionHandle);
-        GLES20.glVertexAttribPointer(mPositionHandle, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false,
+        GLES30.glUseProgram(program);
+        mPositionHandle = GLES30.glGetAttribLocation(program, "vPosition");
+        GLES30.glEnableVertexAttribArray(mPositionHandle);
+        GLES30.glVertexAttribPointer(mPositionHandle, COORDS_PER_VERTEX, GLES30.GL_FLOAT, false,
                 vertexStride, vertexBuffer);
 
-        mColorHandle = GLES20.glGetUniformLocation(program, "vColor");
-        GLES20.glUniform4fv(mColorHandle, 1, DEFAULT_COLOR, 0);
-        mMVPMatrixHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix");
-        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, modelViewProjection, 0);
+        mColorHandle = GLES30.glGetUniformLocation(program, "vColor");
+        GLES30.glUniform4fv(mColorHandle, 1, DEFAULT_COLOR, 0);
+        mMVPMatrixHandle = GLES30.glGetUniformLocation(program, "uMVPMatrix");
+        GLES30.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, modelViewProjection, 0);
 
-        GLES20.glDrawElements(GLES20.GL_LINES, DEFAULT_COLOR.length,
-                GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+        GLES30.glDrawElements(GLES30.GL_LINES, DEFAULT_COLOR.length,
+                GLES30.GL_UNSIGNED_SHORT, drawListBuffer);
 
-        GLES20.glDisableVertexAttribArray(mPositionHandle);
-        GLES20.glDisable(mColorHandle);
+        GLES30.glDisableVertexAttribArray(mPositionHandle);
+        GLES30.glDisable(mColorHandle);
     }
 }

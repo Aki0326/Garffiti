@@ -27,7 +27,7 @@ public class PlaneDiscoveryController{
             return;
         }
 
-        planeDiscoveryView.setVisibility(View.VISIBLE);
+        planeDiscoveryView.post(() -> planeDiscoveryView.setVisibility(View.VISIBLE));
     }
 
     /** Hide the plane discovery UX instructions. */
@@ -36,6 +36,6 @@ public class PlaneDiscoveryController{
             return;
         }
 
-        planeDiscoveryView.setVisibility(View.GONE);
+        planeDiscoveryView.post(() -> planeDiscoveryView.setVisibility(View.GONE));
     }
 }

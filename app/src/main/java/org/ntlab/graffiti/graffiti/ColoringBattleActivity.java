@@ -18,7 +18,7 @@ package org.ntlab.graffiti.graffiti;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
@@ -394,7 +394,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        GLES30.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
@@ -421,13 +421,13 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         displayRotationHelper.onSurfaceChanged(width, height);
-        GLES20.glViewport(0, 0, width, height);
+        GLES30.glViewport(0, 0, width, height);
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
         // Clear screen to notify driver it should not load any pixels from previous frame.
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
 
         if (session == null) {
             return;
@@ -437,7 +437,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         displayRotationHelper.updateSessionIfNeeded(session);
 
         try {
-            session.setCameraTextureName(backgroundRenderer.getTextureId());
+            session.setCameraTextureName(backgroundRenderer.getCameraColorTexture().getTextureId());
 
             // Obtain the current frame from ARSession. When the configuration is set to
             // UpdateMode.BLOCKING (it is by default), this will throttle the rendering to the

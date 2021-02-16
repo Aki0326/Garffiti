@@ -18,7 +18,7 @@
 //import android.content.Context;
 //import android.graphics.Bitmap;
 //import android.graphics.BitmapFactory;
-//import android.opengl.GLES20;
+//import android.opengl.GLES30;
 //import android.opengl.GLSurfaceView;
 //import android.opengl.GLUtils;
 //import android.opengl.Matrix;
@@ -129,12 +129,12 @@
 //        ShaderUtil.checkGLError(TAG, "before create");
 //
 //        int buffers[] = new int[1];
-//        GLES20.glGenBuffers(1, buffers, 0);
+//        GLES30.glGenBuffers(1, buffers, 0);
 //        vbo = buffers[0];
-//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo);
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo);
 //        vboSize = 0;
-//        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vboSize, null, GLES20.GL_DYNAMIC_DRAW);
-//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+//        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vboSize, null, GLES30.GL_DYNAMIC_DRAW);
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
 //
 //
 //        ShaderUtil.checkGLError(TAG, "buffer alloc");
@@ -167,36 +167,36 @@
 //         */
 //
 //        int vertexShader = ShaderUtil.loadGLShader(TAG, context,
-//                GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
+//                GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
 //        int fragmentShader = ShaderUtil.loadGLShader(TAG, context,
-//                GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME);
+//                GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME);
 //
 //
-//        program = GLES20.glCreateProgram();
-//        GLES20.glAttachShader(program, vertexShader);
-//        GLES20.glAttachShader(program, fragmentShader);
-//        GLES20.glLinkProgram(program);
-//        GLES20.glUseProgram(program);
+//        program = GLES30.glCreateProgram();
+//        GLES30.glAttachShader(program, vertexShader);
+//        GLES30.glAttachShader(program, fragmentShader);
+//        GLES30.glLinkProgram(program);
+//        GLES30.glUseProgram(program);
 //
 //        ShaderUtil.checkGLError(TAG, "program");
 //
-//        modelViewUniform = GLES20.glGetUniformLocation(program, "u_ModelView");
-//        modelViewProjectionUniform = GLES20.glGetUniformLocation(program, "u_ModelViewProjection");
+//        modelViewUniform = GLES30.glGetUniformLocation(program, "u_ModelView");
+//        modelViewProjectionUniform = GLES30.glGetUniformLocation(program, "u_ModelViewProjection");
 //
-//        positionAttribute = GLES20.glGetAttribLocation(program, "position");
-//        previousAttribute = GLES20.glGetAttribLocation(program, "previous");
-//        nextAttribute = GLES20.glGetAttribLocation(program, "next");
-//        sideAttribute = GLES20.glGetAttribLocation(program, "side");
-//        widthAttribute = GLES20.glGetAttribLocation(program, "width");
-//        lengthsAttribute = GLES20.glGetAttribLocation(program, "length");
-//        endCapsAttribute = GLES20.glGetAttribLocation(program, "endCaps");
-//        normalAttribute = GLES20.glGetAttribLocation(program, "normal");
+//        positionAttribute = GLES30.glGetAttribLocation(program, "position");
+//        previousAttribute = GLES30.glGetAttribLocation(program, "previous");
+//        nextAttribute = GLES30.glGetAttribLocation(program, "next");
+//        sideAttribute = GLES30.glGetAttribLocation(program, "side");
+//        widthAttribute = GLES30.glGetAttribLocation(program, "width");
+//        lengthsAttribute = GLES30.glGetAttribLocation(program, "length");
+//        endCapsAttribute = GLES30.glGetAttribLocation(program, "endCaps");
+//        normalAttribute = GLES30.glGetAttribLocation(program, "normal");
 //
-//        textureUniform = GLES20.glGetUniformLocation(program, "u_Texture");
-//        endCapTextureUniform = GLES20.glGetUniformLocation(program, "u_EndCapTexture");
+//        textureUniform = GLES30.glGetUniformLocation(program, "u_Texture");
+//        endCapTextureUniform = GLES30.glGetUniformLocation(program, "u_EndCapTexture");
 //
-//        resolutionUniform = GLES20.glGetUniformLocation(program, "resolution");
-//        colorUniform = GLES20.glGetUniformLocation(program, "color");
+//        resolutionUniform = GLES30.glGetUniformLocation(program, "resolution");
+//        colorUniform = GLES30.glGetUniformLocation(program, "color");
 //
 //        ShaderUtil.checkGLError(TAG, "program  params");
 //
@@ -205,16 +205,16 @@
 ////        Bitmap textureBitmap =
 ////                BitmapFactory.decodeStream(context.getAssets().open("texture.png"));
 ////
-////        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-////        GLES20.glGenTextures(textures.length, textures, 0);
-////        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
+////        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+////        GLES30.glGenTextures(textures.length, textures, 0);
+////        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[0]);
 ////
-////        GLES20.glTexParameteri(
-////                GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
-////        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-////        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmap, 0);
-////        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
-//////        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+////        GLES30.glTexParameteri(
+////                GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR);
+////        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+////        GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, textureBitmap, 0);
+////        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
+//////        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
 ////
 ////        ShaderUtil.checkGLError(TAG, "Texture loading");
 //
@@ -222,19 +222,19 @@
 //        Bitmap endCapTextureBitmap =
 //                BitmapFactory.decodeStream(context.getAssets().open("linecap.png"));
 //
-////        GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
-////        GLES20.glGenTextures(textures.length, textures, 0);
-//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
+////        GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+////        GLES30.glGenTextures(textures.length, textures, 0);
+//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[0]);
 //
-//        GLES20.glTexParameteri(
-//                GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
-//        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-//        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, endCapTextureBitmap, 0);
-//        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
-//        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-//        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+//        GLES30.glTexParameteri(
+//                GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR);
+//        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+//        GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, endCapTextureBitmap, 0);
+//        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
+//        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
+//        GLES30.glTexParameterf(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
 //
-//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
 //
 //        ShaderUtil.checkGLError(TAG, "Line texture loading");
 //
@@ -243,8 +243,8 @@
 //    }
 //
 //    public void clearGL() {
-//        GLES20.glDeleteShader(program);
-//        GLES20.glDeleteBuffers(1, new int[]{vbo}, 0);
+//        GLES30.glDeleteShader(program);
+//        GLES30.glDeleteBuffers(1, new int[]{vbo}, 0);
 //    }
 //
 //
@@ -448,27 +448,27 @@
 //
 //        ShaderUtil.checkGLError(TAG, "before update");
 //
-//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo);
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo);
 //
-//        GLES20.glBufferData(GLES20.GL_ARRAY_BUFFER, vboSize, null, GLES20.GL_DYNAMIC_DRAW);
+//        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vboSize, null, GLES30.GL_DYNAMIC_DRAW);
 //
-//        GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, positionAddress, numBytes * 3 * BYTES_PER_FLOAT,
+//        GLES30.glBufferSubData(GLES30.GL_ARRAY_BUFFER, positionAddress, numBytes * 3 * BYTES_PER_FLOAT,
 //                current);
-//        GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, nextAddress, numBytes * 3 * BYTES_PER_FLOAT,
+//        GLES30.glBufferSubData(GLES30.GL_ARRAY_BUFFER, nextAddress, numBytes * 3 * BYTES_PER_FLOAT,
 //                next);
-//        GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, previousAddress, numBytes * 3 * BYTES_PER_FLOAT,
+//        GLES30.glBufferSubData(GLES30.GL_ARRAY_BUFFER, previousAddress, numBytes * 3 * BYTES_PER_FLOAT,
 //                previous);
-//        GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, sideAddress, numBytes * BYTES_PER_FLOAT,
+//        GLES30.glBufferSubData(GLES30.GL_ARRAY_BUFFER, sideAddress, numBytes * BYTES_PER_FLOAT,
 //                side);
-//        GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, widthAddress, numBytes * BYTES_PER_FLOAT,
+//        GLES30.glBufferSubData(GLES30.GL_ARRAY_BUFFER, widthAddress, numBytes * BYTES_PER_FLOAT,
 //                width);
-//        GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, lengthAddress, numBytes * BYTES_PER_FLOAT,
+//        GLES30.glBufferSubData(GLES30.GL_ARRAY_BUFFER, lengthAddress, numBytes * BYTES_PER_FLOAT,
 //                lengths);
-//        GLES20.glBufferSubData(GLES20.GL_ARRAY_BUFFER, endCapsAddress, numBytes * BYTES_PER_FLOAT,
+//        GLES30.glBufferSubData(GLES30.GL_ARRAY_BUFFER, endCapsAddress, numBytes * BYTES_PER_FLOAT,
 //                endCaps);
 //
 //
-//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
 //
 //        ShaderUtil.checkGLError(TAG, "after update");
 //    }
@@ -497,78 +497,78 @@
 //        Matrix.multiplyMM(modelViewMatrix, 0, cameraView, 0, modelMatrix, 0);
 //        Matrix.multiplyMM(modelViewProjectionMatrix, 0, cameraPerspective, 0, modelViewMatrix, 0);
 //
-//        GLES20.glUseProgram(program);
+//        GLES30.glUseProgram(program);
 //
 //        // Blending setup
-//        GLES20.glEnable(GLES20.GL_BLEND);
-////        GLES20.glBlendFuncSeparate(
-////                GLES20.GL_SRC_ALPHA, GLES20.GL_DST_ALPHA, // RGB (src, dest)
-////                GLES20.GL_ZERO, GLES20.GL_ONE); // ALPHA (src, dest)
-//        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+//        GLES30.glEnable(GLES30.GL_BLEND);
+////        GLES30.glBlendFuncSeparate(
+////                GLES30.GL_SRC_ALPHA, GLES30.GL_DST_ALPHA, // RGB (src, dest)
+////                GLES30.GL_ZERO, GLES30.GL_ONE); // ALPHA (src, dest)
+//        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
 //
 //        // Attach the texture.
-//        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
+//        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[0]);
 //
-////        GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
-////        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[1]);
+////        GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+////        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[1]);
 //
-////        GLES20.glUniform1i(lineshaderTextureUniform, 0);
-//        GLES20.glUniform1i(endCapTextureUniform, 0);
+////        GLES30.glUniform1i(lineshaderTextureUniform, 0);
+//        GLES30.glUniform1i(endCapTextureUniform, 0);
 ////
-//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vbo);
-//        GLES20.glVertexAttribPointer(
-//                positionAttribute, FLOATS_PER_POINT, GLES20.GL_FLOAT, false, BYTES_PER_POINT, positionAddress);
-//        GLES20.glVertexAttribPointer(
-//                previousAttribute, FLOATS_PER_POINT, GLES20.GL_FLOAT, false, BYTES_PER_POINT, previousAddress);
-//        GLES20.glVertexAttribPointer(
-//                nextAttribute, FLOATS_PER_POINT, GLES20.GL_FLOAT, false, BYTES_PER_POINT, nextAddress);
-//        GLES20.glVertexAttribPointer(
-//                sideAttribute, 1, GLES20.GL_FLOAT, false, BYTES_PER_FLOAT, sideAddress);
-//        GLES20.glVertexAttribPointer(
-//                widthAttribute, 1, GLES20.GL_FLOAT, false, BYTES_PER_FLOAT, widthAddress);
-//        GLES20.glVertexAttribPointer(
-//                lengthsAttribute, 1, GLES20.GL_FLOAT, false, BYTES_PER_FLOAT, lengthAddress);
-//        GLES20.glVertexAttribPointer(
-//                endCapsAttribute, 1, GLES20.GL_FLOAT, false, BYTES_PER_FLOAT, endCapsAddress);
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo);
+//        GLES30.glVertexAttribPointer(
+//                positionAttribute, FLOATS_PER_POINT, GLES30.GL_FLOAT, false, BYTES_PER_POINT, positionAddress);
+//        GLES30.glVertexAttribPointer(
+//                previousAttribute, FLOATS_PER_POINT, GLES30.GL_FLOAT, false, BYTES_PER_POINT, previousAddress);
+//        GLES30.glVertexAttribPointer(
+//                nextAttribute, FLOATS_PER_POINT, GLES30.GL_FLOAT, false, BYTES_PER_POINT, nextAddress);
+//        GLES30.glVertexAttribPointer(
+//                sideAttribute, 1, GLES30.GL_FLOAT, false, BYTES_PER_FLOAT, sideAddress);
+//        GLES30.glVertexAttribPointer(
+//                widthAttribute, 1, GLES30.GL_FLOAT, false, BYTES_PER_FLOAT, widthAddress);
+//        GLES30.glVertexAttribPointer(
+//                lengthsAttribute, 1, GLES30.GL_FLOAT, false, BYTES_PER_FLOAT, lengthAddress);
+//        GLES30.glVertexAttribPointer(
+//                endCapsAttribute, 1, GLES30.GL_FLOAT, false, BYTES_PER_FLOAT, endCapsAddress);
 ////
 //
-//        GLES20.glUniformMatrix4fv(
+//        GLES30.glUniformMatrix4fv(
 //                modelViewUniform, 1, false, modelViewMatrix, 0);
-//        GLES20.glUniformMatrix4fv(
+//        GLES30.glUniformMatrix4fv(
 //                modelViewProjectionUniform, 1, false, cameraPerspective, 0);
 //
-//        GLES20.glUniform4fv(colorUniform, 1, DEFAULT_COLOR, 0);
+//        GLES30.glUniform4fv(colorUniform, 1, DEFAULT_COLOR, 0);
 //
-//        GLES20.glEnableVertexAttribArray(positionAttribute);
-//        GLES20.glEnableVertexAttribArray(previousAttribute);
-//        GLES20.glEnableVertexAttribArray(nextAttribute);
-//        GLES20.glEnableVertexAttribArray(sideAttribute);
-//        GLES20.glEnableVertexAttribArray(widthAttribute);
-//        GLES20.glEnableVertexAttribArray(lengthsAttribute);
-//        GLES20.glEnableVertexAttribArray(endCapsAttribute);
+//        GLES30.glEnableVertexAttribArray(positionAttribute);
+//        GLES30.glEnableVertexAttribArray(previousAttribute);
+//        GLES30.glEnableVertexAttribArray(nextAttribute);
+//        GLES30.glEnableVertexAttribArray(sideAttribute);
+//        GLES30.glEnableVertexAttribArray(widthAttribute);
+//        GLES30.glEnableVertexAttribArray(lengthsAttribute);
+//        GLES30.glEnableVertexAttribArray(endCapsAttribute);
 //
-//        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, numBytes);
+//        GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, numBytes);
 //
-//        GLES20.glDisableVertexAttribArray(endCapsAttribute);
-//        GLES20.glDisableVertexAttribArray(lengthsAttribute);
-//        GLES20.glDisableVertexAttribArray(widthAttribute);
-//        GLES20.glDisableVertexAttribArray(sideAttribute);
-//        GLES20.glDisableVertexAttribArray(nextAttribute);
-//        GLES20.glDisableVertexAttribArray(previousAttribute);
-//        GLES20.glDisableVertexAttribArray(positionAttribute);
+//        GLES30.glDisableVertexAttribArray(endCapsAttribute);
+//        GLES30.glDisableVertexAttribArray(lengthsAttribute);
+//        GLES30.glDisableVertexAttribArray(widthAttribute);
+//        GLES30.glDisableVertexAttribArray(sideAttribute);
+//        GLES30.glDisableVertexAttribArray(nextAttribute);
+//        GLES30.glDisableVertexAttribArray(previousAttribute);
+//        GLES30.glDisableVertexAttribArray(positionAttribute);
 //
 //
-//        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
 //
-//        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-//        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-////        GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
-////        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-////        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+//        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+////        GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+////        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+////        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
 //
-//        GLES20.glDisable(GLES20.GL_BLEND);
-//        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+//        GLES30.glDisable(GLES30.GL_BLEND);
+//        GLES30.glEnable(GLES30.GL_DEPTH_TEST);
 //
 //    }
 //
@@ -632,7 +632,7 @@ package org.ntlab.graffiti.common.rendering;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
@@ -718,14 +718,14 @@ public class ObjectChainRenderer {
             return;
         }
 
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glGenTextures(textures.length, textures, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        GLES30.glGenTextures(textures.length, textures, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[0]);
 
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, textureBitmap, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
+        GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST);
+        GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, textureBitmap, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
 
         textureBitmap.recycle();
 
@@ -754,25 +754,25 @@ public class ObjectChainRenderer {
                 ByteBuffer.allocateDirect(numVertices * TEXCOORDS_PER_VERTEX * Float.BYTES);
         bbTexCoordsTransformed.order(ByteOrder.nativeOrder());
 
-        int vertexShader = loadGLShader(TAG, GLES20.GL_VERTEX_SHADER, VERTEX_SHADER);
-        int fragmentShader = loadGLShader(TAG, GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER);
+        int vertexShader = loadGLShader(TAG, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER);
+        int fragmentShader = loadGLShader(TAG, GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER);
 
-//        int vertexShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
-//        int fragmentShader = ShaderUtil.loadGLShader(TAG, context, GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME);
+//        int vertexShader = ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
+//        int fragmentShader = ShaderUtil.loadGLShader(TAG, context, GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME);
 
-        lineshaderProgram = GLES20.glCreateProgram();
-        GLES20.glAttachShader(lineshaderProgram, vertexShader);
-        GLES20.glAttachShader(lineshaderProgram, fragmentShader);
-        GLES20.glLinkProgram(lineshaderProgram);
-        GLES20.glUseProgram(lineshaderProgram);
+        lineshaderProgram = GLES30.glCreateProgram();
+        GLES30.glAttachShader(lineshaderProgram, vertexShader);
+        GLES30.glAttachShader(lineshaderProgram, fragmentShader);
+        GLES30.glLinkProgram(lineshaderProgram);
+        GLES30.glUseProgram(lineshaderProgram);
 
         ShaderUtil.checkGLError(TAG, "Program creation");
 
-        lineshaderPositionParam = GLES20.glGetAttribLocation(lineshaderProgram, "a_Position");
-        lineshaderTexCoordParam = GLES20.glGetAttribLocation(lineshaderProgram, "a_TexCoord");
-        lineshaderTextureUniform = GLES20.glGetUniformLocation(lineshaderProgram, "u_Texture");
+        lineshaderPositionParam = GLES30.glGetAttribLocation(lineshaderProgram, "a_Position");
+        lineshaderTexCoordParam = GLES30.glGetAttribLocation(lineshaderProgram, "a_TexCoord");
+        lineshaderTextureUniform = GLES30.glGetUniformLocation(lineshaderProgram, "u_Texture");
         lineshaderModelViewProjectionUniform =
-                GLES20.glGetUniformLocation(lineshaderProgram, "u_ModelViewProjection");
+                GLES30.glGetUniformLocation(lineshaderProgram, "u_ModelViewProjection");
 
         ShaderUtil.checkGLError(TAG, "Program parameters");
 
@@ -780,18 +780,18 @@ public class ObjectChainRenderer {
     }
 
     private int loadGLShader(String tag, int type, String source) {
-        int shader = GLES20.glCreateShader(type);
-        GLES20.glShaderSource(shader, source);
-        GLES20.glCompileShader(shader);
+        int shader = GLES30.glCreateShader(type);
+        GLES30.glShaderSource(shader, source);
+        GLES30.glCompileShader(shader);
 
         // Get the compilation status.
         final int[] compileStatus = new int[1];
-        GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
+        GLES30.glGetShaderiv(shader, GLES30.GL_COMPILE_STATUS, compileStatus, 0);
 
         // If the compilation failed, delete the shader.
         if (compileStatus[0] == 0) {
-            Log.e(tag, "Error compiling shader: " + GLES20.glGetShaderInfoLog(shader));
-            GLES20.glDeleteShader(shader);
+            Log.e(tag, "Error compiling shader: " + GLES30.glGetShaderInfoLog(shader));
+            GLES30.glDeleteShader(shader);
             shader = 0;
         }
 
@@ -817,52 +817,52 @@ public class ObjectChainRenderer {
         Matrix.multiplyMM(modelViewProjectionMatrix, 0, cameraPerspective, 0, modelViewMatrix, 0);
 
         // Start by clearing the alpha channel of the color buffer to 1.0.
-        GLES20.glClearColor(1, 1, 1, 1);
-        GLES20.glColorMask(false, false, false, true);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        GLES20.glColorMask(true, true, true, true);
+        GLES30.glClearColor(1, 1, 1, 1);
+        GLES30.glColorMask(false, false, false, true);
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
+        GLES30.glColorMask(true, true, true, true);
 
         // Disable depth write.
-        GLES20.glDepthMask(false);
+        GLES30.glDepthMask(false);
 
         // Additive blending, masked by alpha channel, clearing alpha channel.
-        GLES20.glEnable(GLES20.GL_BLEND);
-        GLES20.glBlendFuncSeparate(
-                GLES20.GL_DST_ALPHA, GLES20.GL_ONE, // RGB (src, dest)
-                GLES20.GL_ZERO, GLES20.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
+        GLES30.glEnable(GLES30.GL_BLEND);
+        GLES30.glBlendFuncSeparate(
+                GLES30.GL_DST_ALPHA, GLES30.GL_ONE, // RGB (src, dest)
+                GLES30.GL_ZERO, GLES30.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
 
-        GLES20.glUseProgram(lineshaderProgram);
+        GLES30.glUseProgram(lineshaderProgram);
 
         // Attach the object texture.
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
-        GLES20.glUniform1i(lineshaderTextureUniform, 0);
-        GLES20.glUniformMatrix4fv(lineshaderModelViewProjectionUniform, 1, false, modelViewProjectionMatrix, 0);
+        GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures[0]);
+        GLES30.glUniform1i(lineshaderTextureUniform, 0);
+        GLES30.glUniformMatrix4fv(lineshaderModelViewProjectionUniform, 1, false, modelViewProjectionMatrix, 0);
         // Set the vertex positions.
-        GLES20.glVertexAttribPointer(
-                lineshaderPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, lineshaderVertices);
+        GLES30.glVertexAttribPointer(
+                lineshaderPositionParam, COORDS_PER_VERTEX, GLES30.GL_FLOAT, false, 0, lineshaderVertices);
 
         // Set the texture coordinates.
-        GLES20.glVertexAttribPointer(
-                lineshaderTexCoordParam, TEXCOORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, lineshaderTexCoord);
+        GLES30.glVertexAttribPointer(
+                lineshaderTexCoordParam, TEXCOORDS_PER_VERTEX, GLES30.GL_FLOAT, false, 0, lineshaderTexCoord);
 
         // Enable vertex arrays
-        GLES20.glEnableVertexAttribArray(lineshaderPositionParam);
-        GLES20.glEnableVertexAttribArray(lineshaderTexCoordParam);
+        GLES30.glEnableVertexAttribArray(lineshaderPositionParam);
+        GLES30.glEnableVertexAttribArray(lineshaderTexCoordParam);
 
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
 
         // Disable vertex arrays
-        GLES20.glDisableVertexAttribArray(lineshaderPositionParam);
-        GLES20.glDisableVertexAttribArray(lineshaderTexCoordParam);
+        GLES30.glDisableVertexAttribArray(lineshaderPositionParam);
+        GLES30.glDisableVertexAttribArray(lineshaderTexCoordParam);
 
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
 
         // Clean up the state we set
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        GLES20.glDisable(GLES20.GL_BLEND);
-        GLES20.glDepthMask(true);
-        GLES20.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+        GLES30.glDisable(GLES30.GL_BLEND);
+        GLES30.glDepthMask(true);
+        GLES30.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         ShaderUtil.checkGLError(TAG, "After draw");
     }
