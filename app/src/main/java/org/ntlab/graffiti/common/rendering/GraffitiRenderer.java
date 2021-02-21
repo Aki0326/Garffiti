@@ -16,6 +16,7 @@ import android.util.Log;
 import com.google.ar.core.Camera;
 import com.google.ar.core.Coordinates2d;
 import com.google.ar.core.Frame;
+import com.google.ar.core.LightEstimate;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
@@ -24,8 +25,10 @@ import com.google.ar.core.TrackingState;
 
 import org.ntlab.graffiti.common.drawer.TextureDrawer;
 import org.ntlab.graffiti.common.geometry.Vector;
+import org.ntlab.graffiti.common.rendering.arcore.SpecularCubemapFilter;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -98,10 +101,18 @@ public class GraffitiRenderer {
     private int planeObjectModelViewUniform;
     private int planeObjectModelViewProjectionUniform;
     private int textureUniform;
-    private int lineColorUniform;
-    private int dotColorUniform;
-    private int gridControlUniform;
+//    private int lineColorUniform;
+//    private int dotColorUniform;
+//    private int gridControlUniform;
     private int planeObjectUvMatrixUniform;
+
+    private int cubeMapUniform;
+    private int dfgTextureUniform;
+    private int viewInverseUniform;
+    private int viewLightDirectionUniform;
+    private int lightIntensityUniform;
+    private int sphericalHarmonicsCoefficientsUniform;
+    private int isLightEstimateUniform;
 
     // Shader location: depth texture.
     private int depthTextureUniform;
@@ -129,13 +140,38 @@ public class GraffitiRenderer {
 //    private int indexBufferId;
 //    private int indexCount;
 
+    // Environmental HDR
+    private Texture dfgTexture;
+    private SpecularCubemapFilter cubemapFilter;
+
     // Temporary lists/matrices allocated here to reduce number of allocations for each frame.
-    private final float[] viewMatrix = new float[16];
+//    private final float[] viewMatrix = new float[16];
     private final float[] modelMatrix = new float[16];
     private final float[] modelViewMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
     private final float[] planeObjectColor = new float[4];
     private final float[] planeObjectAngleUvMatrix = new float[4]; // 2x2 rotation matrix applied to uv coords.
+    private final float[] sphericalHarmonicsCoefficients = new float[9 * 3];
+    private final float[] viewInverseMatrix = new float[16];
+    private final float[] worldLightDirection = {0.0f, 0.0f, 0.0f, 0.0f};
+    private final float[] viewLightDirection = new float[4]; // view x world light direction
+
+    // See the definition of updateSphericalHarmonicsCoefficients for an explanation of these
+    // constants.
+    private static final float[] sphericalHarmonicFactors = {
+            0.282095f,
+            -0.325735f,
+            0.325735f,
+            -0.325735f,
+            0.273137f,
+            -0.273137f,
+            0.078848f,
+            -0.273137f,
+            0.136569f,
+    };
+
+    private static final int CUBEMAP_RESOLUTION = 16;
+    private static final int CUBEMAP_NUMBER_OF_IMPORTANCE_SAMPLES = 32;
 
     private final Map<Plane, Integer> planeObjectIndexMap = new HashMap<>();
 
@@ -152,7 +188,6 @@ public class GraffitiRenderer {
     private int depthTextureId;
     private float aspectRatio = 0.0f;
     private float[] uvTransform = null;
-
 
     public GraffitiRenderer() {
     }
@@ -179,6 +214,40 @@ public class GraffitiRenderer {
 //                        GLES30.GL_CLAMP_TO_EDGE,
 //                        /*useMipmaps=*/ false);
 
+            cubemapFilter =
+                    new SpecularCubemapFilter(
+                            context, CUBEMAP_RESOLUTION, CUBEMAP_NUMBER_OF_IMPORTANCE_SAMPLES);
+            // Load DFG lookup table for environmental lighting
+            dfgTexture =
+                    new Texture(
+                            GLES30.GL_TEXTURE_2D,
+                            GLES30.GL_CLAMP_TO_EDGE,
+                            /*useMipmaps=*/ false);
+            // The dfg.raw file is a raw half-float texture with two channels.
+            final int dfgResolution = 64;
+            final int dfgChannels = 2;
+            final int halfFloatSize = 2;
+
+            ByteBuffer buffer =
+                    ByteBuffer.allocateDirect(dfgResolution * dfgResolution * dfgChannels * halfFloatSize);
+            try (InputStream is = context.getAssets().open("models/dfg.raw")) {
+                is.read(buffer.array());
+            }
+            // Render abstraction leaks here.
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dfgTexture.getTextureId());
+            GLError.maybeThrowGLException("Failed to bind DFG texture", "glBindTexture");
+            GLES30.glTexImage2D(
+                    GLES30.GL_TEXTURE_2D,
+                    /*level=*/ 0,
+                    GLES30.GL_RG16F,
+                    /*width=*/ dfgResolution,
+                    /*height=*/ dfgResolution,
+                    /*border=*/ 0,
+                    GLES30.GL_RG,
+                    GLES30.GL_HALF_FLOAT,
+                    buffer);
+            GLError.maybeThrowGLException("Failed to populate DFG texture", "glTexImage2D");
+
 //        HashMap<String, String> defines = new HashMap<>();
 //        defines.put("USE_OCCLUSION", useOcclusion ? "1" : "0");
         // This loads the shader code, and must be called on the GL thread.
@@ -200,6 +269,7 @@ public class GraffitiRenderer {
 ////                        .setDepthWrite(false);
         HashMap<String, Integer> defines = new HashMap<>();
         defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
+        defines.put("NUMBER_OF_MIPMAP_LEVELS", cubemapFilter.getNumberOfMipmapLevels());
 
         int vertexShader =
                 ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
@@ -225,6 +295,14 @@ public class GraffitiRenderer {
 //        lineColorUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_lineColor");
 //        dotColorUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_dotColor");
 //        gridControlUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_gridControl");
+
+        lightIntensityUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_LightIntensity");
+        viewInverseUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_ViewInverse");
+        viewLightDirectionUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_ViewLightDirection");
+        sphericalHarmonicsCoefficientsUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_SphericalHarmonicsCoefficients");
+        cubeMapUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_Cubemap");
+        dfgTextureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_DfgTexture");
+        isLightEstimateUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_LightEstimateIsValid");
         ShaderUtil.checkGLError(TAG, "Program parameters");
 
         indexBufferObject = new IndexBuffer(/*entries=*/ null);
@@ -269,6 +347,7 @@ public class GraffitiRenderer {
 ////                        .setDepthWrite(false);
         HashMap<String, Integer> defines = new HashMap<>();
         defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
+        defines.put("NUMBER_OF_MIPMAP_LEVELS", cubemapFilter.getNumberOfMipmapLevels());
 
         int vertexShader =
                 ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
@@ -291,6 +370,14 @@ public class GraffitiRenderer {
         planeObjectUvMatrixUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_PlaneUvMatrix");
 
         textureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_Texture");
+
+        cubeMapUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_Cubemap");
+        dfgTextureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_DfgTexture");
+        viewInverseUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_ViewInverse");
+        viewLightDirectionUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_ViewLightDirection");
+        lightIntensityUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_LightIntensity");
+        sphericalHarmonicsCoefficientsUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_SphericalHarmonicsCoefficients");
+        isLightEstimateUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_LightEstimateIsValid");
         ShaderUtil.checkGLError(TAG, "Program parameters");
         if (useOcclusion) {
 //            shader
@@ -660,8 +747,10 @@ public class GraffitiRenderer {
 
         // Set the Model and ModelViewProjection matrices in the shader.
         GLES30.glUniformMatrix4fv(planeObjectModelViewUniform, 1, false, modelViewMatrix, 0);
+        GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniformMatrix4fv");
         GLES30.glUniformMatrix4fv(
                 planeObjectModelViewProjectionUniform, 1, false, modelViewProjectionMatrix, 0);
+        GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniformMatrix4fv");
 
         // Draw the Model.
         indexBuffer.rewind();
@@ -795,48 +884,85 @@ public class GraffitiRenderer {
                 planePose.put(plane, plane.getCenterPose());
 
                 GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+                GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE0", "glActiveTexture");
 
                 int textureArray[] = new int[1];
 
                 GLES30.glGenTextures(textureArray.length, textureArray, 0);
+                GLError.maybeThrowGLException("Failed to generate textures", "glGenTextures");
                 textures.add(textureArray[0]);
                 GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeobjectIndex));
+                GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
                 GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR_MIPMAP_LINEAR);
+                GLError.maybeThrowGLException("Failed to set texture parameter", "glTexParameteri");
                 GLES30.glTexParameteri(GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR);
+                GLError.maybeThrowGLException("Failed to set texture parameter", "glTexParameteri");
 
                 Bitmap tmp = textureBitmap.copy(textureBitmap.getConfig(), true);
 //                tmp.eraseColor(backgroundColor);
                 textureBitmaps.add(tmp);
                 GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, textureBitmaps.get(planeobjectIndex), 0);
+                GLError.maybeThrowGLException("Failed to specify color texture format", "glTexImage2D");
                 GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D);
+                GLError.maybeThrowGLException("Failed to generate mipmap", "glGenerateMipmap");
                 GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+                GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
 
                 // Occlusion parameters.
                 if (useOcclusion) {
                     // Attach the depth texture.
                     GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+                    GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE1", "glActiveTexture");
                     GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTextureId);
+                    GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
 
-//                    shader.setFloat("u_DepthAspectRatio", aspectRatio);
-//                    shader.setMat3("u_DepthUvTransform", uvTransform);
+//                    GLES30.glActiveTexture(GLES30.GL_TEXTURE2);
+//                    GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE2", "glActiveTexture");
+//                    GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, cubemapFilter.getFilteredCubemapTexture().getTextureId());
+//                    GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
+//                    GLES30.glActiveTexture(GLES30.GL_TEXTURE3);
+//                    GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE3", "glActiveTexture");
+//                    GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dfgTexture.getTextureId());
+//                    GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
                 }
             }
 
             // Attach the texture.
             GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE0", "glActiveTexture");
             GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeobjectIndex));
+            GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
             GLES30.glUniform1i(textureUniform, 0);
+            GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1i");
 
             // Occlusion parameters.
             if (useOcclusion) {
                 // Attach the depth texture.
                 GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
+                GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE1", "glActiveTexture");
                 GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTextureId);
+                GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
                 GLES30.glUniform1i(depthTextureUniform, 1);
+                GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1i");
 
                 // Set the depth texture uv transform.
                 GLES30.glUniform1f(depthAspectRatioUniform, aspectRatio);
+                GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1f");
                 GLES30.glUniformMatrix3fv(depthUvTransformUniform, 1, false, uvTransform, 0);
+                GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniformMatrix3fv");
+
+//                GLES30.glActiveTexture(GLES30.GL_TEXTURE2);
+//                GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE2", "glActiveTexture");
+//                GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, cubemapFilter.getFilteredCubemapTexture().getTextureId());
+//                GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
+//                GLES30.glUniform1i(cubeMapUniform, 1);
+//                GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1i");
+//                GLES30.glActiveTexture(GLES30.GL_TEXTURE3);
+//                GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE3", "glActiveTexture");
+//                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dfgTexture.getTextureId());
+//                GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
+//                GLES30.glUniform1i(dfgTextureUniform, 1);
+//                GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1i");
             }
 
             // Set plane color. Computed deterministically from the PlaneJSON index.
@@ -856,12 +982,12 @@ public class GraffitiRenderer {
             planeObjectAngleUvMatrix[3] = +(float) Math.cos(angleRadians) * vScale;
 
             GLES30.glUniformMatrix2fv(planeObjectUvMatrixUniform, 1, false, planeObjectAngleUvMatrix, 0);
-
             draw(cameraView, cameraPerspective, normal);
         }
 
         GLES30.glDisable(GLES30.GL_BLEND);
         GLError.maybeThrowGLException("Failed to disable blending", "glDisable");
+
 //        GLES30.glDepthMask(true);
 //        GLError.maybeThrowGLException("Failed to set depth write mask", "glDepthMask");
 
@@ -911,4 +1037,81 @@ public class GraffitiRenderer {
             0xFFC107FF,
             0xFF9800FF,
     };
+
+    /**
+     * Update state based on the current frame's light estimation.
+     */
+    public void updateLightEstimation(LightEstimate lightEstimate, float[] viewMatrix) {
+        // Set up the shader.
+        GLES30.glUseProgram(planeObjectProgram);
+        GLError.maybeThrowGLException("Failed to use program", "glUseProgram");
+
+        if (lightEstimate.getState() != LightEstimate.State.VALID) {
+//            shader.setBool("u_LightEstimateIsValid", false);
+            GLES30.glUniform1ui(isLightEstimateUniform, /*false*/0);
+            GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1ui");
+            return;
+        }
+//        shader.setBool("u_LightEstimateIsValid", true);
+        GLES30.glUniform1ui(isLightEstimateUniform, /*true*/1);
+        GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1ui");
+
+        android.opengl.Matrix.invertM(viewInverseMatrix, 0, viewMatrix, 0);
+//        shader.setMat4("u_ViewInverse", viewInverseMatrix);
+        GLES30.glUniformMatrix4fv(viewInverseUniform, 1, false, viewInverseMatrix, 0);
+        GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniformMatrix4fv");
+
+        updateMainLight(
+                lightEstimate.getEnvironmentalHdrMainLightDirection(),
+                lightEstimate.getEnvironmentalHdrMainLightIntensity(),
+                viewMatrix);
+        updateSphericalHarmonicsCoefficients(
+                lightEstimate.getEnvironmentalHdrAmbientSphericalHarmonics());
+        cubemapFilter.update(lightEstimate.acquireEnvironmentalHdrCubeMap());
+    }
+
+    private void updateMainLight(float[] direction, float[] intensity, float[] viewMatrix) {
+        // We need the direction in a vec4 with 0.0 as the final component to transform it to view space
+        worldLightDirection[0] = direction[0];
+        worldLightDirection[1] = direction[1];
+        worldLightDirection[2] = direction[2];
+        android.opengl.Matrix.multiplyMV(viewLightDirection, 0, viewMatrix, 0, worldLightDirection, 0);
+//        shader.setVec4("u_ViewLightDirection", viewLightDirection);
+        GLES30.glUniform4fv(viewLightDirectionUniform, 1, viewLightDirection, 0);
+        GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform4fv");
+//        shader.setVec3("u_LightIntensity", intensity);
+        GLES30.glUniform3fv(lightIntensityUniform, 1, intensity, 0);
+        GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform3fv");
+    }
+
+    private void updateSphericalHarmonicsCoefficients(float[] coefficients) {
+        // Pre-multiply the spherical harmonics coefficients before passing them to the shader. The
+        // constants in sphericalHarmonicFactors were derived from three terms:
+        //
+        // 1. The normalized spherical harmonics basis functions (y_lm)
+        //
+        // 2. The lambertian diffuse BRDF factor (1/pi)
+        //
+        // 3. A <cos> convolution. This is done to so that the resulting function outputs the irradiance
+        // of all incoming light over a hemisphere for a given surface normal, which is what the shader
+        // (environmental_hdr.frag) expects.
+        //
+        // You can read more details about the math here:
+        // https://google.github.io/filament/Filament.html#annex/sphericalharmonics
+
+        if (coefficients.length != 9 * 3) {
+            throw new IllegalArgumentException(
+                    "The given coefficients array must be of length 27 (3 components per 9 coefficients");
+        }
+
+        // Apply each factor to every component of each coefficient
+        for (int i = 0; i < 9 * 3; ++i) {
+            sphericalHarmonicsCoefficients[i] = coefficients[i] * sphericalHarmonicFactors[i / 3];
+        }
+//        shader.setVec3Array(
+//                "u_SphericalHarmonicsCoefficients", sphericalHarmonicsCoefficients);
+        GLES30.glUniform3fv(sphericalHarmonicsCoefficientsUniform, 1, sphericalHarmonicsCoefficients, 0);
+        GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform3fv");
+
+    }
 }
