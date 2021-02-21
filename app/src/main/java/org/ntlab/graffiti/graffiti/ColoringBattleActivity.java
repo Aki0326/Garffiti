@@ -18,11 +18,10 @@ package org.ntlab.graffiti.graffiti;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.media.Image;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -49,8 +48,10 @@ import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
+import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
+import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.common.base.Preconditions;
 
@@ -60,12 +61,16 @@ import org.ntlab.graffiti.common.drawer.RectangleDrawer;
 import org.ntlab.graffiti.common.drawer.TextureDrawer;
 import org.ntlab.graffiti.common.geometry.GeometryUtil;
 import org.ntlab.graffiti.common.helpers.CameraPermissionHelper;
+import org.ntlab.graffiti.common.helpers.DepthSettings;
 import org.ntlab.graffiti.common.helpers.DisplayRotationHelper;
 import org.ntlab.graffiti.common.helpers.FullScreenHelper;
+import org.ntlab.graffiti.common.helpers.InstantPlacementSettings;
+import org.ntlab.graffiti.common.helpers.RendererHelper;
 import org.ntlab.graffiti.common.helpers.SnackbarHelper;
 import org.ntlab.graffiti.common.helpers.TapHelper;
 import org.ntlab.graffiti.common.helpers.TrackingStateHelper;
 import org.ntlab.graffiti.common.rendering.BackgroundRenderer;
+import org.ntlab.graffiti.common.rendering.Framebuffer;
 import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.rendering.ObjectRenderer;
 import org.ntlab.graffiti.common.rendering.ObjectRenderer.BlendMode;
@@ -120,6 +125,11 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     private final PlaneRenderer planeRenderer = new PlaneRenderer();
     private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
     private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
+    private Framebuffer virtualSceneFramebuffer;
+    private boolean hasSetTextureNames = false;
+
+    private final DepthSettings depthSettings = new DepthSettings();
+    private final InstantPlacementSettings instantPlacementSettings = new InstantPlacementSettings();
 
     private boolean installRequested;
 
@@ -129,10 +139,12 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     private final float[] projectionMatrix = new float[16];
 
     // Tap handling and UI.
-    private final SnackbarHelper snackbarHelper = new SnackbarHelper();
+    private final SnackbarHelper messageSnackbarHelper = new SnackbarHelper();
     private final SnackbarHelper planeDiscoverySnackbarHelper = new SnackbarHelper();
     private DisplayRotationHelper displayRotationHelper;
     private TapHelper tapHelper;
+    private final RendererHelper rendererHelper = new RendererHelper();
+
     private final TrackingStateHelper trackingStateHelper = new TrackingStateHelper(this);
 //    private Button hostButton;
 //    private Button resolveButton;
@@ -158,8 +170,9 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate()");
         setContentView(R.layout.activity_coloring_battle);
+
         surfaceView = findViewById(R.id.surfaceview);
-        displayRotationHelper = new DisplayRotationHelper(this);
+        displayRotationHelper = new DisplayRotationHelper(/*context=*/this);
 
         // Set up tap listener.
         tapHelper = new TapHelper(this, ColoringBattleActivity.this);
@@ -172,7 +185,11 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         surfaceView.setRenderer(this);
         surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
         surfaceView.setWillNotDraw(false);
+
         installRequested = false;
+
+        depthSettings.onCreate(this);
+        instantPlacementSettings.onCreate(this);
 
         // Set up the HandMotion View.
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -200,11 +217,12 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
 
         if (sharedPreferences.getBoolean(ALLOW_SHARE_IMAGES_KEY, false)) {
             createSession();
+            planeDiscoveryController.show();
+            planeDiscoverySnackbarHelper.showMessage(this, getString(R.string.searching_plane));
+        } else {
+            messageSnackbarHelper.showMessage(this, getString(R.string.unavailable_mode));
+            finish();
         }
-        surfaceView.onResume();
-        displayRotationHelper.onResume();
-        planeDiscoveryController.show();
-        planeDiscoverySnackbarHelper.showMessage(this, "端末を持ち上げて、カメラに映った壁や床を写してください。");
     }
 
     private void createSession() {
@@ -225,7 +243,9 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                     CameraPermissionHelper.requestCameraPermission(this);
                     return;
                 }
-                session = new Session(this);
+
+                // Create the session.
+                session = new Session(/* context= */this);
             } catch (UnavailableArcoreNotInstalledException e) {
                 messageId = R.string.snackbar_arcore_unavailable;
                 exception = e;
@@ -235,33 +255,89 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             } catch (UnavailableSdkTooOldException e) {
                 messageId = R.string.snackbar_arcore_sdk_too_old;
                 exception = e;
+            } catch (UnavailableDeviceNotCompatibleException e) {
+                messageId = R.string.snackbar_arcore_not_compatible;
+                exception = e;
             } catch (Exception e) {
                 messageId = R.string.snackbar_arcore_exception;
                 exception = e;
             }
 
             if (exception != null) {
-                snackbarHelper.showError(this, getString(messageId));
+                messageSnackbarHelper.showError(this, getString(messageId));
                 Log.e(TAG, "Exception creating session", exception);
                 return;
             }
 
-            // Create default config and check if supported.
-            Config config = new Config(session);
-            config.setCloudAnchorMode(Config.CloudAnchorMode.ENABLED);
-            session.configure(config);
-
-            // Setting the session in the HostManager.
-            anchorManager.setSession(session);
+            // Enable depth-based occlusion.
+            boolean isDepthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
+//            if (isDepthSupported) {
+                depthSettings.setUseDepthForOcclusion(false);
+                depthSettings.setDepthColorVisualizationEnabled(false);
+//            }
         }
 
         // Note that order matters - see the note in onPause(), the reverse applies here.
         try {
+            configureSession();
+
+            // Setting the session in the HostManager.
+            anchorManager.setSession(session);
+
+            // To record a live camera session for later playback, call
+            // `session.startRecording(recorderConfig)` at anytime. To playback a previously recorded AR
+            // session instead of using the live camera feed, call
+            // `session.setPlaybackDataset(playbackDatasetPath)` before calling `session.resume()`. To
+            // learn more about recording and playback, see:
+            // https://developers.google.com/ar/develop/java/recording-and-playback
             session.resume();
         } catch (CameraNotAvailableException e) {
-            snackbarHelper.showError(this, getString(R.string.snackbar_camera_unavailable));
+            // In some cases (such as another camera app launching) the camera may be given to
+            // a different app instead. Handle this properly by showing a message and recreate the
+            // session at the next iteration.
+            messageSnackbarHelper.showError(this, getString(R.string.snackbar_camera_unavailable));
             session = null;
             return;
+        }
+
+        surfaceView.onResume();
+        displayRotationHelper.onResume();
+    }
+
+    /**
+     * Configures the session with feature settings.
+     */
+    private void configureSession() {
+        Config config = session.getConfig();
+//        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
+        config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
+////        config.setLightEstimationMode(Config.LightEstimationMode.AMBIENT_INTENSITY);
+        if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
+            config.setDepthMode(Config.DepthMode.AUTOMATIC);
+        } else {
+            config.setDepthMode(Config.DepthMode.DISABLED);
+        }
+        if (instantPlacementSettings.isInstantPlacementEnabled()) {
+            config.setInstantPlacementMode(Config.InstantPlacementMode.LOCAL_Y_UP);
+        } else {
+            config.setInstantPlacementMode(Config.InstantPlacementMode.DISABLED);
+        }
+        config.setCloudAnchorMode(Config.CloudAnchorMode.ENABLED);
+        session.configure(config);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (!CameraPermissionHelper.hasCameraPermission(this)) {
+            // Use toast instead of snackbar here since the activity will exit.
+            Toast.makeText(this, "Camera permission is needed to run this application", Toast.LENGTH_LONG)
+                    .show();
+            if (!CameraPermissionHelper.shouldShowRequestPermissionRationale(this)) {
+                // Permission denied with checking "Do not ask again".
+                CameraPermissionHelper.launchPermissionSettings(this);
+            }
+            finish();
         }
     }
 
@@ -282,46 +358,263 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     @Override
     public void onStop() {
         Log.d(TAGTEST, "onStop()");
-        Log.d(TAGTEST,  "PlaneSize:" + session.getAllTrackables(Plane.class).size());
-        int cnt = 0;
-        for (Plane plane : session.getAllTrackables(Plane.class)) {
-            if (plane.getSubsumedBy() == null) {
-                Log.d(TAGTEST,  "NotSubsumedPlane:" + plane);
-                cnt++;
-            } else {
-                Log.d(TAGTEST,  "SubsumedPlane:" + plane + " subsumed by " + plane.getSubsumedBy());
+        if (session != null) {
+            Log.d(TAGTEST, "PlaneSize:" + session.getAllTrackables(Plane.class).size());
+            int cnt = 0;
+            for (Plane plane : session.getAllTrackables(Plane.class)) {
+                if (plane.getSubsumedBy() == null) {
+                    Log.d(TAGTEST, "NotSubsumedPlane:" + plane);
+                    cnt++;
+                } else {
+                    Log.d(TAGTEST, "SubsumedPlane:" + plane + " subsumed by " + plane.getSubsumedBy());
 
+                }
             }
+            Log.d(TAGTEST, "NotSubsumedPlaneSize:" + cnt);
+            anchorMatchingManager.endLog();
         }
-        Log.d(TAGTEST,  "NotSubsumedPlaneSize:" + cnt);
-
-        anchorMatchingManager.endLog();
         super.onStop();
     }
 
     @Override
     public void onDestroy() {
+        // Clear all registered listeners.
         resetMode();
+
+        if (session != null) {
+            // Explicitly close ARCore Session to release native resources.
+            // Review the API reference for important considerations before calling close() in apps with
+            // more complicated lifecycle requirements:
+            // https://developers.google.com/ar/reference/java/arcore/reference/com/google/ar/core/Session#close()
+            session.close();
+            session = null;
+        }
+
         Log.d(TAG, "onDestroy()");
         super.onDestroy();
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
-        if (!CameraPermissionHelper.hasCameraPermission(this)) {
-            Toast.makeText(this, "Camera permission is needed to run this application", Toast.LENGTH_LONG).show();
-            if (!CameraPermissionHelper.shouldShowRequestPermissionRationale(this)) {
-                // Permission denied with checking "Do not ask again".
-                CameraPermissionHelper.launchPermissionSettings(this);
-            }
-            finish();
-        }
+    public void onBackPressed(){
+        resetMode();
+        // Activity を終了し, 前のページへ
+        finish();
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         FullScreenHelper.setFullScreenOnWindowFocusChanged(this, hasFocus);
+    }
+
+
+    @Override
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        rendererHelper.enableBlend();
+        GLES30.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+        // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
+        try {
+            // Create the texture and pass it to ARCore session to be filled during update().
+            backgroundRenderer.createOnGlThread(this);
+            // Update BackgroundRenderer state to match the depth settings.
+            backgroundRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+
+            planeRenderer.createOnGlThread(this, "models/trigrid.png");
+            pointCloudRenderer.createOnGlThread(this);
+
+            virtualObject.createOnGlThread(this, "models/andy.obj", "models/andy.png");
+            virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f);
+
+            virtualObjectShadow.createOnGlThread(this, "models/andy_shadow.obj", "models/andy_shadow.png");
+            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
+            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
+
+            graffitiRenderer.createOnGlThread(this,"models/plane.png");
+            // Update BackgroundRenderer state to match the depth settings.
+            graffitiRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+
+            virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
+        } catch (IOException ex) {
+            Log.e(TAG, "Failed to read an asset file", ex);
+        }
+    }
+
+    @Override
+    public void onSurfaceChanged(GL10 gl, int width, int height) {
+        displayRotationHelper.onSurfaceChanged(width, height);
+        virtualSceneFramebuffer.resize(width, height);
+    }
+
+    @Override
+    public void onDrawFrame(GL10 gl) {
+        // Clear screen to notify driver it should not load any pixels from previous frame.
+        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
+        virtualSceneFramebuffer.clear();
+        rendererHelper.clear(0f, 0f, 0f, 1f);
+
+        if (session == null) {
+            return;
+        }
+
+        // Texture names should only be set once on a GL thread unless they change. This is done during
+        // onDrawFrame rather than onSurfaceCreated since the session is not guaranteed to have been
+        // initialized during the execution of onSurfaceCreated.
+        if (!hasSetTextureNames) {
+//      session.setCameraTextureNames(
+//              new int[] {backgroundRenderer.getCameraColorTexture().getTextureId()});
+            session.setCameraTextureName(backgroundRenderer.getCameraColorTexture().getTextureId());
+            hasSetTextureNames = true;
+        }
+
+        // -- Update per-frame state
+
+        // Notify ARCore session that the view size changed so that the perspective matrix and
+        // the video background can be properly adjusted.
+        displayRotationHelper.updateSessionIfNeeded(session);
+
+        // Obtain the current frame from ARSession. When the configuration is set to
+        // UpdateMode.BLOCKING (it is by default), this will throttle the rendering to the
+        // camera framerate.
+        Frame frame;
+        try {
+            frame = session.update();
+        } catch (CameraNotAvailableException e) {
+            Log.e(TAG, "Camera not available during onDrawFrame. Try restarting the app.", e);
+            return;
+        }
+
+        Camera camera = frame.getCamera();
+        TrackingState cameraTrackingState = camera.getTrackingState();
+
+        // Notify the anchorManager of all the updates.
+        anchorManager.update();
+
+        // BackgroundRenderer.updateDisplayGeometry must be called every frame to update the coordinates
+        // used to draw the background camera image.
+        backgroundRenderer.updateDisplayGeometry(frame);
+        graffitiRenderer.updateDisplayGeometry(frame);
+
+        if (cameraTrackingState == TrackingState.TRACKING
+                && (depthSettings.useDepthForOcclusion()
+                /*|| depthSettings.depthColorVisualizationEnabled()*/)) {
+            // Retrieve the depth map for the current frame, if available.
+            try {
+                Image depthImage = frame.acquireDepthImage();
+                backgroundRenderer.updateCameraDepthTexture(depthImage);
+//                graffitiRenderer.updateCameraDepthTexture(depthImage);
+                graffitiRenderer.setDepthTexture(backgroundRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
+            } catch (NotYetAvailableException e) {
+                // This means that depth data is not available yet.
+                // Depth data will not be available if there are no tracked
+                // feature points. This can happen when there is no motion, or when the
+                // camera loses its ability to track objects in the surrounding
+                // environment.
+//                Log.e(TAG, "NotYetAvailableException", e);
+            }
+        }
+
+        // Handle user input.
+        handleTap(frame, cameraTrackingState);
+
+        // Keep the screen unlocked while tracking, but allow it to lock when tracking stops.
+        trackingStateHelper.updateKeepScreenOnFlag(camera.getTrackingState());
+
+        // Check if we detected at least one plane. If so, hide the loading message.
+        if (planeDiscoverySnackbarHelper.isShowing()) {
+            for (Plane plane : session.getAllTrackables(Plane.class)) {
+                if (plane.getTrackingState() == TrackingState.TRACKING) {
+                    planeDiscoverySnackbarHelper.hide(this);
+                    planeDiscoveryController.hide();
+                    onEnterRoom();
+                    break;
+                }
+            }
+        }
+
+        // -- Draw background
+
+        // Suppress rendering if the camera did not produce the first frame yet. This is to avoid
+        // drawing possible leftover data from previous sessions if the texture is reused.
+        virtualSceneFramebuffer.clear();
+        backgroundRenderer.draw(frame);
+
+        // If not tracking, don't draw 3d objects.
+        if (cameraTrackingState == TrackingState.PAUSED) {
+            return;
+        }
+
+        // -- Draw non-occluded virtual objects (planes, point cloud)
+
+        // Get camera and projection matrices.
+        camera.getViewMatrix(viewMatrix, 0);
+        camera.getProjectionMatrix(projectionMatrix, 0, 0.1f, 100.0f);
+
+        for (Plane newPlane : frame.getUpdatedTrackables(Plane.class)) {
+            Log.d(TAGPLANE, "UpdatePlane:" + newPlane + ", " + newPlane.getCenterPose() + ", " + newPlane.getSubsumedBy());
+        }
+
+        if (anchorListener != null) {
+            anchorMatchingManager.updateState(frame.getUpdatedTrackables(Plane.class),
+                    new AnchorMatchingManager.UpdateAnchorListener() {
+
+                        @Override
+                        public Anchor createAnchor(Plane plane) {
+                            Anchor hostAnchor = anchorManager.hostAnchor(plane.createAnchor(plane.getCenterPose()), anchorListener);
+                            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "pendingAnchor put.");
+                            return hostAnchor;
+                        }
+
+                        @Override
+                        public void onAnchorMatched(MatchedAnchor matchedAnchor) {
+                            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Shared Plane.");
+                        }
+                    },
+                    new AnchorMatchingManager.UpdatePlaneListener() {
+                        @Override
+                        public void onUpdatePlaneAfterMatched(MatchedAnchor matchedAnchor, Plane plane) {
+                            storePolygon(matchedAnchor.getMyAnchor(), plane);
+                        }
+                    });
+        }
+
+        anchorMatchingManager.updateLog();
+
+        for (Anchor anchor: session.getAllAnchors()) {
+            Log.d(TAGANCHOR,  ", getAllAnchors, " + anchor.getCloudAnchorId() + ", " + anchor.getPose() + ", (" + anchor.getPose().getXAxis().toString() + ", " + anchor.getPose().getZAxis().toString() + ")");
+        }
+
+        // Visualize tracked points.
+        // Use try-with-resources to automatically release the point cloud.
+        try (PointCloud pointCloud = frame.acquirePointCloud()) {
+            pointCloudRenderer.update(pointCloud);
+            pointCloudRenderer.draw(viewMatrix, projectionMatrix);
+            // Application is responsible for releasing the point cloud resources after
+            // using it.
+            pointCloud.release();
+        }
+
+        // Visualize planes.
+        virtualSceneFramebuffer.clear();
+        planeRenderer.drawPlanes(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
+
+        // -- Draw occluded virtual objects
+
+        // Visualize graffiti.
+        virtualSceneFramebuffer.clear();
+        graffitiRenderer.adjustTextureAxis(frame, camera);
+        graffitiRenderer.draw(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
+
+        for (MergedPlane mergedPlane : anchorMatchingManager.getDrawnPlanes()) {
+            List<PointTex2D> stroke = mergedPlane.getStroke();
+            if (stroke.size() > mergedPlane.getDrawnStrokeIndex()) {
+                for (int i = mergedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
+                    graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
+                }
+                mergedPlane.drawnStroke(stroke.size());
+            }
+        }
+
     }
 
     /**
@@ -359,7 +652,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                             break;
                     }
                     Preconditions.checkNotNull(anchorListener, "The anchorlistener cannot be null.");
-                    snackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
+                    messageSnackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
                     if (color == Color.TRANSPARENT) {
                         graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
                     } else {
@@ -392,162 +685,6 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         return null;
     }
 
-    @Override
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        GLES30.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-
-        // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
-        try {
-            // Create the texture and pass it to ARCore session to be filled during update().
-            backgroundRenderer.createOnGlThread(this);
-            planeRenderer.createOnGlThread(this, "models/trigrid.png");
-            pointCloudRenderer.createOnGlThread(this);
-
-            virtualObject.createOnGlThread(this, "models/andy.obj", "models/andy.png");
-            virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f);
-
-            virtualObjectShadow.createOnGlThread(this, "models/andy_shadow.obj", "models/andy_shadow.png");
-            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
-            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
-
-//            graffitiRenderer.createOnGlThread(this,"models/plane.png");
-            graffitiRenderer.createOnGlThread(this,"models/plane.png");
-
-        } catch (IOException ex) {
-            Log.e(TAG, "Failed to read an asset file", ex);
-        }
-    }
-
-    @Override
-    public void onSurfaceChanged(GL10 gl, int width, int height) {
-        displayRotationHelper.onSurfaceChanged(width, height);
-        GLES30.glViewport(0, 0, width, height);
-    }
-
-    @Override
-    public void onDrawFrame(GL10 gl) {
-        // Clear screen to notify driver it should not load any pixels from previous frame.
-        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
-
-        if (session == null) {
-            return;
-        }
-        // Notify ARCore session that the view size changed so that the perspective matrix and
-        // the video background can be properly adjusted.
-        displayRotationHelper.updateSessionIfNeeded(session);
-
-        try {
-            session.setCameraTextureName(backgroundRenderer.getCameraColorTexture().getTextureId());
-
-            // Obtain the current frame from ARSession. When the configuration is set to
-            // UpdateMode.BLOCKING (it is by default), this will throttle the rendering to the
-            // camera framerate.
-            Frame frame = session.update();
-            Camera camera = frame.getCamera();
-            TrackingState cameraTrackingState = camera.getTrackingState();
-
-            // Notify the anchorManager of all the updates.
-            anchorManager.update();
-
-            // Handle user input.
-            handleTap(frame, cameraTrackingState);
-
-            // If frame is ready, render camera preview image to the GL surface.
-            backgroundRenderer.draw(frame);
-
-            // Keep the screen unlocked while tracking, but allow it to lock when tracking stops.
-            trackingStateHelper.updateKeepScreenOnFlag(camera.getTrackingState());
-
-            // If not tracking, don't draw 3d objects.
-            if (cameraTrackingState == TrackingState.PAUSED) {
-                return;
-            }
-
-            // Get camera and projection matrices.
-            camera.getViewMatrix(viewMatrix, 0);
-            camera.getProjectionMatrix(projectionMatrix, 0, 0.1f, 100.0f);
-
-            // Check if we detected at least one plane. If so, hide the loading message.
-            if (planeDiscoverySnackbarHelper.isShowing()) {
-                for (Plane plane : session.getAllTrackables(Plane.class)) {
-                    if (plane.getTrackingState() == TrackingState.TRACKING) {
-                        planeDiscoverySnackbarHelper.hide(this);
-                        Handler handler = new Handler(Looper.getMainLooper());
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                planeDiscoveryController.hide();
-                            }
-                        });
-                        onEnterRoom();
-                        break;
-                    }
-                }
-            }
-
-            for (Plane newPlane : frame.getUpdatedTrackables(Plane.class)) {
-                Log.d(TAGPLANE, "UpdatePlane:" + newPlane + ", " + newPlane.getCenterPose() + ", " + newPlane.getSubsumedBy());
-            }
-
-            if (anchorListener != null) {
-                anchorMatchingManager.updateState(frame.getUpdatedTrackables(Plane.class),
-                        new AnchorMatchingManager.UpdateAnchorListener() {
-
-                            @Override
-                            public Anchor createAnchor(Plane plane) {
-                                Anchor hostAnchor = anchorManager.hostAnchor(plane.createAnchor(plane.getCenterPose()), anchorListener);
-                                snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "pendingAnchor put.");
-                                return hostAnchor;
-                            }
-
-                            @Override
-                            public void onAnchorMatched(MatchedAnchor matchedAnchor) {
-                                snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Shared Plane.");
-                            }
-                        },
-                        new AnchorMatchingManager.UpdatePlaneListener() {
-                            @Override
-                            public void onUpdatePlaneAfterMatched(MatchedAnchor matchedAnchor, Plane plane) {
-                                storePolygon(matchedAnchor.getMyAnchor(), plane);
-                            }
-                        });
-            }
-
-            anchorMatchingManager.updateLog();
-
-            for (Anchor anchor: session.getAllAnchors()) {
-                Log.d(TAGANCHOR,  ", getAllAnchors, " + anchor.getCloudAnchorId() + ", " + anchor.getPose() + ", (" + anchor.getPose().getXAxis().toString() + ", " + anchor.getPose().getZAxis().toString() + ")");
-            }
-
-            // Visualize tracked points.
-            // Use try-with-resources to automatically release the point cloud.
-            try (PointCloud pointCloud = frame.acquirePointCloud()) {
-                pointCloudRenderer.update(pointCloud);
-                pointCloudRenderer.draw(viewMatrix, projectionMatrix);
-            }
-
-            // Visualize planes.
-            planeRenderer.drawPlanes(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
-
-            // Visualize graffiti.
-            graffitiRenderer.adjustTextureAxis(frame, camera);
-            graffitiRenderer.draw(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
-
-            for (MergedPlane mergedPlane : anchorMatchingManager.getDrawnPlanes()) {
-                List<PointTex2D> stroke = mergedPlane.getStroke();
-                if (stroke.size() > mergedPlane.getDrawnStrokeIndex()) {
-                    for (int i = mergedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
-                        graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
-                    }
-                    mergedPlane.drawnStroke(stroke.size());
-                }
-            }
-
-        } catch (Throwable t) {
-//             Avoid crashing the application due to unhandled exceptions.
-            Log.e(TAG, "Exception on the OpenGL thread", t);
-        }
-    }
 
     private void storePolygon(Anchor anchor, Plane plane) {
         String cloudAnchorId = anchor.getCloudAnchorId();
@@ -574,7 +711,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         }
         Log.d(TAGTEST, "storePolygonInRoom:" + cloudAnchorId);
         webServiceManager.storePolygonInRoom(cloudAnchorId, polyArray);
-        snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Polygon.");
+        messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Polygon.");
     }
 
     private void storeStroke(Plane hitPlane, float[] hitPosition) {
@@ -588,17 +725,10 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             // ワールド座標系から平面のローカル座標への変換
             hitOnMyAnchorCoord = GeometryUtil.worldToLocal(hitPosition, myAnchorPose.getTranslation(), myAnchorPose.getXAxis(), myAnchorPose.getZAxis());
             webServiceManager.storeStrokeInRoom(cloudAnchorId, hitOnMyAnchorCoord[0], hitOnMyAnchorCoord[1]);
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Stroke.");
+            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Stroke.");
         } else {
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "No Store Stroke.");
+            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "No Store Stroke.");
         }
-    }
-
-    @Override
-    public void onBackPressed(){
-        resetMode();
-        // Activity を終了し, 前のページへ
-        finish();
     }
 
     /** Callback function invoked when the Host Button is pressed. */
@@ -666,7 +796,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         webServiceManager.clearRoomListener();
         anchorManager.clearListeners();
         anchorListener = null;
-        snackbarHelper.hide(this);
+        messageSnackbarHelper.hide(this);
     }
 
     /** Callback function invoked when the user presses the OK button in the Resolve Dialog. */
@@ -680,7 +810,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         WebServiceUpdateListener webServiceListener = new WebServiceUpdateListener(cloudAnchorListener);
 //        Preconditions.checkState(roomCode == null, "The room code cannot have been set before.");
         roomCodeText.setText(String.valueOf(roomCode));
-        snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_on_room_code_available, roomCode));
+        messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_on_room_code_available, roomCode));
         webServiceManager.createRoom(roomCode, webServiceListener);
     }
 
@@ -721,7 +851,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             Anchor.CloudAnchorState cloudState = anchor.getCloudAnchorState();
             if (cloudState.isError()) {
                 Log.e(TAG, "Error hosting a cloud anchor, state " + cloudState);
-                snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_host_error, cloudState));
+                messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_host_error, cloudState));
                 return;
             }
             String cloudAnchorId = anchor.getCloudAnchorId();
@@ -729,7 +859,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             if (anchorMatchingManager.isPendingSubmission(anchor) && cloudAnchorId != null) {
                 webServiceManager.storeAnchorIdInRoom(cloudAnchorId);
                 Plane plane = anchorMatchingManager.submit(anchor);
-                snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "myAnchor put.");
+                messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "myAnchor put.");
 //                    snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_cloud_id_shared));
                 Log.d(TAGTEST, "myAnchors.put:" + anchor + ", " + anchor.getCloudAnchorId() + ", (" + anchor.getPose().getTranslation()[0] + ", " + anchor.getPose().getTranslation()[1] + ", " + anchor.getPose().getTranslation()[2] + ") ," + plane);
             }
@@ -740,17 +870,17 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             // When the anchor has been resolved, or had a final error state.
             CloudAnchorState cloudState = anchor.getCloudAnchorState();
             if (cloudState.isError()) {
-                snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_error, cloudState));
+                messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_error, cloudState));
                 return;
             }
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_success));
+            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_success));
             anchorMatchingManager.storePartner(anchor);
         }
 
         @Override
         public void onShowResolveMessage() {
-            snackbarHelper.setMaxLines(4);
-            snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_no_result_yet));
+            messageSnackbarHelper.setMaxLines(4);
+            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_no_result_yet));
         }
 
     }
