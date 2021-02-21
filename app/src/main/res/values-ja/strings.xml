@@ -17,14 +17,14 @@
 <resources>
   <string name="app_name">Graffiti</string>
 
-  <string name="unavailable_mode">Sorry. This mode is currently under construction.</string>
+  <string name="unavailable_mode">すみません。ただいま工事中です。</string>
 
   <!-- Image and ImageButton Content Descriptions for Accessibility-->
   <string name="content_description_white_brush">White Brush</string>
 
   <!-- Searching for surfaces -->
-  <string name="searching_plane">Searching for surfaces...</string>
-  <string name="waiting_for_tap">Tap on a surface to place an object.</string>
+  <string name="searching_plane">端末を持ち上げて、カメラに映った壁や床にタッチしてらくがきして下さい。</string>
+  <string name="waiting_for_tap">タッチしてらくがきして下さい。</string>
   <string name="tracking_indicator_text_looking">Looking for a place for your line</string>
   <string name="tracking_indicator_text_cant_find">Can\'t find a place for your line</string>
   <string name="tracking_indicator_text_anchor_not_tracking">Hmm… We can\'t find your\ndrawings.
