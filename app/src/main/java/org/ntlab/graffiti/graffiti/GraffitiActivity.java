@@ -101,9 +101,6 @@ import javax.microedition.khronos.opengles.GL10;
 public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
     private static final String TAG = GraffitiActivity.class.getSimpleName();
 
-    private static final String SEARCHING_PLANE_MESSAGE = "端末を持ち上げて、カメラに映った壁や床にタッチしてらくがきして下さい。";
-//    private static final String WAITING_FOR_TAP_MESSAGE = "タッチしてらくがきして下さい。";
-
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 100f;
 
@@ -260,7 +257,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 
         if (session == null) {
             Exception exception = null;
-            String message = null;
+            int messageId = -1;
             try {
                 switch (ArCoreApk.getInstance().requestInstall(this, !installRequested)) {
                     case INSTALL_REQUESTED:
@@ -281,24 +278,24 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
                 session = new Session(/* context= */ this);
             } catch (UnavailableArcoreNotInstalledException
                     | UnavailableUserDeclinedInstallationException e) {
-                message = "Please install ARCore";
+                messageId = R.string.snackbar_arcore_unavailable;
                 exception = e;
             } catch (UnavailableApkTooOldException e) {
-                message = "Please update ARCore";
+                messageId = R.string.snackbar_arcore_too_old;
                 exception = e;
             } catch (UnavailableSdkTooOldException e) {
-                message = "Please update this app";
+                messageId = R.string.snackbar_arcore_sdk_too_old;
                 exception = e;
             } catch (UnavailableDeviceNotCompatibleException e) {
-                message = "This device does not support AR";
+                messageId = R.string.snackbar_arcore_not_compatible;
                 exception = e;
             } catch (Exception e) {
-                message = "Failed to create AR session";
+                messageId = R.string.snackbar_arcore_exception;
                 exception = e;
             }
 
-            if (message != null) {
-                messageSnackbarHelper.showError(this, message);
+            if (exception != null) {
+                messageSnackbarHelper.showError(this, getString(messageId));
                 Log.e(TAG, "Exception creating session", exception);
                 return;
             }
@@ -325,7 +322,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
             // In some cases (such as another camera app launching) the camera may be given to
             // a different app instead. Handle this properly by showing a message and recreate the
             // session at the next iteration.
-            messageSnackbarHelper.showError(this, "Camera not available. Please restart the app.");
+            messageSnackbarHelper.showError(this, getString(R.string.snackbar_camera_unavailable));
             session = null;
             return;
         }
@@ -336,19 +333,25 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         TimeoutHelper.startTimer(GraffitiActivity.this);
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (session != null) {
-            // Note that the order matters - GLSurfaceView is paused first so that it does not try
-            // to query the session. If Session is paused before GLSurfaceView, GLSurfaceView may
-            // still call session.update() and get a SessionPausedException.
-            displayRotationHelper.onPause();
-            surfaceView.onPause();
-            session.pause();
+    /**
+     * Configures the session with feature settings.
+     */
+    private void configureSession() {
+        Config config = session.getConfig();
+//        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
+        config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
+////        config.setLightEstimationMode(Config.LightEstimationMode.AMBIENT_INTENSITY);
+        if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
+            config.setDepthMode(Config.DepthMode.AUTOMATIC);
+        } else {
+            config.setDepthMode(Config.DepthMode.DISABLED);
         }
-        resetTimer();
-        TimeoutHelper.resetTimer();
+        if (instantPlacementSettings.isInstantPlacementEnabled()) {
+            config.setInstantPlacementMode(Config.InstantPlacementMode.LOCAL_Y_UP);
+        } else {
+            config.setInstantPlacementMode(Config.InstantPlacementMode.DISABLED);
+        }
+        session.configure(config);
     }
 
     @Override
@@ -366,7 +369,9 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         }
     }
 
-    // ユーザーの許可を受け取る（スクリーンショット）
+    /*
+     * ユーザーの許可を受け取る（スクリーンショット）
+     */
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -404,6 +409,21 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        if (session != null) {
+            // Note that the order matters - GLSurfaceView is paused first so that it does not try
+            // to query the session. If Session is paused before GLSurfaceView, GLSurfaceView may
+            // still call session.update() and get a SessionPausedException.
+            displayRotationHelper.onPause();
+            surfaceView.onPause();
+            session.pause();
+        }
+        resetTimer();
+        TimeoutHelper.resetTimer();
+    }
+
+    @Override
     protected void onDestroy() {
         if (virtualDisplay != null) {
             Log.d("debug", "release VirtualDisplay");
@@ -430,7 +450,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         rendererHelper.enableBlend();
-//        GLES30.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        GLES30.glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
@@ -541,7 +561,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
             }
         }
 
-        // Handle one tap per frame.
+        // Handle user input.
         handleTap(frame, camera);
 
         // Keep the screen unlocked while tracking, but allow it to lock when tracking stops.
@@ -552,16 +572,16 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         String message = null;
         if (camera.getTrackingState() == TrackingState.PAUSED) {
             if (camera.getTrackingFailureReason() == TrackingFailureReason.NONE) {
-                message = SEARCHING_PLANE_MESSAGE;
+                message = getString(R.string.searching_plane);
             } else {
                 message = TrackingStateHelper.getTrackingFailureReasonString(camera);
             }
         } else if (hasTrackingPlane()) {
 //            if (anchors.isEmpty()) {
-//                message = WAITING_FOR_TAP_MESSAGE;
+//                message = getString(R.string.waiting_for_tap);;
 //            }
         } else {
-            message = SEARCHING_PLANE_MESSAGE;
+            message = getString(R.string.searching_plane);
         }
         if (messageSnackbarHelper.isShowing() && message == null) {
             messageSnackbarHelper.hide(this);
@@ -731,6 +751,18 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         }
     }
 
+    /**
+     * Checks if we detected at least one plane.
+     */
+    private boolean hasTrackingPlane() {
+        for (Plane plane : session.getAllTrackables(Plane.class)) {
+            if (plane.getTrackingState() == TrackingState.TRACKING) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void getScreenshot() {
         glDrawListenerQueue.offer(new IGLDrawListener() {
             @Override
@@ -834,38 +866,4 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     private interface IGLDrawListener {
         public void onDraw(GL10 gl);
     }
-
-    /**
-     * Checks if we detected at least one plane.
-     */
-    private boolean hasTrackingPlane() {
-        for (Plane plane : session.getAllTrackables(Plane.class)) {
-            if (plane.getTrackingState() == TrackingState.TRACKING) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Configures the session with feature settings.
-     */
-    private void configureSession() {
-        Config config = session.getConfig();
-//        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
-        config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
-////        config.setLightEstimationMode(Config.LightEstimationMode.AMBIENT_INTENSITY);
-        if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
-            config.setDepthMode(Config.DepthMode.AUTOMATIC);
-        } else {
-            config.setDepthMode(Config.DepthMode.DISABLED);
-        }
-        if (instantPlacementSettings.isInstantPlacementEnabled()) {
-            config.setInstantPlacementMode(Config.InstantPlacementMode.LOCAL_Y_UP);
-        } else {
-            config.setInstantPlacementMode(Config.InstantPlacementMode.DISABLED);
-        }
-        session.configure(config);
-    }
-
 }
