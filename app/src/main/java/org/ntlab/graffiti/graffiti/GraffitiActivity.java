@@ -39,7 +39,6 @@ import com.google.ar.core.Camera;
 import com.google.ar.core.Config;
 import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
-import com.google.ar.core.LightEstimate;
 import com.google.ar.core.Plane;
 import com.google.ar.core.PointCloud;
 import com.google.ar.core.Pose;
@@ -74,8 +73,6 @@ import org.ntlab.graffiti.common.rendering.BackgroundRenderer;
 import org.ntlab.graffiti.common.rendering.Framebuffer;
 import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
-import org.ntlab.graffiti.common.rendering.Texture;
-import org.ntlab.graffiti.common.rendering.arcore.SpecularCubemapFilter;
 import org.ntlab.graffiti.common.views.BrushSizeSelector;
 import org.ntlab.graffiti.common.views.ColorSelector;
 import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
@@ -107,23 +104,6 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     private static final String SEARCHING_PLANE_MESSAGE = "端末を持ち上げて、カメラに映った壁や床にタッチしてらくがきして下さい。";
 //    private static final String WAITING_FOR_TAP_MESSAGE = "タッチしてらくがきして下さい。";
 
-    // See the definition of updateSphericalHarmonicsCoefficients for an explanation of these
-    // constants.
-    private static final float[] sphericalHarmonicFactors = {
-            0.282095f,
-            -0.325735f,
-            0.325735f,
-            -0.325735f,
-            0.273137f,
-            -0.273137f,
-            0.078848f,
-            -0.273137f,
-            0.136569f,
-    };
-
-    private static final int CUBEMAP_RESOLUTION = 16;
-    private static final int CUBEMAP_NUMBER_OF_IMPORTANCE_SAMPLES = 32;
-
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 100f;
 
@@ -140,7 +120,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     private final RendererHelper rendererHelper = new RendererHelper();
 
     private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
-    //    private final PlaneRenderer planeRenderer = new PlaneRenderer();
+//    private final PlaneRenderer planeRenderer = new PlaneRenderer();
 //    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
 //    private final ObjectRenderer virtualObject = new ObjectRenderer();
 //    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
@@ -161,21 +141,6 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     private static final float APPROXIMATE_DISTANCE_METERS = 2.0f;
 
     private Queue<IGLDrawListener> glDrawListenerQueue = new ArrayDeque<>();
-
-    // Environmental HDR
-    private Texture dfgTexture;
-    private SpecularCubemapFilter cubemapFilter;
-
-    // Temporary matrix allocated here to reduce number of allocations for each frame.
-    private final float[] modelMatrix = new float[16];
-    private final float[] viewMatrix = new float[16];
-    private final float[] projectionMatrix = new float[16];
-    private final float[] modelViewMatrix = new float[16]; // view x model
-    private final float[] modelViewProjectionMatrix = new float[16]; // projection x view x model
-    private final float[] sphericalHarmonicsCoefficients = new float[9 * 3];
-    private final float[] viewInverseMatrix = new float[16];
-    private final float[] worldLightDirection = {0.0f, 0.0f, 0.0f, 0.0f};
-    private final float[] viewLightDirection = new float[4]; // view x world light direction
 
     private PlaneDiscoveryController planeDiscoveryController;
 
@@ -413,9 +378,9 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
                 return;
             }
             // 許可された結果を受け取る
-            Intent intent = new Intent(this, GraffitiActivity.class);
+//            Intent intent = new Intent(this, GraffitiActivity.class);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                startForegroundService(data);
+//                startForegroundService(intent);
                 setUpMediaProjection(resultCode, data);
             }
         }
@@ -472,12 +437,8 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
             // Create the texture and pass it to ARCore session to be filled during update().
             backgroundRenderer.createOnGlThread(this);
             // Update BackgroundRenderer state to match the depth settings.
-            try {
-                backgroundRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
-            } catch (IOException e) {
-                Log.e(TAG, "Failed to read a required asset file", e);
-                return;
-            }
+            backgroundRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+
 //            planeRenderer.createOnGlThread(this, "models/trigrid.png");
 //            pointCloudRenderer.createOnGlThread(this);
 //            virtualObject.createOnGlThread(this, "models/fluid_01.obj", "models/fluid_01.png");
@@ -488,80 +449,11 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 //            planeObjectRenderer.createOnGlThread(this, "models/nambo.png");
             graffitiRenderer.createOnGlThread(this, "models/plane.png");
             // Update BackgroundRenderer state to match the depth settings.
-            try {
-                graffitiRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
-//                graffitiRenderer.setUseOcclusion(this, false);
-            } catch (IOException e) {
-                Log.e(TAG, "Failed to read a required asset file", e);
-                return;
-            }
+            graffitiRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+//            graffitiRenderer.setUseOcclusion(this, false);
+
 //            planeRendererOcculusion = new PlaneRendererOcculusion(this);
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
-
-//            cubemapFilter =
-//                    new SpecularCubemapFilter(
-//                            this, CUBEMAP_RESOLUTION, CUBEMAP_NUMBER_OF_IMPORTANCE_SAMPLES);
-//            // Load DFG lookup table for environmental lighting
-//            dfgTexture =
-//                    new Texture(
-//                            GLES30.GL_TEXTURE_2D,
-//                            GLES30.GL_CLAMP_TO_EDGE,
-//                            /*useMipmaps=*/ false);
-//            // The dfg.raw file is a raw half-float texture with two channels.
-//            final int dfgResolution = 64;
-//            final int dfgChannels = 2;
-//            final int halfFloatSize = 2;
-//
-//            ByteBuffer buffer =
-//                    ByteBuffer.allocateDirect(dfgResolution * dfgResolution * dfgChannels * halfFloatSize);
-//            try (InputStream is = getAssets().open("models/dfg.raw")) {
-//                is.read(buffer.array());
-//            }
-//            // SampleRender abstraction leaks here.
-//            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dfgTexture.getTextureId());
-//            GLError.maybeThrowGLException("Failed to bind DFG texture", "glBindTexture");
-//            GLES30.glTexImage2D(
-//                    GLES30.GL_TEXTURE_2D,
-//                    /*level=*/ 0,
-//                    GLES30.GL_RG16F,
-//                    /*width=*/ dfgResolution,
-//                    /*height=*/ dfgResolution,
-//                    /*border=*/ 0,
-//                    GLES30.GL_RG,
-//                    GLES30.GL_HALF_FLOAT,
-//                    buffer);
-//            GLError.maybeThrowGLException("Failed to populate DFG texture", "glTexImage2D");
-//
-//            // Virtual object to render (ARCore pawn)
-//            Texture virtualObjectAlbedoTexture =
-//                    Texture.createFromAsset(
-//                            this,
-//                            "models/pawn_albedo.png",
-//                            GLES30.GL_CLAMP_TO_EDGE,
-//                            GLES30.GL_SRGB8_ALPHA8);
-//            Texture virtualObjectPbrTexture =
-//                    Texture.createFromAsset(
-//                            this,
-//                            "models/pawn_roughness_metallic_ao.png",
-//                            GLES30.GL_CLAMP_TO_EDGE,
-//                            GLES30.GL_RGBA8);
-//            virtualObjectMesh = Mesh.createFromAsset(this, "models/pawn.obj");
-//            virtualObjectShader =
-//                    Shader.createFromAssets(
-//                            this,
-//                            "shaders/environmental_hdr.vert",
-//                            "shaders/environmental_hdr.frag",
-//                            /*defines=*/ new HashMap<String, String>() {
-//                                {
-//                                    put(
-//                                            "NUMBER_OF_MIPMAP_LEVELS",
-//                                            Integer.toString(cubemapFilter.getNumberOfMipmapLevels()));
-//                                }
-//                            })
-//                            .setTexture("u_AlbedoTexture", virtualObjectAlbedoTexture)
-//                            .setTexture("u_RoughnessMetallicAmbientOcclusionTexture", virtualObjectPbrTexture)
-//                            .setTexture("u_Cubemap", cubemapFilter.getFilteredCubemapTexture())
-//                            .setTexture("u_DfgTexture", dfgTexture);
         } catch (IOException e) {
             Log.e(TAG, "Failed to read a required asset file", e);
         }
@@ -579,7 +471,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         if (l != null) l.onDraw(gl);
 
         // Clear screen to notify driver it should not load any pixels from previous frame.
-//        clear(/*framebuffer=*/ null, 0f, 0f, 0f, 1f);
+////        clear(/*framebuffer=*/ null, 0f, 0f, 0f, 1f);
         virtualSceneFramebuffer.clear();
         rendererHelper.clear(0f, 0f, 0f, 1f);
 
@@ -637,8 +529,8 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
             try {
                 Image depthImage = frame.acquireDepthImage();
                 backgroundRenderer.updateCameraDepthTexture(depthImage);
-                graffitiRenderer.setDepthTexture(backgroundRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
 //                graffitiRenderer.updateCameraDepthTexture(depthImage);
+                graffitiRenderer.setDepthTexture(backgroundRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
             } catch (NotYetAvailableException e) {
                 // This means that depth data is not available yet.
                 // Depth data will not be available if there are no tracked
@@ -684,8 +576,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 //        if (frame.getTimestamp() != 0) {
         // Suppress rendering if the camera did not produce the first frame yet. This is to avoid
         // drawing possible leftover data from previous sessions if the texture is reused.
-//        backgroundRenderer.drawBackground(render);
-//        virtualSceneFramebuffer.clear();
+        virtualSceneFramebuffer.clear();
         backgroundRenderer.draw(frame);
 //        }
 
@@ -717,8 +608,8 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 //      }
 
         PointCloud pointCloud = frame.acquirePointCloud();
-////        pointCloudRenderer.update(pointCloud);
-////      pointCloudRenderer.draw(viewmtx, projmtx);
+//        pointCloudRenderer.update(pointCloud);
+//      pointCloudRenderer.draw(viewmtx, projmtx);
         // Application is responsible for releasing the point cloud resources after
         // using it.
         pointCloud.release();
@@ -733,27 +624,21 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 //      planeRenderer.drawPlanes(session.getAllTrackables(PlaneJSON.class), camera.getDisplayOrientedPose(), projmtx);
 //      planeObjectRenderer.draw(session.getAllTrackables(PlaneJSON.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 //      testRenderer.draw(session.getAllTrackables(PlaneJSON.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
-        virtualSceneFramebuffer.clear();
-        graffitiRenderer.adjustTextureAxis(frame, camera);
-        graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
         // -- Draw occluded virtual objects
+        virtualSceneFramebuffer.clear();
+        graffitiRenderer.adjustTextureAxis(frame, camera);
 
         // Update lighting parameters in the shader
-//        updateLightEstimation(frame.getLightEstimate(), viewmtx);
+        graffitiRenderer.updateLightEstimation(frame.getLightEstimate(), viewmtx);
+
+        graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
         // Compute lighting from average intensity of the image.
         // The first three components are color scaling factors.
         // The last one is the average pixel intensity in gamma space.
-        final float[] colorCorrectionRgba = new float[4];
-        frame.getLightEstimate().getColorCorrection(colorCorrectionRgba, 0);
-
-////      render.clear(virtualSceneFramebuffer, 0f, 0f, 0f, 0f);
-//        virtualSceneFramebuffer.use();
-//        rendererHelper.clear(0f, 0f, 0f, 0f);
-//        graffitiRenderer.adjustTextureAxis(frame, camera);
-//        virtualSceneFramebuffer.use();
-//        graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
+//        final float[] colorCorrectionRgba = new float[4];
+//        frame.getLightEstimate().getColorCorrection(colorCorrectionRgba, 0);
 
         // Visualize anchors created by touch.
 ////      render.clear(virtualSceneFramebuffer, 0f, 0f, 0f, 0f);
@@ -784,7 +669,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 //        virtualObject.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color);
 //        virtualObjectShadow.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color);
 
-        // Compose the virtual scene with the background.
+        // Compose the virtual scene with the background. (not use)
 //        virtualSceneFramebuffer.clear();
 //        backgroundRenderer.drawVirtualScene(virtualSceneFramebuffer, Z_NEAR, Z_FAR);
 //        } catch (Throwable t) {
@@ -963,71 +848,13 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     }
 
     /**
-     * Update state based on the current frame's light estimation.
-     */
-    private void updateLightEstimation(LightEstimate lightEstimate, float[] viewMatrix) {
-        if (lightEstimate.getState() != LightEstimate.State.VALID) {
-//            virtualObjectShader.setBool("u_LightEstimateIsValid", false);
-            return;
-        }
-//        virtualObjectShader.setBool("u_LightEstimateIsValid", true);
-
-        android.opengl.Matrix.invertM(viewInverseMatrix, 0, viewMatrix, 0);
-//        virtualObjectShader.setMat4("u_ViewInverse", viewInverseMatrix);
-
-        updateMainLight(
-                lightEstimate.getEnvironmentalHdrMainLightDirection(),
-                lightEstimate.getEnvironmentalHdrMainLightIntensity(),
-                viewMatrix);
-        updateSphericalHarmonicsCoefficients(
-                lightEstimate.getEnvironmentalHdrAmbientSphericalHarmonics());
-        cubemapFilter.update(lightEstimate.acquireEnvironmentalHdrCubeMap());
-    }
-
-    private void updateMainLight(float[] direction, float[] intensity, float[] viewMatrix) {
-        // We need the direction in a vec4 with 0.0 as the final component to transform it to view space
-        worldLightDirection[0] = direction[0];
-        worldLightDirection[1] = direction[1];
-        worldLightDirection[2] = direction[2];
-        android.opengl.Matrix.multiplyMV(viewLightDirection, 0, viewMatrix, 0, worldLightDirection, 0);
-//        virtualObjectShader.setVec4("u_ViewLightDirection", viewLightDirection);
-//        virtualObjectShader.setVec3("u_LightIntensity", intensity);
-    }
-
-    private void updateSphericalHarmonicsCoefficients(float[] coefficients) {
-        // Pre-multiply the spherical harmonics coefficients before passing them to the shader. The
-        // constants in sphericalHarmonicFactors were derived from three terms:
-        //
-        // 1. The normalized spherical harmonics basis functions (y_lm)
-        //
-        // 2. The lambertian diffuse BRDF factor (1/pi)
-        //
-        // 3. A <cos> convolution. This is done to so that the resulting function outputs the irradiance
-        // of all incoming light over a hemisphere for a given surface normal, which is what the shader
-        // (environmental_hdr.frag) expects.
-        //
-        // You can read more details about the math here:
-        // https://google.github.io/filament/Filament.html#annex/sphericalharmonics
-
-        if (coefficients.length != 9 * 3) {
-            throw new IllegalArgumentException(
-                    "The given coefficients array must be of length 27 (3 components per 9 coefficients");
-        }
-
-        // Apply each factor to every component of each coefficient
-        for (int i = 0; i < 9 * 3; ++i) {
-            sphericalHarmonicsCoefficients[i] = coefficients[i] * sphericalHarmonicFactors[i / 3];
-        }
-//        virtualObjectShader.setVec3Array(
-//                "u_SphericalHarmonicsCoefficients", sphericalHarmonicsCoefficients);
-    }
-
-    /**
      * Configures the session with feature settings.
      */
     private void configureSession() {
         Config config = session.getConfig();
-        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
+//        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
+        config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
+////        config.setLightEstimationMode(Config.LightEstimationMode.AMBIENT_INTENSITY);
         if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
             config.setDepthMode(Config.DepthMode.AUTOMATIC);
         } else {

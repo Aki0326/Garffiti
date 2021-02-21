@@ -24,8 +24,10 @@ uniform mat2 u_PlaneUvMatrix;
 //attribute vec4 a_Position;
 //attribute vec3 a_XZPositionAlpha; // (x, z, alpha)
 layout(location = 0) in vec3 a_XZPositionAlpha; // (x, z, alpha)
+layout(location = 1) in vec3 a_Normal;
 
 out vec3 v_ViewPosition;
+out vec3 v_ViewNormal;
 //attribute vec2 a_TexCoord;
 //varying vec2 v_TexCoord;
 //varying vec3 v_TexCoordAlpha;
@@ -36,6 +38,7 @@ out vec3 v_ScreenSpacePosition;
 void main() {
    vec4 local_pos = vec4(a_XZPositionAlpha.x, 0.0, a_XZPositionAlpha.y, 1.0);
    v_ViewPosition = (u_ModelView * local_pos).xyz;
+   v_ViewNormal = normalize((u_ModelView * vec4(a_Normal, 0.0)).xyz);
    vec2 texture_pos = u_PlaneUvMatrix * vec2(local_pos.x, -local_pos.z);
    v_TexCoordAlpha = vec3(texture_pos.x + 0.5, texture_pos.y + 0.5, a_XZPositionAlpha.z);
    gl_Position = u_ModelViewProjection * local_pos;
