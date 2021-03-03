@@ -54,7 +54,15 @@
     </activity>
 
     <activity
-        android:name="org.ntlab.graffiti.graffiti.ColoringBattleActivity"
+        android:name="org.ntlab.graffiti.graffiti.SharedGraffitiActivity"
+        android:configChanges="orientation|screenSize"
+        android:exported="true"
+        android:theme="@style/Theme.AppCompat.NoActionBar"
+        android:screenOrientation="locked">
+    </activity>
+
+    <activity
+        android:name="org.ntlab.graffiti.graffiti.GraffitiTimeAttackActivity"
         android:configChanges="orientation|screenSize"
         android:exported="true"
         android:theme="@style/Theme.AppCompat.NoActionBar"

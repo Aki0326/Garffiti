@@ -102,12 +102,12 @@ import javax.microedition.khronos.opengles.GL10;
  * anchors.
  * @author a-hongo
  */
-public class ColoringBattleActivity extends AppCompatActivity implements GLSurfaceView.Renderer, NoticeDialogListener {
-    private static final String TAG = ColoringBattleActivity.class.getSimpleName();
-    private static final String TAGTEST = ColoringBattleActivity.class.getSimpleName() + "Shared";
-    private static final String TAGPLANE = ColoringBattleActivity.class.getSimpleName() + "Plane";
-    private static final String TAGANCHOR = ColoringBattleActivity.class.getSimpleName() + "Anchor";
-    private static final String TAGSTROKE = ColoringBattleActivity.class.getSimpleName() + "Stroke";
+public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfaceView.Renderer, NoticeDialogListener {
+    private static final String TAG = SharedGraffitiActivity.class.getSimpleName();
+    private static final String TAGTEST = SharedGraffitiActivity.class.getSimpleName() + "Shared";
+    private static final String TAGPLANE = SharedGraffitiActivity.class.getSimpleName() + "Plane";
+    private static final String TAGANCHOR = SharedGraffitiActivity.class.getSimpleName() + "Anchor";
+    private static final String TAGSTROKE = SharedGraffitiActivity.class.getSimpleName() + "Stroke";
 
 //    private static final float[] OBJECT_COLOR = new float[] {139.0f, 195.0f, 74.0f, 255.0f};
 
@@ -169,13 +169,13 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate()");
-        setContentView(R.layout.activity_coloring_battle);
+        setContentView(R.layout.activity_shared_graffiti);
 
         surfaceView = findViewById(R.id.surfaceview);
         displayRotationHelper = new DisplayRotationHelper(/*context=*/this);
 
         // Set up tap listener.
-        tapHelper = new TapHelper(this, ColoringBattleActivity.this);
+        tapHelper = new TapHelper(this, SharedGraffitiActivity.this);
         surfaceView.setOnTouchListener(tapHelper);
 
         // Set up renderer.
@@ -561,13 +561,13 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
                         @Override
                         public Anchor createAnchor(Plane plane) {
                             Anchor hostAnchor = anchorManager.hostAnchor(plane.createAnchor(plane.getCenterPose()), anchorListener);
-                            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "pendingAnchor put.");
+                            messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, "pendingAnchor put.");
                             return hostAnchor;
                         }
 
                         @Override
                         public void onAnchorMatched(MatchedAnchor matchedAnchor) {
-                            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Shared Plane.");
+                            messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, "Shared Plane.");
                         }
                     },
                     new AnchorMatchingManager.UpdatePlaneListener() {
@@ -711,7 +711,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         }
         Log.d(TAGTEST, "storePolygonInRoom:" + cloudAnchorId);
         webServiceManager.storePolygonInRoom(cloudAnchorId, polyArray);
-        messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Polygon.");
+        messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, "Stored Polygon.");
     }
 
     private void storeStroke(Plane hitPlane, float[] hitPosition) {
@@ -725,9 +725,9 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             // ワールド座標系から平面のローカル座標への変換
             hitOnMyAnchorCoord = GeometryUtil.worldToLocal(hitPosition, myAnchorPose.getTranslation(), myAnchorPose.getXAxis(), myAnchorPose.getZAxis());
             webServiceManager.storeStrokeInRoom(cloudAnchorId, hitOnMyAnchorCoord[0], hitOnMyAnchorCoord[1]);
-            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "Stored Stroke.");
+            messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, "Stored Stroke.");
         } else {
-            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "No Store Stroke.");
+            messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, "No Store Stroke.");
         }
     }
 
@@ -810,7 +810,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
         WebServiceUpdateListener webServiceListener = new WebServiceUpdateListener(cloudAnchorListener);
 //        Preconditions.checkState(roomCode == null, "The room code cannot have been set before.");
         roomCodeText.setText(String.valueOf(roomCode));
-        messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_on_room_code_available, roomCode));
+        messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, getString(R.string.snackbar_on_room_code_available, roomCode));
         webServiceManager.createRoom(roomCode, webServiceListener);
     }
 
@@ -851,7 +851,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             Anchor.CloudAnchorState cloudState = anchor.getCloudAnchorState();
             if (cloudState.isError()) {
                 Log.e(TAG, "Error hosting a cloud anchor, state " + cloudState);
-                messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_host_error, cloudState));
+                messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, getString(R.string.snackbar_host_error, cloudState));
                 return;
             }
             String cloudAnchorId = anchor.getCloudAnchorId();
@@ -859,7 +859,7 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             if (anchorMatchingManager.isPendingSubmission(anchor) && cloudAnchorId != null) {
                 webServiceManager.storeAnchorIdInRoom(cloudAnchorId);
                 Plane plane = anchorMatchingManager.submit(anchor);
-                messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, "myAnchor put.");
+                messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, "myAnchor put.");
 //                    snackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_cloud_id_shared));
                 Log.d(TAGTEST, "myAnchors.put:" + anchor + ", " + anchor.getCloudAnchorId() + ", (" + anchor.getPose().getTranslation()[0] + ", " + anchor.getPose().getTranslation()[1] + ", " + anchor.getPose().getTranslation()[2] + ") ," + plane);
             }
@@ -870,17 +870,17 @@ public class ColoringBattleActivity extends AppCompatActivity implements GLSurfa
             // When the anchor has been resolved, or had a final error state.
             CloudAnchorState cloudState = anchor.getCloudAnchorState();
             if (cloudState.isError()) {
-                messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_error, cloudState));
+                messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, getString(R.string.snackbar_resolve_error, cloudState));
                 return;
             }
-            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_success));
+            messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, getString(R.string.snackbar_resolve_success));
             anchorMatchingManager.storePartner(anchor);
         }
 
         @Override
         public void onShowResolveMessage() {
             messageSnackbarHelper.setMaxLines(4);
-            messageSnackbarHelper.showMessageWithDismiss(ColoringBattleActivity.this, getString(R.string.snackbar_resolve_no_result_yet));
+            messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, getString(R.string.snackbar_resolve_no_result_yet));
         }
 
     }

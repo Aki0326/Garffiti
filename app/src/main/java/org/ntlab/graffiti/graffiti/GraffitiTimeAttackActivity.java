@@ -1,35 +1,19 @@
 package org.ntlab.graffiti.graffiti;
 
-import android.annotation.SuppressLint;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.Matrix;
-import android.graphics.PixelFormat;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
 import android.media.Image;
-import android.media.ImageReader;
-import android.media.projection.MediaProjection;
-import android.media.projection.MediaProjectionManager;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
-import android.provider.MediaStore;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.Animation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -73,33 +57,22 @@ import org.ntlab.graffiti.common.rendering.BackgroundRenderer;
 import org.ntlab.graffiti.common.rendering.Framebuffer;
 import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
-import org.ntlab.graffiti.common.views.BrushSizeSelector;
-import org.ntlab.graffiti.common.views.ColorSelector;
+import org.ntlab.graffiti.common.views.Arc;
 import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
+import org.ntlab.graffiti.graffiti.states.ReadyGoState;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
-import java.util.Date;
 import java.util.Queue;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
- * This is a simple example that shows how to create an augmented reality (AR) application using the
- * ARCore API. The application will display any detected planes and will allow the user to tap on a
- * plane to place a 3d model of the Android robot.
- *
- * @author a-hongo, n-nitta
+ * Created by a-hongo on 25,2月,2021
  */
-public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
-    private static final String TAG = GraffitiActivity.class.getSimpleName();
+public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
+    private static final String TAG = GraffitiTimeAttackActivity.class.getSimpleName();
 
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 100f;
@@ -117,7 +90,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     private final RendererHelper rendererHelper = new RendererHelper();
 
     private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
-//    private final PlaneRenderer planeRenderer = new PlaneRenderer();
+    //    private final PlaneRenderer planeRenderer = new PlaneRenderer();
 //    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
 //    private final ObjectRenderer virtualObject = new ObjectRenderer();
 //    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
@@ -139,25 +112,18 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 
     private Queue<IGLDrawListener> glDrawListenerQueue = new ArrayDeque<>();
 
+    private ReadyGoState readyGoState;
+
     private PlaneDiscoveryController planeDiscoveryController;
 
-    private ColorSelector colorSelector;
-    private BrushSizeSelector brushSizeSelector;
+    private Arc arcView;
 
-    private static final int REQUEST_MEDIA_PROJECTION = 1001;
-    private MediaProjectionManager mpManager;
-    private MediaProjection mProjection;
-
-    private int displayWidth, displayHeight;
-    private ImageReader imageReader;
-    private VirtualDisplay virtualDisplay;
-    private int screenDensity;
-    private ImageView screenshotImageView;
-    private ImageView cameraButton;
-
-    private static final long START_TIME = 10000; //10s
-    private CountDownTimer showScreenshotTimer;
+    private static final long START_TIME = 61000; //61s
+    private static final long COUNT_DOWN_INTERVAL = 1000;
     private long timeLeftInMillis = START_TIME;
+    private CountDownTimer countDownTimer;
+    private TextView timerText;
+    private ImageView timerBgImage;
 
     private MusicPlayerHelper graffitiClickSE = new MusicPlayerHelper();
     private boolean isLoop = false;
@@ -165,13 +131,13 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_graffiti);
+        setContentView(R.layout.activity_graffiti_time_attack);
 
         surfaceView = findViewById(R.id.surfaceview);
         displayRotationHelper = new DisplayRotationHelper(/*context=*/ this);
 
         // Set up tap listener.
-        tapHelper = new TapHelper(this, GraffitiActivity.this);
+        tapHelper = new TapHelper(this, GraffitiTimeAttackActivity.this);
         surfaceView.setOnTouchListener(tapHelper);
 
         // Set up renderer.
@@ -193,62 +159,41 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         FrameLayout instructionsView = (FrameLayout) inflater.inflate(R.layout.view_plane_discovery, handmotion, true);
         planeDiscoveryController = new PlaneDiscoveryController(instructionsView);
 
-        // Set up the ColorSelector View.
-        colorSelector = findViewById(R.id.color_selector_view);
+        // Set up the Arc View.
+        FrameLayout arc = findViewById(R.id.arc_view);
+        inflater.inflate(R.layout.view_arc, arc, true);
+        arcView = findViewById(R.id.arc);
 
-        // Set up the brushSizeSelector View.
-        brushSizeSelector = findViewById(R.id.brush_size_selector);
+        // Set up the timerView.
+        timerText = findViewById(R.id.timer_text);
+        timerBgImage = findViewById(R.id.timer_bg_image);
+        timerBgImage.setVisibility(View.INVISIBLE);
 
-        // Set up the Screen Shot View.
-        // 撮影したスクリーンを表示するImageView
-        screenshotImageView = findViewById(R.id.image_view);
-        screenshotImageView.setOnClickListener(new View.OnClickListener() {
+        Animation.AnimationListener readyGoAnimListener = new Animation.AnimationListener() {
             @Override
-            public void onClick(View view) {
-                startActivity(new Intent(GraffitiActivity.this, PhotoGalleryActivity.class));
-                screenshotImageView.setClickable(false);
-                cameraButton.setClickable(false);
-                screenshotImageView.setImageBitmap(null);
+            public void onAnimationStart(Animation animation) {
+                arcView.startAnimation(360);
             }
-        });
-        screenshotImageView.setClickable(false);
 
-        cameraButton = findViewById(R.id.camera_image);
-        // ボタンタップでスクリーンショットを撮る
-        cameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                try {
-                    isLoop = false;
-                    graffitiClickSE.musicPlay(GraffitiActivity.this, "musics/se/camera-shutter.mp3", isLoop);
-                    cameraButton.setClickable(false);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                getScreenshot();
+            public void onAnimationEnd(Animation animation) {
+                resetTimer();
+                startTimer();
+                surfaceView.setEnabled(true);
             }
-        });
 
-        // 画面の縦横サイズとdpを取得
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        screenDensity = displayMetrics.densityDpi;
-        displayWidth = displayMetrics.widthPixels;
-        displayHeight = displayMetrics.heightPixels;
-        mpManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+            @Override
+            public void onAnimationRepeat(Animation animation) {
 
-        // permissionを確認するintentを投げ、ユーザーの許可・不許可を受け取る
-        if (mpManager != null) {
-            startActivityForResult(mpManager.createScreenCaptureIntent(), REQUEST_MEDIA_PROJECTION);
-        }
-
+            }
+        };
+        readyGoState = new ReadyGoState(this, readyGoAnimListener);
     }
 
     @Override
     protected void onRestart() {
         super.onRestart();
         resetTimer();
-        cameraButton.setClickable(true);
     }
 
     @Override
@@ -302,10 +247,12 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 
             // Enable depth-based occlusion.
             boolean isDepthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
-            if (isDepthSupported) {
-                depthSettings.setUseDepthForOcclusion(true);
-                depthSettings.setDepthColorVisualizationEnabled(true);
-            }
+//            if (isDepthSupported) {
+//                depthSettings.setUseDepthForOcclusion(true);
+//                depthSettings.setDepthColorVisualizationEnabled(true);
+//            }
+            depthSettings.setUseDepthForOcclusion(false);
+            depthSettings.setDepthColorVisualizationEnabled(false);
         }
 
         // Note that order matters - see the note in onPause(), the reverse applies here.
@@ -330,7 +277,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         surfaceView.onResume();
         displayRotationHelper.onResume();
 
-        TimeoutHelper.startTimer(GraffitiActivity.this);
+        TimeoutHelper.startTimer(GraffitiTimeAttackActivity.this);
     }
 
     /**
@@ -369,45 +316,6 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         }
     }
 
-    /*
-     * ユーザーのスクリーンショットの許可を受け取る
-     */
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (REQUEST_MEDIA_PROJECTION == requestCode) {
-            if (resultCode != RESULT_OK) {
-                // 拒否された
-                Toast.makeText(this,
-                        "User cancelled", Toast.LENGTH_LONG).show();
-                return;
-            }
-            // 許可された結果を受け取る
-//            Intent intent = new Intent(this, GraffitiActivity.class);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                startForegroundService(intent);
-                setUpMediaProjection(resultCode, data);
-            }
-        }
-    }
-
-    private void setUpMediaProjection(int code, Intent intent) {
-        if (intent != null) {
-            mProjection = mpManager.getMediaProjection(code, intent);
-            setUpVirtualDisplay();
-        }
-    }
-
-    private void setUpVirtualDisplay() {
-        imageReader = ImageReader.newInstance(
-                displayWidth, displayHeight, PixelFormat.RGBA_8888, 2);
-
-        virtualDisplay = mProjection.createVirtualDisplay("ScreenCapture",
-                displayWidth, displayHeight, screenDensity,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                imageReader.getSurface(), null, null);
-    }
-
     @Override
     public void onPause() {
         super.onPause();
@@ -425,10 +333,6 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 
     @Override
     protected void onDestroy() {
-        if (virtualDisplay != null) {
-            Log.d("debug", "release VirtualDisplay");
-            virtualDisplay.release();
-        }
         if (session != null) {
             // Explicitly close ARCore Session to release native resources.
             // Review the API reference for important considerations before calling close() in apps with
@@ -586,6 +490,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         if (messageSnackbarHelper.isShowing() && message == null) {
             messageSnackbarHelper.hide(this);
             planeDiscoveryController.hide();
+            startTimeAttack();
         } else if (!messageSnackbarHelper.isShowing() && message != null) {
             messageSnackbarHelper.showMessage(this, message);
             planeDiscoveryController.show();
@@ -730,7 +635,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
                     float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
                     float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
                     int drawerStyle = 1;
-                    int color = colorSelector.getSelectedLineColor();
+                    int color = Color.BLUE;
                     TextureDrawer drawer = null;
                     switch (drawerStyle) {
                         case 1:
@@ -744,8 +649,9 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
                     if (color == Color.TRANSPARENT) {
                         graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
                     } else {
-                        graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, brushSizeSelector.getSelectedLineWidth(), trackable, drawer);
+                        graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
                     }
+                    arcView.startAnimation(arcView.getAngle()-10);
                 }
             }
         }
@@ -763,102 +669,30 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         return false;
     }
 
-    private void getScreenshot() {
-        glDrawListenerQueue.offer(new IGLDrawListener() {
-            @Override
-            public void onDraw(GL10 gl) {
-                final String filename = generateFilename();
-                // バッファからBitmapを生成
-                int[] viewportDim = new int[4];
-                GLES30.glGetIntegerv(GLES30.GL_VIEWPORT, IntBuffer.wrap(viewportDim));
-                int width = viewportDim[2];
-                int height = viewportDim[3];
-                ByteBuffer buffer = ByteBuffer.allocate(width * height * 4);
-                buffer.position(0);
-                GLES30.glReadPixels(0, 0, width, height, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE, buffer);
-                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-                bitmap.copyPixelsFromBuffer(buffer);
-                Matrix mat = new Matrix();
-                mat.preScale(1.0f, -1.0f);
-                Bitmap bitmap2 = Bitmap.createBitmap(bitmap, 0, 0, width, height, mat, false);
-                try {
-                    saveBitmapToDisk(bitmap2, filename);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                Handler handler = new Handler(Looper.getMainLooper());
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        setScreenshotImageView(bitmap2);
-                    }
-                });
-            }
-        });
-    }
-
-    private String generateFilename() {
-        String date =
-                new SimpleDateFormat("yyyyMMddHHmmss", java.util.Locale.getDefault()).format(new Date());
-        return Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES) + File.separator + "AR/" + date + "_screenshot.jpg";
-    }
-
-    @SuppressLint("WrongThread")
-    private void saveBitmapToDisk(Bitmap bitmap, String filename) throws IOException {
-
-        File out = new File(filename);
-        if (!out.getParentFile().exists()) {
-            out.getParentFile().mkdirs();
-        }
-        try (FileOutputStream outputStream = new FileOutputStream(filename);
-             ByteArrayOutputStream outputData = new ByteArrayOutputStream()) {
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputData);
-            outputData.writeTo(outputStream);
-            outputStream.flush();
-            outputStream.close();
-            registerDatabase(filename);
-        } catch (IOException ex) {
-            throw new IOException("Failed to save bitmap to disk", ex);
-        }
-    }
-
-    // アンドロイドのデータベースへ登録する
-    private void registerDatabase(String file) {
-        ContentValues contentValues = new ContentValues();
-        ContentResolver contentResolver = GraffitiActivity.this.getContentResolver();
-        contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        contentValues.put("_data", file);
-        contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                contentValues);
-    }
-
-    public void setScreenshotImageView(Bitmap bitmap) {
-        screenshotImageView.setImageBitmap(bitmap);
-        screenshotImageView.setClickable(true);
-        resetTimer();
-        startTimer();
-    }
-
     private void startTimer() {
-        showScreenshotTimer = new CountDownTimer(timeLeftInMillis, START_TIME) {
+        timerBgImage.setVisibility(View.VISIBLE);
+
+        // Set up the countDownTimer.
+        countDownTimer = new CountDownTimer(START_TIME, COUNT_DOWN_INTERVAL) {
             @Override
             public void onTick(long millisUntilFinished) {
                 timeLeftInMillis = millisUntilFinished;
+                long mm = timeLeftInMillis / 1000 / 60;
+                long ss = timeLeftInMillis / 1000 % 60;
+                timerText.setText(String.format("%1$01d:%2$02d", mm, ss));
             }
 
             @Override
             public void onFinish() {
-                screenshotImageView.setClickable(false);
-                cameraButton.setClickable(true);
-                screenshotImageView.setImageBitmap(null);
+                finishTimeAttack();
             }
         }.start();
     }
 
     private void resetTimer() {
-        if (showScreenshotTimer != null) {
-            showScreenshotTimer.cancel();
+        if (countDownTimer != null) {
+            timerBgImage.setVisibility(View.INVISIBLE);
+            countDownTimer.cancel();
             timeLeftInMillis = START_TIME;
         }
     }
@@ -866,4 +700,23 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
     private interface IGLDrawListener {
         public void onDraw(GL10 gl);
     }
+
+    private void startTimeAttack() {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                surfaceView.setEnabled(false);
+                arcView.setArcColor(Color.BLUE);
+                readyGoState.showReadyGo();
+            }
+        });
+    }
+
+    private void finishTimeAttack() {
+        // TODO: Calculate graffiti area and Show
+        long totalColorArea = graffitiRenderer.getTotalColorArea(Color.BLUE);
+        TextView myResultText = findViewById(R.id.my_result_text);
+        myResultText.setText(String.valueOf(totalColorArea));
+    }
+
 }

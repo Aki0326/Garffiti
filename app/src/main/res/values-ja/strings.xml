@@ -16,7 +16,10 @@
 -->
 <resources>
   <string name="app_name">Graffiti</string>
-
+  <string name="graffiti_mode">　らくがき　</string>
+  <string name="shared_graffiti_mode">　2人でらくがき　</string>
+  <string name="graffiti_time_attack_mode">らくがきタイムアタック</string>
+  <string name="photo_gallery_mode">　写真ギャラリー　</string>
   <string name="unavailable_mode">すみません。ただいま工事中です。</string>
 
   <!-- Image and ImageButton Content Descriptions for Accessibility-->
