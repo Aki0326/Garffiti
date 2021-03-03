@@ -7,7 +7,7 @@ import android.os.CountDownTimer;
 import org.ntlab.graffiti.graffiti.ModeSelectActivity;
 
 /**
- * Helper to timeout.
+ * Helper to back to ModeSelectActivity after START_TIME.
  * @author a-hongo
  */
 public class TimeoutHelper {
@@ -16,7 +16,7 @@ public class TimeoutHelper {
     private static CountDownTimer countDownTimer = null;
 
     /**
-     * Start time count.
+     * Start the CountDownTimer.
      *
      * @param activity the application's current activity.
      */
@@ -37,11 +37,10 @@ public class TimeoutHelper {
             };
         }
         countDownTimer.start();
-
     }
 
     /**
-     * Reset time count.
+     * Reset the CountDownTimer.
      */
     public static void resetTimer(){
         if(countDownTimer != null) {

@@ -16,7 +16,10 @@
 -->
 <resources>
   <string name="app_name">Graffiti</string>
-
+  <string name="graffiti_mode">Graffiti</string>
+  <string name="shared_graffiti_mode">Shared Graffiti</string>
+  <string name="graffiti_time_attack_mode">Graffiti Time Attack</string>
+  <string name="photo_gallery_mode">Photo Gallery</string>
   <string name="unavailable_mode">Sorry. This mode is currently under construction.</string>
 
   <!-- Image and ImageButton Content Descriptions for Accessibility-->

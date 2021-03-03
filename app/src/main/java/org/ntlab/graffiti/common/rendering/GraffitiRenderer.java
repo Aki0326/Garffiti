@@ -438,6 +438,23 @@ public class GraffitiRenderer {
         return uvTransform;
     }
 
+    public long getTotalColorArea(int color) {
+        long colorPixels = 0; // color色pixelの総計
+        for (int i = 0; i < textureBitmaps.size(); i++) {
+            Bitmap bitmap = textureBitmaps.get(i);
+            int w = bitmap.getWidth();
+            int h = bitmap.getHeight();
+            int[] pixels = new int[w * h];
+            bitmap.getPixels(pixels, 0, w, 0, 0, w, h);
+            for (int j = 0; j < w * h; j++) {
+                if (pixels[j] == color) {
+                    colorPixels++;
+                }
+            }
+        }
+        return colorPixels;
+    }
+
     /**
      * Updates the display geometry. This must be called every frame before calling either of
      * GraffitiRenderer's draw methods.
