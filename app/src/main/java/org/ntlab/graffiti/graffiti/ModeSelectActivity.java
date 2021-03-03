@@ -7,7 +7,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -17,7 +16,7 @@ import org.ntlab.graffiti.common.helpers.MusicPlayerHelper;
 import java.io.IOException;
 
 /**
- * This ModeSelectActivity selects mode.
+ * Select the mode in ModeSelectActivity.
  * @author a-hongo
  */
 public class ModeSelectActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener {
@@ -25,13 +24,14 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
 
     private MusicPlayerHelper modeSelectBGM = new MusicPlayerHelper();
     private MusicPlayerHelper modeSelectClickSE = new MusicPlayerHelper();
-    private Boolean isLoop;
+    private Boolean isLoop; // true:BGMをループする
 
-    private Button graffityModeButton;
-    private Button coloringbattleModeButton;
-    private Button photogalleryButton;
+    private Button graffitiModeButton;
+    private Button sharedGraffitiModeButton;
+    private Button graffitiTimeAttackModeButton;
+    private Button photoGalleryButton;
 
-    private PowerManager.WakeLock wakeLock;
+    private PowerManager.WakeLock wakeLock; // 画面がスリープしないように
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,17 +39,21 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mode_select);
 
-        graffityModeButton = findViewById(R.id.graffity_mode_button);
-        graffityModeButton.setOnClickListener(this);
-        graffityModeButton.setOnTouchListener(this);
+        graffitiModeButton = findViewById(R.id.graffiti_mode_button);
+        graffitiModeButton.setOnClickListener(this);
+        graffitiModeButton.setOnTouchListener(this);
 
-        coloringbattleModeButton = findViewById(R.id.coloringbattle_mode_button);
-        coloringbattleModeButton.setOnClickListener(this);
-        coloringbattleModeButton.setOnTouchListener(this);
+        sharedGraffitiModeButton = findViewById(R.id.shared_graffiti_mode_button);
+        sharedGraffitiModeButton.setOnClickListener(this);
+        sharedGraffitiModeButton.setOnTouchListener(this);
 
-        photogalleryButton = findViewById(R.id.photogallery_button);
-        photogalleryButton.setOnClickListener(this);
-        photogalleryButton.setOnTouchListener(this);
+        graffitiTimeAttackModeButton = findViewById(R.id.graffiti_time_attack_mode_button);
+        graffitiTimeAttackModeButton.setOnClickListener(this);
+        graffitiTimeAttackModeButton.setOnTouchListener(this);
+
+        photoGalleryButton = findViewById(R.id.photo_gallery_mode_button);
+        photoGalleryButton.setOnClickListener(this);
+        photoGalleryButton.setOnTouchListener(this);
     }
 
     @Override
@@ -92,31 +96,27 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
     @Override
     public void onClick(View view) {
         modeSelectClickSE.musicStop();
+        modeSelectBGM.musicStop();
+        try {
+            isLoop = false;
+            modeSelectClickSE.musicPlay(this, "musics/se/click-sound.mp3", isLoop);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         switch (view.getId()) {
-            case R.id.graffity_mode_button:
-                modeSelectBGM.musicStop();
-                try {
-                    isLoop = false;
-                    modeSelectClickSE.musicPlay(this, "musics/se/click-sound.mp3", isLoop);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            case R.id.graffiti_mode_button:
                 ((Graffiti) getApplication()).outputLine("Graffiti mode Clicked.");
                 startActivity(new Intent(ModeSelectActivity.this, GraffitiActivity.class));
                 break;
-            case R.id.coloringbattle_mode_button:
-                Toast.makeText(this, "すみません。ただいま工事中です。", Toast.LENGTH_SHORT).show();
-                ((Graffiti) getApplication()).outputLine("Coloring battle mode Clicked.");
-                startActivity(new Intent(ModeSelectActivity.this, ColoringBattleActivity.class));
+            case R.id.shared_graffiti_mode_button:
+                ((Graffiti) getApplication()).outputLine("Shared graffiti mode Clicked.");
+                startActivity(new Intent(ModeSelectActivity.this, SharedGraffitiActivity.class));
                 break;
-            case R.id.photogallery_button:
-                modeSelectBGM.musicStop();
-                try {
-                    isLoop = false;
-                    modeSelectClickSE.musicPlay(this, "musics/se/click-sound.mp3", isLoop);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            case R.id.graffiti_time_attack_mode_button:
+                ((Graffiti) getApplication()).outputLine("Graffiti time attack mode Clicked.");
+                startActivity(new Intent(ModeSelectActivity.this, GraffitiTimeAttackActivity.class));
+                break;
+            case R.id.photo_gallery_mode_button:
                 ((Graffiti) getApplication()).outputLine("Photo gallery mode Clicked.");
                 startActivity(new Intent(ModeSelectActivity.this, PhotoGalleryActivity.class));
                 break;
@@ -136,27 +136,17 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
-        switch (view.getId()) {
-            case R.id.graffity_mode_button:
-                if(motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                    graffityModeButton.setScaleX(1.2f);
-                    graffityModeButton.setScaleY(1.2f);
-                } else if(motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    graffityModeButton.setScaleX(1.0f);
-                    graffityModeButton.setScaleY(1.0f);
-                }
-                break;
-            case R.id.coloringbattle_mode_button:
-                break;
-            case R.id.photogallery_button:
-                if(motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                    photogalleryButton.setScaleX(1.2f);
-                    photogalleryButton.setScaleY(1.2f);
-                } else if(motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    photogalleryButton.setScaleX(1.0f);
-                    photogalleryButton.setScaleY(1.0f);
-                }
-                break;
+        Button clickedButton = (Button)findViewById(view.getId());
+        if (clickedButton != null) {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                float downScale = 1.2f;
+                clickedButton.setScaleX(downScale);
+                clickedButton.setScaleY(downScale);
+            } else if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                float upScale = 1.0f;
+                clickedButton.setScaleX(upScale);
+                clickedButton.setScaleY(upScale);
+            }
         }
         return false;
     }
