@@ -18,9 +18,12 @@
   <string name="app_name">Graffiti</string>
   <string name="graffiti_mode">　らくがき　</string>
   <string name="shared_graffiti_mode">　2人でらくがき　</string>
-  <string name="graffiti_time_attack_mode">らくがきタイムアタック</string>
+  <string name="graffiti_time_attack_mode">　らくがきタイムアタック　</string>
   <string name="photo_gallery_mode">　写真ギャラリー　</string>
   <string name="unavailable_mode">すみません。ただいま工事中です。</string>
+
+  <string name="retry">リトライ</string>
+  <string name="quit">やめる</string>
 
   <!-- Image and ImageButton Content Descriptions for Accessibility-->
   <string name="content_description_white_brush">White Brush</string>

@@ -1,22 +1,25 @@
 package org.ntlab.graffiti.graffiti;
 
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.media.Image;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.animation.Animation;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.RequiresApi;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.Camera;
@@ -58,11 +61,18 @@ import org.ntlab.graffiti.common.rendering.Framebuffer;
 import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
 import org.ntlab.graffiti.common.views.Arc;
-import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
-import org.ntlab.graffiti.graffiti.states.ReadyGoState;
+import org.ntlab.graffiti.common.views.PlaneDetectController;
+import org.ntlab.graffiti.graffiti.states.CountDownState;
+import org.ntlab.graffiti.graffiti.states.GameRankingState;
+import org.ntlab.graffiti.graffiti.states.GameReadyState;
+import org.ntlab.graffiti.graffiti.states.GameResultState;
+import org.ntlab.graffiti.graffiti.states.PlaneDetectState;
+import org.ntlab.graffiti.graffiti.states.State;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -71,14 +81,14 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * Created by a-hongo on 25,2月,2021
  */
-public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
+public class GraffitiTimeAttackActivity extends GameActivity {
     private static final String TAG = GraffitiTimeAttackActivity.class.getSimpleName();
 
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 100f;
 
     // Rendering. The Renderers are created here, and initialized when the GL surface is created.
-    private GLSurfaceView surfaceView;
+//    private GLSurfaceView surfaceView;
 
     private boolean installRequested;
 
@@ -112,22 +122,27 @@ public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLS
 
     private Queue<IGLDrawListener> glDrawListenerQueue = new ArrayDeque<>();
 
-    private ReadyGoState readyGoState;
+    private PlaneDetectState planeDetectState;
+    private GameReadyState gameReadyState;
+    private CountDownState countDownState;
+    private GameResultState gameResultState;
+    private GameRankingState gameRankingState;
 
-    private PlaneDiscoveryController planeDiscoveryController;
+    private PlaneDetectController planeDetectController;
 
     private Arc arcView;
 
-    private static final long START_TIME = 61000; //61s
-    private static final long COUNT_DOWN_INTERVAL = 1000;
-    private long timeLeftInMillis = START_TIME;
-    private CountDownTimer countDownTimer;
-    private TextView timerText;
-    private ImageView timerBgImage;
+    private TextView myResultText;
+
+    private Button retryButton;
+    private Button quitButton;
+    private View.OnClickListener readyButtonClickListener;
+    private View.OnClickListener quitButtonClickListener;
 
     private MusicPlayerHelper graffitiClickSE = new MusicPlayerHelper();
     private boolean isLoop = false;
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -153,47 +168,78 @@ public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLS
         depthSettings.onCreate(this);
         instantPlacementSettings.onCreate(this);
 
-        // Set up the HandMotion View.
+        // Set up the HandMotion View & planeDetectState.
         LayoutInflater inflater = LayoutInflater.from(this);
         FrameLayout handmotion = findViewById(R.id.plane_discovery_view);
         FrameLayout instructionsView = (FrameLayout) inflater.inflate(R.layout.view_plane_discovery, handmotion, true);
-        planeDiscoveryController = new PlaneDiscoveryController(instructionsView);
+        planeDetectController = new PlaneDetectController(instructionsView);
+        planeDetectState = new PlaneDetectState();
+        changeState(planeDetectState);
 
         // Set up the Arc View.
         FrameLayout arc = findViewById(R.id.arc_view);
         inflater.inflate(R.layout.view_arc, arc, true);
         arcView = findViewById(R.id.arc);
 
+        // Set up the ReadyGo View.
+        TextView readyText = findViewById(R.id.ready_text);
+        TextView goText = findViewById(R.id.go_text);
+        gameReadyState = new GameReadyState(this, readyText, goText, arcView);
+
         // Set up the timerView.
-        timerText = findViewById(R.id.timer_text);
-        timerBgImage = findViewById(R.id.timer_bg_image);
-        timerBgImage.setVisibility(View.INVISIBLE);
+        TextView timerText = findViewById(R.id.timer_text);
+        ImageView timerBgImage = findViewById(R.id.timer_bg_image);
+        countDownState = new CountDownState(timerText, timerBgImage);
 
-        Animation.AnimationListener readyGoAnimListener = new Animation.AnimationListener() {
+        // Set up the resultView.
+        myResultText = findViewById(R.id.my_result_text);
+        gameResultState = new GameResultState(this, myResultText);
+
+        ConstraintLayout constraintLayout = findViewById(R.id.draw_container);
+        gameRankingState = new GameRankingState(this, constraintLayout);
+        gameRankingState.setGameRankingBg(getResources().getDrawable(R.drawable.bg_sketchbook, null));
+        List<Drawable> rankBgs = new ArrayList<>();
+        rankBgs.add(getResources().getDrawable(R.drawable.crown_gold, null));
+        rankBgs.add(getResources().getDrawable(R.drawable.crown_silver, null));
+        rankBgs.add(getResources().getDrawable(R.drawable.crown_bronze, null));
+        gameRankingState.setRankBgs(getResources(), rankBgs, false);
+        Typeface textFont = getResources().getFont(R.font.mplus_rounded1c_bold);
+        gameRankingState.setTextFont(Typeface.create(textFont, Typeface.BOLD));
+
+        // Set up the retry & quit button
+        retryButton = findViewById(R.id.retry_button);
+        retryButton.setVisibility(View.INVISIBLE);
+        readyButtonClickListener = new View.OnClickListener() {
             @Override
-            public void onAnimationStart(Animation animation) {
-                arcView.startAnimation(360);
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                resetTimer();
-                startTimer();
-                surfaceView.setEnabled(true);
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
+            public void onClick(View v) {
+                retryButton.setClickable(false);
+                retryButton.setVisibility(View.INVISIBLE);
+                quitButton.setClickable(false);
+                quitButton.setVisibility(View.INVISIBLE);
+                myResultText.clearAnimation();
+                myResultText.setVisibility(View.INVISIBLE);
+                graffitiRenderer.clearTexture();
+                changeState(gameReadyState);
             }
         };
-        readyGoState = new ReadyGoState(this, readyGoAnimListener);
+        retryButton.setOnClickListener(readyButtonClickListener);
+        retryButton.setClickable(false);
+        quitButton = findViewById(R.id.quit_button);
+        quitButton.setVisibility(View.INVISIBLE);
+        quitButtonClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        };
+        quitButton.setOnClickListener(quitButtonClickListener);
+        quitButton.setClickable(false);
     }
 
     @Override
     protected void onRestart() {
         super.onRestart();
-        resetTimer();
+        restartCurState();
     }
 
     @Override
@@ -273,7 +319,6 @@ public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLS
             session = null;
             return;
         }
-
         surfaceView.onResume();
         displayRotationHelper.onResume();
 
@@ -327,7 +372,7 @@ public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLS
             surfaceView.onPause();
             session.pause();
         }
-        resetTimer();
+        pauseCurState();
         TimeoutHelper.resetTimer();
     }
 
@@ -481,6 +526,7 @@ public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLS
                 message = TrackingStateHelper.getTrackingFailureReasonString(camera);
             }
         } else if (hasTrackingPlane()) {
+            // TODO Visualize temporarily plane
 //            if (anchors.isEmpty()) {
 //                message = getString(R.string.waiting_for_tap);;
 //            }
@@ -489,11 +535,13 @@ public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLS
         }
         if (messageSnackbarHelper.isShowing() && message == null) {
             messageSnackbarHelper.hide(this);
-            planeDiscoveryController.hide();
+            planeDetectController.hide();
             startTimeAttack();
         } else if (!messageSnackbarHelper.isShowing() && message != null) {
-            messageSnackbarHelper.showMessage(this, message);
-            planeDiscoveryController.show();
+            if (getCurState() instanceof PlaneDetectState) {
+                messageSnackbarHelper.showMessage(this, message);
+                planeDetectController.show();
+            }
         }
 
         // -- Draw background
@@ -669,31 +717,29 @@ public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLS
         return false;
     }
 
-    private void startTimer() {
-        timerBgImage.setVisibility(View.VISIBLE);
-
-        // Set up the countDownTimer.
-        countDownTimer = new CountDownTimer(START_TIME, COUNT_DOWN_INTERVAL) {
-            @Override
-            public void onTick(long millisUntilFinished) {
-                timeLeftInMillis = millisUntilFinished;
-                long mm = timeLeftInMillis / 1000 / 60;
-                long ss = timeLeftInMillis / 1000 % 60;
-                timerText.setText(String.format("%1$01d:%2$02d", mm, ss));
-            }
-
-            @Override
-            public void onFinish() {
-                finishTimeAttack();
-            }
-        }.start();
-    }
-
-    private void resetTimer() {
-        if (countDownTimer != null) {
-            timerBgImage.setVisibility(View.INVISIBLE);
-            countDownTimer.cancel();
-            timeLeftInMillis = START_TIME;
+    @Override
+    public void onExitState(State state) {
+        if (state instanceof PlaneDetectState) {
+            surfaceView.setEnabled(false);
+            arcView.setArcColor(Color.BLUE);
+            changeState(gameReadyState);
+        } else if (state instanceof GameReadyState) {
+            changeState(countDownState);
+            surfaceView.setEnabled(true);
+        } else if (state instanceof CountDownState) {
+            surfaceView.setEnabled(false);
+            long score = graffitiRenderer.getTotalColorPixels(Color.BLUE);
+            Log.d(TAG, "Point: " + score + "p");
+            gameResultState.setScore(score);
+            gameRankingState.setScore(score);
+            changeState(gameResultState);
+        } else if (state instanceof GameResultState) {
+            changeState(gameRankingState);
+        } else if (state instanceof GameRankingState) {
+            retryButton.setVisibility(View.VISIBLE);
+            retryButton.setClickable(true);
+            quitButton.setVisibility(View.VISIBLE);
+            quitButton.setClickable(true);
         }
     }
 
@@ -705,18 +751,12 @@ public class GraffitiTimeAttackActivity extends AppCompatActivity implements GLS
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                surfaceView.setEnabled(false);
-                arcView.setArcColor(Color.BLUE);
-                readyGoState.showReadyGo();
+                onExitState(getCurState());
             }
         });
     }
 
     private void finishTimeAttack() {
-        // TODO: Calculate graffiti area and Show
-        long totalColorArea = graffitiRenderer.getTotalColorArea(Color.BLUE);
-        TextView myResultText = findViewById(R.id.my_result_text);
-        myResultText.setText(String.valueOf(totalColorArea));
     }
 
 }

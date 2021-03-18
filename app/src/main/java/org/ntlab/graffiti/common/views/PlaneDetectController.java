@@ -5,14 +5,14 @@ import android.view.View;
 import androidx.annotation.Nullable;
 
 /**
- * This class control the plane discovery.
+ * This class control the plane detection.
  * @author a-hongo
  */
-public class PlaneDiscoveryController{
+public class PlaneDetectController {
     private @Nullable
     View planeDiscoveryView;
 
-    public PlaneDiscoveryController(@Nullable View planeDiscoveryView) {
+    public PlaneDetectController(@Nullable View planeDiscoveryView) {
         this.planeDiscoveryView = planeDiscoveryView;
     }
 
