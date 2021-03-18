@@ -438,7 +438,12 @@ public class GraffitiRenderer {
         return uvTransform;
     }
 
-    public long getTotalColorArea(int color) {
+    /**
+     * Sum up colored pixels.
+     *
+     * @param color 集計する色
+     */
+    public long getTotalColorPixels(int color) {
         long colorPixels = 0; // color色pixelの総計
         for (int i = 0; i < textureBitmaps.size(); i++) {
             Bitmap bitmap = textureBitmaps.get(i);
@@ -710,6 +715,23 @@ public class GraffitiRenderer {
             textureBitmaps.set(planeNo.get(p), textureBitmapToRecycle);
             textureBitmapToRecycle = bitmap;        //  リサイクルに回す
             planePose.put(p, newPose);
+        }
+    }
+
+    /**
+     * Clear textureBitmap.
+     */
+    public void clearTexture() {
+        for (Plane p: planeNo.keySet()) {
+            Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
+            Canvas canvas = new Canvas(bitmap);
+            canvas.drawColor(Color.WHITE);
+
+            // 転送
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeNo.get(p)));
+            GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
         }
     }
 
