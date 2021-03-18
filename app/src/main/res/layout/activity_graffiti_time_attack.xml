@@ -19,7 +19,7 @@
         android:layout_marginBottom="20dp">
 
         <FrameLayout
-            android:id="@+id/timer_view"
+            android:id="@+id/timer_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="5dp"
@@ -51,33 +51,31 @@
 
         <TextView
             android:id="@+id/my_result_text"
-            android:layout_width="wrap_content"
+            android:layout_width="250dp"
             android:layout_height="wrap_content"
             android:fontFamily="@font/mplus_rounded1c_bold"
-            android:gravity="center_vertical"
+            android:gravity="center"
             android:textColor="@color/black"
             android:textSize="50sp"
             android:textStyle="bold"
+            android:background="@drawable/bg_yellow2"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <org.ntlab.graffiti.common.views.ReadyGoText
-            android:id="@+id/ready_go_text_view"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        <include
+            android:id="@+id/ready_go_text"
+            layout="@layout/ready_go_text"
+            tools:visibility="invisible" />
 
         <FrameLayout
             android:id="@+id/plane_discovery_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             tools:layout_editor_absoluteX="-16dp"
-            tools:layout_editor_absoluteY="0dp"></FrameLayout>
+            tools:layout_editor_absoluteY="0dp" />
+
 
         <FrameLayout
             android:id="@+id/arc_view"
@@ -85,7 +83,17 @@
             android:layout_height="match_parent"
             android:layout_marginTop="5dp"
             tools:layout_editor_absoluteX="0dp"
-            tools:layout_editor_absoluteY="0dp"></FrameLayout>
+            tools:layout_editor_absoluteY="0dp" />
+
+        <include
+            layout="@layout/view_retry_quit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:visibility="invisible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

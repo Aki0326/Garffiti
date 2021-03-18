@@ -22,6 +22,9 @@
   <string name="photo_gallery_mode">Photo Gallery</string>
   <string name="unavailable_mode">Sorry. This mode is currently under construction.</string>
 
+  <string name="retry">Retry</string>
+  <string name="quit">Quit</string>
+
   <!-- Image and ImageButton Content Descriptions for Accessibility-->
   <string name="content_description_white_brush">White Brush</string>
 

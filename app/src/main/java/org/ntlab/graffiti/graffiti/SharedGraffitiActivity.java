@@ -76,7 +76,7 @@ import org.ntlab.graffiti.common.rendering.ObjectRenderer;
 import org.ntlab.graffiti.common.rendering.ObjectRenderer.BlendMode;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
 import org.ntlab.graffiti.common.rendering.PointCloudRenderer;
-import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
+import org.ntlab.graffiti.common.views.PlaneDetectController;
 import org.ntlab.graffiti.entities.CloudAnchor;
 import org.ntlab.graffiti.entities.PointTex2D;
 import org.ntlab.graffiti.graffiti.PrivacyNoticeDialogFragment.HostResolveListener;
@@ -163,7 +163,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
     private AnchorMatchingManager anchorMatchingManager = new AnchorMatchingManager();
 
-    private PlaneDiscoveryController planeDiscoveryController;
+    private PlaneDetectController planeDetectController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -195,7 +195,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         LayoutInflater inflater = LayoutInflater.from(this);
         FrameLayout handmotion = findViewById(R.id.plane_discovery_view);
         FrameLayout instructionsView = (FrameLayout)inflater.inflate(R.layout.view_plane_discovery, handmotion, true);
-        planeDiscoveryController = new PlaneDiscoveryController(instructionsView);
+        planeDetectController = new PlaneDetectController(instructionsView);
 
         // Initialize UI components.
 //        hostButton = findViewById(R.id.host_button);
@@ -217,7 +217,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
         if (sharedPreferences.getBoolean(ALLOW_SHARE_IMAGES_KEY, false)) {
             createSession();
-            planeDiscoveryController.show();
+            planeDetectController.show();
             planeDiscoverySnackbarHelper.showMessage(this, getString(R.string.searching_plane));
         } else {
             messageSnackbarHelper.showMessage(this, getString(R.string.unavailable_mode));
@@ -525,7 +525,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
             for (Plane plane : session.getAllTrackables(Plane.class)) {
                 if (plane.getTrackingState() == TrackingState.TRACKING) {
                     planeDiscoverySnackbarHelper.hide(this);
-                    planeDiscoveryController.hide();
+                    planeDetectController.hide();
                     onEnterRoom();
                     break;
                 }

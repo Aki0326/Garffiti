@@ -32,8 +32,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.Camera;
 import com.google.ar.core.Config;
@@ -75,7 +73,7 @@ import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
 import org.ntlab.graffiti.common.views.BrushSizeSelector;
 import org.ntlab.graffiti.common.views.ColorSelector;
-import org.ntlab.graffiti.common.views.PlaneDiscoveryController;
+import org.ntlab.graffiti.common.views.PlaneDetectController;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -98,14 +96,11 @@ import javax.microedition.khronos.opengles.GL10;
  *
  * @author a-hongo, n-nitta
  */
-public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView.Renderer {
+public class GraffitiActivity extends ArActivity {
     private static final String TAG = GraffitiActivity.class.getSimpleName();
 
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 100f;
-
-    // Rendering. The Renderers are created here, and initialized when the GL surface is created.
-    private GLSurfaceView surfaceView;
 
     private boolean installRequested;
 
@@ -139,7 +134,7 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
 
     private Queue<IGLDrawListener> glDrawListenerQueue = new ArrayDeque<>();
 
-    private PlaneDiscoveryController planeDiscoveryController;
+    private PlaneDetectController planeDetectController;
 
     private ColorSelector colorSelector;
     private BrushSizeSelector brushSizeSelector;
@@ -191,17 +186,17 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         LayoutInflater inflater = LayoutInflater.from(this);
         FrameLayout handmotion = findViewById(R.id.plane_discovery_view);
         FrameLayout instructionsView = (FrameLayout) inflater.inflate(R.layout.view_plane_discovery, handmotion, true);
-        planeDiscoveryController = new PlaneDiscoveryController(instructionsView);
+        planeDetectController = new PlaneDetectController(instructionsView);
 
         // Set up the ColorSelector View.
-        colorSelector = findViewById(R.id.color_selector_view);
+        colorSelector = findViewById(R.id.color_selector);
 
         // Set up the brushSizeSelector View.
         brushSizeSelector = findViewById(R.id.brush_size_selector);
 
         // Set up the Screen Shot View.
         // 撮影したスクリーンを表示するImageView
-        screenshotImageView = findViewById(R.id.image_view);
+        screenshotImageView = findViewById(R.id.screenshot_view);
         screenshotImageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -585,10 +580,10 @@ public class GraffitiActivity extends AppCompatActivity implements GLSurfaceView
         }
         if (messageSnackbarHelper.isShowing() && message == null) {
             messageSnackbarHelper.hide(this);
-            planeDiscoveryController.hide();
+            planeDetectController.hide();
         } else if (!messageSnackbarHelper.isShowing() && message != null) {
             messageSnackbarHelper.showMessage(this, message);
-            planeDiscoveryController.show();
+            planeDetectController.show();
         }
 
         // -- Draw background
