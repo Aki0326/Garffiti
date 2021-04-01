@@ -36,8 +36,8 @@ import java.util.HashMap;
  *
  * @author a-hongo
  */
-public class BackgroundRenderer {
-    private static final String TAG = BackgroundRenderer.class.getSimpleName();
+public class BackgroundOcclusionRenderer {
+    private static final String TAG = BackgroundOcclusionRenderer.class.getSimpleName();
 
     // Shader names
     private static final String VERTEX_SHADER_NAME = "shaders/screenquad.vert";
@@ -84,7 +84,7 @@ public class BackgroundRenderer {
 //                  /*0:*/ 0f, 0f, /*1:*/ 1f, 0f, /*2:*/ 0f, 1f, /*3:*/ 1f, 1f,
             };
 
-    public BackgroundRenderer() {
+    public BackgroundOcclusionRenderer() {
     }
 
 //    public int getTextureId() {

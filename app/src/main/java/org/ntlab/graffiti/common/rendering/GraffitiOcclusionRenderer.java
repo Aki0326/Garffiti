@@ -46,12 +46,12 @@ import java.util.Map;
  *
  * @author n-nitta, a-hongo
  */
-public class GraffitiRenderer {
-    private static final String TAG = GraffitiRenderer.class.getSimpleName();
+public class GraffitiOcclusionRenderer {
+    private static final String TAG = GraffitiOcclusionRenderer.class.getSimpleName();
 
     // Shader names.
-    private static final String VERTEX_SHADER_NAME = "shaders/graffiti.vert";
-    private static final String FRAGMENT_SHADER_NAME = "shaders/graffiti.frag";
+    private static final String VERTEX_SHADER_NAME = "shaders/graffiti_occlusion.vert";
+    private static final String FRAGMENT_SHADER_NAME = "shaders/graffiti_occlusion.frag";
 
     private static final int BYTES_PER_FLOAT = Float.SIZE / 8;
     private static final int BYTES_PER_INT = Integer.SIZE / 8;
@@ -191,7 +191,7 @@ public class GraffitiRenderer {
 
     private int diffColoredPxs;
 
-    public GraffitiRenderer() {
+    public GraffitiOcclusionRenderer() {
     }
 
     /**
