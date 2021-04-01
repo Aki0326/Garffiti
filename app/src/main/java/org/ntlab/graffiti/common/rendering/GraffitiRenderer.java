@@ -189,6 +189,8 @@ public class GraffitiRenderer {
     private float aspectRatio = 0.0f;
     private float[] uvTransform = null;
 
+    private int diffColoredPxs;
+
     public GraffitiRenderer() {
     }
 
@@ -443,7 +445,7 @@ public class GraffitiRenderer {
      *
      * @param color 集計する色
      */
-    public long getTotalColorPixels(int color) {
+    public long getTotalColoredPixels(int color) {
         long colorPixels = 0; // color色pixelの総計
         for (int i = 0; i < textureBitmaps.size(); i++) {
             Bitmap bitmap = textureBitmaps.get(i);
@@ -458,6 +460,42 @@ public class GraffitiRenderer {
             }
         }
         return colorPixels;
+    }
+
+    public int getDiffColoredPixels() {
+        return diffColoredPxs;
+    }
+
+    /**
+     * Sum up difference colored pixels between preBitmap and curBitmap.
+     *
+     * @param color 集計する色
+     * @param preBitmap previous bitmap
+     * @param curBitmap current bitmap
+     */
+    private int diffColoredPixels(int color, Bitmap preBitmap, Bitmap curBitmap) {
+        if (color == -1) {
+            // TODO Correspond color
+            color = Color.BLUE;
+        }
+        int coloredPixels = 0; // color色pixelの総計
+        if (preBitmap.getWidth() == curBitmap.getWidth()
+                && preBitmap.getHeight() == curBitmap.getHeight()) {
+            int w = preBitmap.getWidth();
+            int h = preBitmap.getHeight();
+            int[] prePixels = new int[w * h];
+            int[] curPixels = new int[w * h];
+            preBitmap.getPixels(prePixels, 0, w, 0, 0, w, h);
+            curBitmap.getPixels(curPixels, 0, w, 0, 0, w, h);
+            for (int i = 0; i < w * h; i++) {
+                if (prePixels[i] == color) {
+                    if (curPixels[i] != color) coloredPixels--; // prePixels[i]だけがcolor
+                } else if (curPixels[i] == color) { // curPixels[i]だけがcolor
+                    coloredPixels++;
+                }
+            }
+        }
+        return coloredPixels;
     }
 
     /**
@@ -632,6 +670,7 @@ public class GraffitiRenderer {
 
             Bitmap bitmap = textureBitmaps.get(hitPlaneObjectTextureNo);
             Canvas canvas = new Canvas(bitmap);
+            Bitmap preBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
             Bitmap miniBitmap;
 
             drawer.draw(pixelX, pixelY, r, canvas);
@@ -647,6 +686,7 @@ public class GraffitiRenderer {
 //                canvas.drawCircle(pixelX, pixelY, r, paint);
 //            }
             miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
+            diffColoredPxs = diffColoredPixels(-1, preBitmap, miniBitmap);
 
             GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
             GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(hitPlaneObjectTextureNo));
