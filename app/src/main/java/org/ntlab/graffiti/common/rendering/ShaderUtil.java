@@ -15,7 +15,7 @@
 package org.ntlab.graffiti.common.rendering;
 
 import android.content.Context;
-import android.opengl.GLES30;
+import android.opengl.GLES20;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -53,18 +53,18 @@ public class ShaderUtil {
 //    code = defines + code;
 
     // Compiles shader code.
-    int shader = GLES30.glCreateShader(type);
-    GLES30.glShaderSource(shader, code);
-    GLES30.glCompileShader(shader);
+    int shader = GLES20.glCreateShader(type);
+    GLES20.glShaderSource(shader, code);
+    GLES20.glCompileShader(shader);
 
     // Get the compilation status.
     final int[] compileStatus = new int[1];
-    GLES30.glGetShaderiv(shader, GLES30.GL_COMPILE_STATUS, compileStatus, 0);
+    GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
 
     // If the compilation failed, delete the shader.
-    if (compileStatus[0] == GLES30.GL_FALSE) {
-      Log.e(tag, "Error compiling shader: " + GLES30.glGetShaderInfoLog(shader));
-      GLES30.glDeleteShader(shader);
+    if (compileStatus[0] == GLES20.GL_FALSE) {
+      Log.e(tag, "Error compiling shader: " + GLES20.glGetShaderInfoLog(shader));
+      GLES20.glDeleteShader(shader);
       shader = 0;
     }
 
@@ -85,18 +85,18 @@ public class ShaderUtil {
   public static int loadGLShader(String tag, Context context, int type, String filename)
       throws IOException {
     String code = readRawTextFileFromAssets(context, filename);
-    int shader = GLES30.glCreateShader(type);
-    GLES30.glShaderSource(shader, code);
-    GLES30.glCompileShader(shader);
+    int shader = GLES20.glCreateShader(type);
+    GLES20.glShaderSource(shader, code);
+    GLES20.glCompileShader(shader);
 
     // Get the compilation status.
     final int[] compileStatus = new int[1];
-    GLES30.glGetShaderiv(shader, GLES30.GL_COMPILE_STATUS, compileStatus, 0);
+    GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
 
     // If the compilation failed, delete the shader.
     if (compileStatus[0] == 0) {
-      Log.e(tag, "Error compiling shader: " + GLES30.glGetShaderInfoLog(shader));
-      GLES30.glDeleteShader(shader);
+      Log.e(tag, "Error compiling shader: " + GLES20.glGetShaderInfoLog(shader));
+      GLES20.glDeleteShader(shader);
       shader = 0;
     }
 
@@ -114,14 +114,14 @@ public class ShaderUtil {
    * @throws RuntimeException If an OpenGL error is detected.
    */
   public static void checkGLError(String tag, String label) {
-    int lastError = GLES30.GL_NO_ERROR;
+    int lastError = GLES20.GL_NO_ERROR;
     // Drain the queue of all errors.
     int error;
-    while ((error = GLES30.glGetError()) != GLES30.GL_NO_ERROR) {
+    while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
       Log.e(tag, label + ": glError " + error);
       lastError = error;
     }
-    if (lastError != GLES30.GL_NO_ERROR) {
+    if (lastError != GLES20.GL_NO_ERROR) {
       throw new RuntimeException(label + ": glError " + lastError);
     }
   }

@@ -7,7 +7,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.graphics.PorterDuff;
 import android.opengl.GLES20;
+import android.opengl.GLES30;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
@@ -113,6 +115,8 @@ public class GraffitiRenderer {
     private HashMap<Plane, Integer> planeNo = new HashMap<Plane, Integer>();
     private HashMap<Plane, Pose> planePose = new HashMap<>();
 
+    private int diffColoredPxs;
+
     public GraffitiRenderer() {}
 
     /**
@@ -157,6 +161,64 @@ public class GraffitiRenderer {
         planeobjectUvMatrixUniform = GLES20.glGetUniformLocation(planeobjectProgram, "u_PlaneUvMatrix");
 
         ShaderUtil.checkGLError(TAG, "Program parameters");
+    }
+
+    /**
+     * Sum up colored pixels.
+     *
+     * @param color 集計する色
+     */
+    public long getTotalColoredPixels(int color) {
+        long colorPixels = 0; // color色pixelの総計
+        for (int i = 0; i < textureBitmaps.size(); i++) {
+            Bitmap bitmap = textureBitmaps.get(i);
+            int w = bitmap.getWidth();
+            int h = bitmap.getHeight();
+            int[] pixels = new int[w * h];
+            bitmap.getPixels(pixels, 0, w, 0, 0, w, h);
+            for (int j = 0; j < w * h; j++) {
+                if (pixels[j] == color) {
+                    colorPixels++;
+                }
+            }
+        }
+        return colorPixels;
+    }
+
+    public int getDiffColoredPixels() {
+        return diffColoredPxs;
+    }
+
+    /**
+     * Sum up difference colored pixels between preBitmap and curBitmap.
+     *
+     * @param color 集計する色
+     * @param preBitmap previous bitmap
+     * @param curBitmap current bitmap
+     */
+    private int diffColoredPixels(int color, Bitmap preBitmap, Bitmap curBitmap) {
+        if (color == -1) {
+            // TODO Correspond color
+            color = Color.BLUE;
+        }
+        int coloredPixels = 0; // color色pixelの総計
+        if (preBitmap.getWidth() == curBitmap.getWidth()
+                && preBitmap.getHeight() == curBitmap.getHeight()) {
+            int w = preBitmap.getWidth();
+            int h = preBitmap.getHeight();
+            int[] prePixels = new int[w * h];
+            int[] curPixels = new int[w * h];
+            preBitmap.getPixels(prePixels, 0, w, 0, 0, w, h);
+            curBitmap.getPixels(curPixels, 0, w, 0, 0, w, h);
+            for (int i = 0; i < w * h; i++) {
+                if (prePixels[i] == color) {
+                    if (curPixels[i] != color) coloredPixels--; // prePixels[i]だけがcolor
+                } else if (curPixels[i] == color) { // curPixels[i]だけがcolor
+                    coloredPixels++;
+                }
+            }
+        }
+        return coloredPixels;
     }
 
     /** Updates the plane model transform matrix and extents. */
@@ -255,18 +317,21 @@ public class GraffitiRenderer {
      */
     public PointF drawTexture(float x, float y, int r, Trackable trackable, TextureDrawer drawer) {
         if (textureBitmap != null) {
-            Integer hitplaneobjectTextureNo = planeNo.get(trackable);
+            Integer hitPlaneObjectTextureNo = planeNo.get(trackable);
 
-            Log.d(TAG, "No. " + hitplaneobjectTextureNo);
-            int w = textureBitmaps.get(hitplaneobjectTextureNo).getWidth();
-            int h = textureBitmaps.get(hitplaneobjectTextureNo).getHeight();
+            Log.d(TAG, "No. " + hitPlaneObjectTextureNo);
+            if (hitPlaneObjectTextureNo == null || textureBitmaps.size() <= hitPlaneObjectTextureNo)
+                return null;
+            int w = textureBitmaps.get(hitPlaneObjectTextureNo).getWidth();
+            int h = textureBitmaps.get(hitPlaneObjectTextureNo).getHeight();
             int pixelX = (int)((x * DOTS_PER_METER + 0.5) * w);
             int pixelY = (int)((y * DOTS_PER_METER + 0.5) * h);
             pixelX = Math.floorMod(pixelX, w);
             pixelY = Math.floorMod(pixelY, h);
 
-            Bitmap bitmap = textureBitmaps.get(hitplaneobjectTextureNo);
+            Bitmap bitmap = textureBitmaps.get(hitPlaneObjectTextureNo);
             Canvas canvas = new Canvas(bitmap);
+            Bitmap preBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
             Bitmap miniBitmap;
 
             drawer.draw(pixelX, pixelY, r, canvas);
@@ -282,9 +347,10 @@ public class GraffitiRenderer {
 //                canvas.drawCircle(pixelX, pixelY, r, paint);
 //            }
             miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
+            diffColoredPxs = diffColoredPixels(-1, preBitmap, miniBitmap);
 
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitplaneobjectTextureNo));
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures.get(hitPlaneObjectTextureNo));
             GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, pixelX - r, pixelY - r, miniBitmap, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
             return new PointF(pixelX, pixelY);
@@ -312,6 +378,8 @@ public class GraffitiRenderer {
 //            Log.d("pose","plane:" + p + "," + newPose.tx() + "," + newPose.ty() + "," + newPose.tz() + ","
 //                    + newPose.getXAxis()[0] +","  + newPose.getXAxis()[1] +","  + newPose.getXAxis()[2] +","
 //                    + newPose.getYAxis()[0] +","  + newPose.getYAxis()[1] +","  + newPose.getYAxis()[2]);
+
+            if (!planeNo.containsKey(p)) return;
 
             // 1. テクスチャを平面上で回転＆移動させるための行列の作成
             Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
@@ -349,6 +417,23 @@ public class GraffitiRenderer {
             textureBitmaps.set(planeNo.get(p), textureBitmapToRecycle);
             textureBitmapToRecycle = bitmap;        //  リサイクルに回す
             planePose.put(p, newPose);
+        }
+    }
+
+    /**
+     * Clear textureBitmap.
+     */
+    public void clearTexture() {
+        for (Plane p: planeNo.keySet()) {
+            Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
+            Canvas canvas = new Canvas(bitmap);
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+
+            // 転送
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeNo.get(p)));
+            GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0);
+            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
         }
     }
 

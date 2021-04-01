@@ -3,7 +3,6 @@ package org.ntlab.graffiti.graffiti;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.media.Image;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
@@ -34,7 +33,6 @@ import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingFailureReason;
 import com.google.ar.core.TrackingState;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
-import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
@@ -56,9 +54,9 @@ import org.ntlab.graffiti.common.helpers.SnackbarHelper;
 import org.ntlab.graffiti.common.helpers.TapHelper;
 import org.ntlab.graffiti.common.helpers.TimeoutHelper;
 import org.ntlab.graffiti.common.helpers.TrackingStateHelper;
-import org.ntlab.graffiti.common.rendering.BackgroundOcclusionRenderer;
+import org.ntlab.graffiti.common.rendering.BackgroundRenderer;
 import org.ntlab.graffiti.common.rendering.Framebuffer;
-import org.ntlab.graffiti.common.rendering.GraffitiOcclusionRenderer;
+import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
 import org.ntlab.graffiti.common.views.Arc;
 import org.ntlab.graffiti.common.views.PlaneDetectController;
@@ -99,13 +97,14 @@ public class GraffitiTimeAttackActivity extends GameActivity {
     private TapHelper tapHelper;
     private final RendererHelper rendererHelper = new RendererHelper();
 
-    private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
+    private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
+//    private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
     //    private final PlaneRenderer planeRenderer = new PlaneRenderer();
 //    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
 //    private final ObjectRenderer virtualObject = new ObjectRenderer();
 //    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
 //    private PlaneRendererOcculusion planeRendererOcculusion;
-    private final GraffitiOcclusionRenderer graffitiOcclusionRenderer = new GraffitiOcclusionRenderer();
+    private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
     private Framebuffer virtualSceneFramebuffer;
     private boolean hasSetTextureNames = false;
 
@@ -218,7 +217,8 @@ public class GraffitiTimeAttackActivity extends GameActivity {
                 quitButton.setVisibility(View.INVISIBLE);
                 myResultText.clearAnimation();
                 myResultText.setVisibility(View.INVISIBLE);
-                graffitiOcclusionRenderer.clearTexture();
+                graffitiRenderer.clearTexture();
+//                graffitiOcclusionRenderer.clearTexture();
                 changeState(gameReadyState);
             }
         };
@@ -292,13 +292,13 @@ public class GraffitiTimeAttackActivity extends GameActivity {
             }
 
             // Enable depth-based occlusion.
-            boolean isDepthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
+//            boolean isDepthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
 //            if (isDepthSupported) {
 //                depthSettings.setUseDepthForOcclusion(true);
 //                depthSettings.setDepthColorVisualizationEnabled(true);
 //            }
-            depthSettings.setUseDepthForOcclusion(false);
-            depthSettings.setDepthColorVisualizationEnabled(false);
+//            depthSettings.setUseDepthForOcclusion(false);
+//            depthSettings.setDepthColorVisualizationEnabled(false);
         }
 
         // Note that order matters - see the note in onPause(), the reverse applies here.
@@ -404,9 +404,10 @@ public class GraffitiTimeAttackActivity extends GameActivity {
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
             // Create the texture and pass it to ARCore session to be filled during update().
-            backgroundOcclusionRenderer.createOnGlThread(this);
-            // Update BackgroundRenderer state to match the depth settings.
-            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+            backgroundRenderer.createOnGlThread(this);
+//            backgroundOcclusionRenderer.createOnGlThread(this);
+            // Update backgroundOcclusionRenderer state to match the depth settings.
+//            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 
 //            planeRenderer.createOnGlThread(this, "models/trigrid.png");
 //            pointCloudRenderer.createOnGlThread(this);
@@ -416,10 +417,12 @@ public class GraffitiTimeAttackActivity extends GameActivity {
 //            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
 //            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
 //            planeObjectRenderer.createOnGlThread(this, "models/nambo.png");
-            graffitiOcclusionRenderer.createOnGlThread(this, "models/plane.png");
-            // Update BackgroundRenderer state to match the depth settings.
-            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
-//            graffitiRenderer.setUseOcclusion(this, false);
+
+            graffitiRenderer.createOnGlThread(this, "models/plane.png");
+//            graffitiOcclusionRenderer.createOnGlThread(this, "models/plane.png");
+            // Update backgroundOcclusionRenderer state to match the depth settings.
+//            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+//            graffitiOcclusionRenderer.setUseOcclusion(this, false);
 
 //            planeRendererOcculusion = new PlaneRendererOcculusion(this);
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
@@ -453,9 +456,10 @@ public class GraffitiTimeAttackActivity extends GameActivity {
         // onDrawFrame rather than onSurfaceCreated since the session is not guaranteed to have been
         // initialized during the execution of onSurfaceCreated.
         if (!hasSetTextureNames) {
+            session.setCameraTextureName(backgroundRenderer.getTextureId());
 //      session.setCameraTextureNames(
-//              new int[] {backgroundRenderer.getCameraColorTexture().getTextureId()});
-            session.setCameraTextureName(backgroundOcclusionRenderer.getCameraColorTexture().getTextureId());
+//              new int[] {backgroundOcclusionRenderer.getCameraColorTexture().getTextureId()});
+//            session.setCameraTextureName(backgroundOcclusionRenderer.getCameraColorTexture().getTextureId());
             hasSetTextureNames = true;
         }
 
@@ -478,36 +482,36 @@ public class GraffitiTimeAttackActivity extends GameActivity {
 
         Camera camera = frame.getCamera();
 
-        // Update BackgroundRenderer state to match the depth settings. Call onSurfaceCreated().
+        // Update backgroundOcclusionRenderer state to match the depth settings. Call onSurfaceCreated().
 //      try {
-//          backgroundRenderer.setUseOcclusion(depthSettings.useDepthForOcclusion());
+//          backgroundOcclusionRenderer.setUseOcclusion(depthSettings.useDepthForOcclusion());
 //      } catch (IOException e) {
 //          Log.e(TAG, "Failed to read a required asset file", e);
 //          return;
 //      }
 
-        // BackgroundRenderer.updateDisplayGeometry must be called every frame to update the coordinates
+        // backgroundOcclusionRenderer.updateDisplayGeometry must be called every frame to update the coordinates
         // used to draw the background camera image.
-        backgroundOcclusionRenderer.updateDisplayGeometry(frame);
-        graffitiOcclusionRenderer.updateDisplayGeometry(frame);
+//        backgroundOcclusionRenderer.updateDisplayGeometry(frame);
+//        graffitiOcclusionRenderer.updateDisplayGeometry(frame);
 
         if (camera.getTrackingState() == TrackingState.TRACKING
-                && (depthSettings.useDepthForOcclusion()
-                /*|| depthSettings.depthColorVisualizationEnabled()*/)) {
+//                && (depthSettings.useDepthForOcclusion()
+                /*|| depthSettings.depthColorVisualizationEnabled())*/) {
             // Retrieve the depth map for the current frame, if available.
-            try {
-                Image depthImage = frame.acquireDepthImage();
-                backgroundOcclusionRenderer.updateCameraDepthTexture(depthImage);
-//                graffitiRenderer.updateCameraDepthTexture(depthImage);
-                graffitiOcclusionRenderer.setDepthTexture(backgroundOcclusionRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
-            } catch (NotYetAvailableException e) {
+//            try {
+//                Image depthImage = frame.acquireDepthImage();
+//                backgroundOcclusionRenderer.updateCameraDepthTexture(depthImage);
+//                graffitiOcclusionRenderer.updateCameraDepthTexture(depthImage);
+//                graffitiOcclusionRenderer.setDepthTexture(backgroundOcclusionRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
+//            } catch (NotYetAvailableException e) {
                 // This means that depth data is not available yet.
                 // Depth data will not be available if there are no tracked
                 // feature points. This can happen when there is no motion, or when the
                 // camera loses its ability to track objects in the surrounding
                 // environment.
 //                Log.e(TAG, "NotYetAvailableException", e);
-            }
+//            }
         }
 
         // Handle user input.
@@ -550,7 +554,8 @@ public class GraffitiTimeAttackActivity extends GameActivity {
         // Suppress rendering if the camera did not produce the first frame yet. This is to avoid
         // drawing possible leftover data from previous sessions if the texture is reused.
         virtualSceneFramebuffer.clear();
-        backgroundOcclusionRenderer.draw(frame);
+        backgroundRenderer.draw(frame);
+//        backgroundOcclusionRenderer.draw(frame);
 //        }
 
         // If not tracking, don't draw 3D objects.
@@ -600,12 +605,14 @@ public class GraffitiTimeAttackActivity extends GameActivity {
 
         // -- Draw occluded virtual objects
         virtualSceneFramebuffer.clear();
-        graffitiOcclusionRenderer.adjustTextureAxis(frame, camera);
+        graffitiRenderer.adjustTextureAxis(frame, camera);
+//        graffitiOcclusionRenderer.adjustTextureAxis(frame, camera);
 
         // Update lighting parameters in the shader
-        graffitiOcclusionRenderer.updateLightEstimation(frame.getLightEstimate(), viewmtx);
+//        graffitiOcclusionRenderer.updateLightEstimation(frame.getLightEstimate(), viewmtx);
 
-        graffitiOcclusionRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
+        graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
+//        graffitiOcclusionRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
         // Compute lighting from average intensity of the image.
         // The first three components are color scaling factors.
@@ -696,11 +703,14 @@ public class GraffitiTimeAttackActivity extends GameActivity {
                         }
 
                         if (color == Color.TRANSPARENT) {
-                            graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
+                            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
+//                            graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
                         } else {
-                            graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
+                            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
+//                            graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
                         }
-                        int diffColoredPxs = graffitiOcclusionRenderer.getDiffColoredPixels();
+                        int diffColoredPxs = graffitiRenderer.getDiffColoredPixels();
+//                        int diffColoredPxs = graffitiOcclusionRenderer.getDiffColoredPixels();
                         Log.d(TAG, "angle " + arcView.getAngle() + ", diffColoredPxs " + diffColoredPxs);
                         if (diffColoredPxs > 0) {
                             arcView.addAngleQueue(diffColoredPxs / 10);
@@ -734,7 +744,8 @@ public class GraffitiTimeAttackActivity extends GameActivity {
             surfaceView.setEnabled(true);
         } else if (state instanceof CountDownState) {
             surfaceView.setEnabled(false);
-            long score = graffitiOcclusionRenderer.getTotalColoredPixels(Color.BLUE);
+            long score = graffitiRenderer.getTotalColoredPixels(Color.BLUE);
+//            long score = graffitiOcclusionRenderer.getTotalColoredPixels(Color.BLUE);
             Log.d(TAG, "Point: " + score + "p");
             gameResultState.setScore(score);
             gameRankingState.setScore(score);
