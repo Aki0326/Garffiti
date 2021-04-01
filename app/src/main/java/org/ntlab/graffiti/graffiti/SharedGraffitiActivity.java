@@ -69,9 +69,9 @@ import org.ntlab.graffiti.common.helpers.RendererHelper;
 import org.ntlab.graffiti.common.helpers.SnackbarHelper;
 import org.ntlab.graffiti.common.helpers.TapHelper;
 import org.ntlab.graffiti.common.helpers.TrackingStateHelper;
-import org.ntlab.graffiti.common.rendering.BackgroundRenderer;
+import org.ntlab.graffiti.common.rendering.BackgroundOcclusionRenderer;
 import org.ntlab.graffiti.common.rendering.Framebuffer;
-import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
+import org.ntlab.graffiti.common.rendering.GraffitiOcclusionRenderer;
 import org.ntlab.graffiti.common.rendering.ObjectRenderer;
 import org.ntlab.graffiti.common.rendering.ObjectRenderer.BlendMode;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
@@ -119,12 +119,12 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
     // Rendering. The Renderers are created here, and initialized when the GL surface is created.
     private GLSurfaceView surfaceView;
-    private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
+    private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
     private final ObjectRenderer virtualObject = new ObjectRenderer();
     private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
     private final PlaneRenderer planeRenderer = new PlaneRenderer();
     private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
-    private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
+    private final GraffitiOcclusionRenderer graffitiOcclusionRenderer = new GraffitiOcclusionRenderer();
     private Framebuffer virtualSceneFramebuffer;
     private boolean hasSetTextureNames = false;
 
@@ -416,9 +416,9 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
             // Create the texture and pass it to ARCore session to be filled during update().
-            backgroundRenderer.createOnGlThread(this);
+            backgroundOcclusionRenderer.createOnGlThread(this);
             // Update BackgroundRenderer state to match the depth settings.
-            backgroundRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 
             planeRenderer.createOnGlThread(this, "models/trigrid.png");
             pointCloudRenderer.createOnGlThread(this);
@@ -430,9 +430,9 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
             virtualObjectShadow.setBlendMode(BlendMode.Shadow);
             virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
 
-            graffitiRenderer.createOnGlThread(this,"models/plane.png");
+            graffitiOcclusionRenderer.createOnGlThread(this,"models/plane.png");
             // Update BackgroundRenderer state to match the depth settings.
-            graffitiRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
         } catch (IOException ex) {
@@ -463,7 +463,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         if (!hasSetTextureNames) {
 //      session.setCameraTextureNames(
 //              new int[] {backgroundRenderer.getCameraColorTexture().getTextureId()});
-            session.setCameraTextureName(backgroundRenderer.getCameraColorTexture().getTextureId());
+            session.setCameraTextureName(backgroundOcclusionRenderer.getCameraColorTexture().getTextureId());
             hasSetTextureNames = true;
         }
 
@@ -492,8 +492,8 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
         // BackgroundRenderer.updateDisplayGeometry must be called every frame to update the coordinates
         // used to draw the background camera image.
-        backgroundRenderer.updateDisplayGeometry(frame);
-        graffitiRenderer.updateDisplayGeometry(frame);
+        backgroundOcclusionRenderer.updateDisplayGeometry(frame);
+        graffitiOcclusionRenderer.updateDisplayGeometry(frame);
 
         if (cameraTrackingState == TrackingState.TRACKING
                 && (depthSettings.useDepthForOcclusion()
@@ -501,9 +501,9 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
             // Retrieve the depth map for the current frame, if available.
             try {
                 Image depthImage = frame.acquireDepthImage();
-                backgroundRenderer.updateCameraDepthTexture(depthImage);
+                backgroundOcclusionRenderer.updateCameraDepthTexture(depthImage);
 //                graffitiRenderer.updateCameraDepthTexture(depthImage);
-                graffitiRenderer.setDepthTexture(backgroundRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
+                graffitiOcclusionRenderer.setDepthTexture(backgroundOcclusionRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
             } catch (NotYetAvailableException e) {
                 // This means that depth data is not available yet.
                 // Depth data will not be available if there are no tracked
@@ -537,7 +537,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         // Suppress rendering if the camera did not produce the first frame yet. This is to avoid
         // drawing possible leftover data from previous sessions if the texture is reused.
         virtualSceneFramebuffer.clear();
-        backgroundRenderer.draw(frame);
+        backgroundOcclusionRenderer.draw(frame);
 
         // If not tracking, don't draw 3d objects.
         if (cameraTrackingState == TrackingState.PAUSED) {
@@ -602,14 +602,14 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
         // Visualize graffiti.
         virtualSceneFramebuffer.clear();
-        graffitiRenderer.adjustTextureAxis(frame, camera);
-        graffitiRenderer.draw(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
+        graffitiOcclusionRenderer.adjustTextureAxis(frame, camera);
+        graffitiOcclusionRenderer.draw(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
 
         for (MergedPlane mergedPlane : anchorMatchingManager.getDrawnPlanes()) {
             List<PointTex2D> stroke = mergedPlane.getStroke();
             if (stroke.size() > mergedPlane.getDrawnStrokeIndex()) {
                 for (int i = mergedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
-                    graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
+                    graffitiOcclusionRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
                 }
                 mergedPlane.drawnStroke(stroke.size());
             }
@@ -654,9 +654,9 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
                     Preconditions.checkNotNull(anchorListener, "The anchorlistener cannot be null.");
                     messageSnackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
                     if (color == Color.TRANSPARENT) {
-                        graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
+                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
                     } else {
-                        graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
+                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
                     }
                     storeStroke(plane, hit.getHitPose().getTranslation());
                     Log.d(TAGSTROKE, "hit.getHitPose().getTranslation(): " + hit.getHitPose().getTranslation());

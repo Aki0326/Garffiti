@@ -67,9 +67,9 @@ import org.ntlab.graffiti.common.helpers.SnackbarHelper;
 import org.ntlab.graffiti.common.helpers.TapHelper;
 import org.ntlab.graffiti.common.helpers.TimeoutHelper;
 import org.ntlab.graffiti.common.helpers.TrackingStateHelper;
-import org.ntlab.graffiti.common.rendering.BackgroundRenderer;
+import org.ntlab.graffiti.common.rendering.BackgroundOcclusionRenderer;
 import org.ntlab.graffiti.common.rendering.Framebuffer;
-import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
+import org.ntlab.graffiti.common.rendering.GraffitiOcclusionRenderer;
 import org.ntlab.graffiti.common.rendering.PlaneRenderer;
 import org.ntlab.graffiti.common.views.BrushSizeSelector;
 import org.ntlab.graffiti.common.views.ColorSelector;
@@ -111,13 +111,13 @@ public class GraffitiActivity extends ArActivity {
     private TapHelper tapHelper;
     private final RendererHelper rendererHelper = new RendererHelper();
 
-    private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
+    private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
 //    private final PlaneRenderer planeRenderer = new PlaneRenderer();
 //    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
 //    private final ObjectRenderer virtualObject = new ObjectRenderer();
 //    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
 //    private PlaneRendererOcculusion planeRendererOcculusion;
-    private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
+    private final GraffitiOcclusionRenderer graffitiOcclusionRenderer = new GraffitiOcclusionRenderer();
     private Framebuffer virtualSceneFramebuffer;
     private boolean hasSetTextureNames = false;
 
@@ -450,9 +450,9 @@ public class GraffitiActivity extends ArActivity {
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
             // Create the texture and pass it to ARCore session to be filled during update().
-            backgroundRenderer.createOnGlThread(this);
+            backgroundOcclusionRenderer.createOnGlThread(this);
             // Update BackgroundRenderer state to match the depth settings.
-            backgroundRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 
 //            planeRenderer.createOnGlThread(this, "models/trigrid.png");
 //            pointCloudRenderer.createOnGlThread(this);
@@ -462,9 +462,9 @@ public class GraffitiActivity extends ArActivity {
 //            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
 //            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
 //            planeObjectRenderer.createOnGlThread(this, "models/nambo.png");
-            graffitiRenderer.createOnGlThread(this, "models/plane.png");
+            graffitiOcclusionRenderer.createOnGlThread(this, "models/plane.png");
             // Update BackgroundRenderer state to match the depth settings.
-            graffitiRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 //            graffitiRenderer.setUseOcclusion(this, false);
 
 //            planeRendererOcculusion = new PlaneRendererOcculusion(this);
@@ -501,7 +501,7 @@ public class GraffitiActivity extends ArActivity {
         if (!hasSetTextureNames) {
 //      session.setCameraTextureNames(
 //              new int[] {backgroundRenderer.getCameraColorTexture().getTextureId()});
-            session.setCameraTextureName(backgroundRenderer.getCameraColorTexture().getTextureId());
+            session.setCameraTextureName(backgroundOcclusionRenderer.getCameraColorTexture().getTextureId());
             hasSetTextureNames = true;
         }
 
@@ -534,8 +534,8 @@ public class GraffitiActivity extends ArActivity {
 
         // BackgroundRenderer.updateDisplayGeometry must be called every frame to update the coordinates
         // used to draw the background camera image.
-        backgroundRenderer.updateDisplayGeometry(frame);
-        graffitiRenderer.updateDisplayGeometry(frame);
+        backgroundOcclusionRenderer.updateDisplayGeometry(frame);
+        graffitiOcclusionRenderer.updateDisplayGeometry(frame);
 
         if (camera.getTrackingState() == TrackingState.TRACKING
                 && (depthSettings.useDepthForOcclusion()
@@ -543,9 +543,9 @@ public class GraffitiActivity extends ArActivity {
             // Retrieve the depth map for the current frame, if available.
             try {
                 Image depthImage = frame.acquireDepthImage();
-                backgroundRenderer.updateCameraDepthTexture(depthImage);
+                backgroundOcclusionRenderer.updateCameraDepthTexture(depthImage);
 //                graffitiRenderer.updateCameraDepthTexture(depthImage);
-                graffitiRenderer.setDepthTexture(backgroundRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
+                graffitiOcclusionRenderer.setDepthTexture(backgroundOcclusionRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
             } catch (NotYetAvailableException e) {
                 // This means that depth data is not available yet.
                 // Depth data will not be available if there are no tracked
@@ -592,7 +592,7 @@ public class GraffitiActivity extends ArActivity {
         // Suppress rendering if the camera did not produce the first frame yet. This is to avoid
         // drawing possible leftover data from previous sessions if the texture is reused.
         virtualSceneFramebuffer.clear();
-        backgroundRenderer.draw(frame);
+        backgroundOcclusionRenderer.draw(frame);
 //        }
 
         // If not tracking, don't draw 3D objects.
@@ -642,12 +642,12 @@ public class GraffitiActivity extends ArActivity {
 
         // -- Draw occluded virtual objects
         virtualSceneFramebuffer.clear();
-        graffitiRenderer.adjustTextureAxis(frame, camera);
+        graffitiOcclusionRenderer.adjustTextureAxis(frame, camera);
 
         // Update lighting parameters in the shader
-        graffitiRenderer.updateLightEstimation(frame.getLightEstimate(), viewmtx);
+        graffitiOcclusionRenderer.updateLightEstimation(frame.getLightEstimate(), viewmtx);
 
-        graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
+        graffitiOcclusionRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
         // Compute lighting from average intensity of the image.
         // The first three components are color scaling factors.
@@ -737,9 +737,9 @@ public class GraffitiActivity extends ArActivity {
                     }
 
                     if (color == Color.TRANSPARENT) {
-                        graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
+                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
                     } else {
-                        graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, brushSizeSelector.getSelectedLineWidth(), trackable, drawer);
+                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, brushSizeSelector.getSelectedLineWidth(), trackable, drawer);
                     }
                 }
             }
