@@ -663,43 +663,49 @@ public class GraffitiTimeAttackActivity extends GameActivity {
 //                hitResultList = frame.hitTest(tap);
 //            }
 
-            for (HitResult hit : frame.hitTest(tap)) {
-                // If any plane, Oriented Point, or Instant Placement Point was hit, create an anchor.
-                Trackable trackable = hit.getTrackable();
-                // If a plane was hit, check that it was hit inside the plane polygon.
-                if (trackable instanceof Plane
-                        && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
-                        && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0)
-                        && ((Plane) trackable).getSubsumedBy() == null) {
+            if (arcView.getAngle() > 0.0f) {
+                for (HitResult hit : frame.hitTest(tap)) {
+                    // If any plane, Oriented Point, or Instant Placement Point was hit, create an anchor.
+                    Trackable trackable = hit.getTrackable();
+                    // If a plane was hit, check that it was hit inside the plane polygon.
+                    if (trackable instanceof Plane
+                            && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
+                            && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0)
+                            && ((Plane) trackable).getSubsumedBy() == null) {
 //                        || (trackable instanceof Point
 //                        && ((Point) trackable).getOrientationMode()
 //                        == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL)
 //                        || (trackable instanceof InstantPlacementPoint)) {
 
-                    Pose planePose = ((Plane) trackable).getCenterPose();
-                    float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
-                    float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
-                    float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
-                    float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
-                    float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
-                    int drawerStyle = 1;
-                    int color = Color.BLUE;
-                    TextureDrawer drawer = null;
-                    switch (drawerStyle) {
-                        case 1:
-                            drawer = new CircleDrawer(color);
-                            break;
-                        case 2:
-                            drawer = new RectangleDrawer(color);
-                            break;
-                    }
+                        Pose planePose = ((Plane) trackable).getCenterPose();
+                        float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
+                        float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
+                        float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
+                        float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
+                        float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
+                        int drawerStyle = 1;
+                        int color = Color.BLUE;
+                        TextureDrawer drawer = null;
+                        switch (drawerStyle) {
+                            case 1:
+                                drawer = new CircleDrawer(color);
+                                break;
+                            case 2:
+                                drawer = new RectangleDrawer(color);
+                                break;
+                        }
 
-                    if (color == Color.TRANSPARENT) {
-                        graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
-                    } else {
-                        graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
+                        if (color == Color.TRANSPARENT) {
+                            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
+                        } else {
+                            graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
+                        }
+                        int diffColoredPxs = graffitiRenderer.getDiffColoredPixels();
+                        Log.d(TAG, "angle " + arcView.getAngle() + ", diffColoredPxs " + diffColoredPxs);
+                        if (diffColoredPxs > 0) {
+                            arcView.addAngleQueue(diffColoredPxs / 10);
+                        }
                     }
-                    arcView.startAnimation(arcView.getAngle()-10);
                 }
             }
         }
@@ -728,7 +734,7 @@ public class GraffitiTimeAttackActivity extends GameActivity {
             surfaceView.setEnabled(true);
         } else if (state instanceof CountDownState) {
             surfaceView.setEnabled(false);
-            long score = graffitiRenderer.getTotalColorPixels(Color.BLUE);
+            long score = graffitiRenderer.getTotalColoredPixels(Color.BLUE);
             Log.d(TAG, "Point: " + score + "p");
             gameResultState.setScore(score);
             gameRankingState.setScore(score);
