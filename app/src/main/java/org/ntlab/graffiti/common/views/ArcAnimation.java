@@ -23,9 +23,9 @@ public class ArcAnimation extends Animation {
 
     @Override
     protected void applyTransformation(float interpolatedTime, Transformation transformation) {
-        float oldAngle = arcView.getAngle();
+        float oldAngle = arcView.getCurAngle();
         float angle = oldAngle + ((newAngle - oldAngle) * interpolatedTime);
-        arcView.setAngle(angle);
+        arcView.setCurAngle(angle);
         arcView.requestLayout();
     }
 }

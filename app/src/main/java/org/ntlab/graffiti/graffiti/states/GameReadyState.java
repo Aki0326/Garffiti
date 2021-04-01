@@ -139,6 +139,9 @@ public class GameReadyState extends State {
     }
 
     public void startAnimation() {
+        if (arcView instanceof Arc) {
+            ((Arc) arcView).setAnimationPeriod(3500);
+        }
         readyText.setVisibility(View.VISIBLE);
         readyText.startAnimation(slideinAnim);
     }
