@@ -50,7 +50,6 @@ public class ShaderUtil {
       defines += "#define " + entry.getKey() + " " + entry.getValue() + "\n";
     }
     code = insertShaderDefinesCode(code, defines);
-//    code = defines + code;
 
     // Compiles shader code.
     int shader = GLES20.glCreateShader(type);

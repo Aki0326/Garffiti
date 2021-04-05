@@ -9,7 +9,7 @@ import java.nio.FloatBuffer;
 import java.util.Collection;
 
 /**
- *
+ * MatchedAnchor Model
  * @author a-hongo
  */
 public class MatchedAnchor {

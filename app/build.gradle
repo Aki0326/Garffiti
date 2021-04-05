@@ -43,9 +43,6 @@ dependencies {
     // ARCore library
     implementation 'com.google.ar:core:1.23.0'
 
-    // Alternatively, use ArSceneView without the UX dependency.
-//    implementation "com.google.ar.sceneform:core:1.17.1"
-
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'com.google.android.material:material:1.1.0'

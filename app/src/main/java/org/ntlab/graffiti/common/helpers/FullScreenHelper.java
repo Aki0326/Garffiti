@@ -18,7 +18,9 @@ package org.ntlab.graffiti.common.helpers;
 import android.app.Activity;
 import android.view.View;
 
-/** Helper to set up the Android full screen mode. */
+/**
+ * Helper to set up the Android full screen mode.
+ */
 public final class FullScreenHelper {
   /**
    * Sets the Android fullscreen flags. Expected to be called from {@link

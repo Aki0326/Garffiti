@@ -23,7 +23,7 @@ public class MusicPlayerHelper {
      * @param filePath the filepath of music.
      * @param isLoop is loop or is not loop.
      */
-    private boolean musicSetup(Context context, String filePath, Boolean isLoop) throws IOException {
+    private boolean setupMusic(Context context, String filePath, Boolean isLoop) throws IOException {
         boolean fileCheck = false;
 
         // インタンスを生成
@@ -55,11 +55,11 @@ public class MusicPlayerHelper {
      * @param filePath the filepath of music.
      * @param isLoop is loop or is not loop.
      */
-    public void musicPlay(Context context, String filePath, Boolean isLoop) throws IOException {
+    public void playMusic(Context context, String filePath, Boolean isLoop) throws IOException {
 
         if (mediaPlayer == null) {
             // audio ファイルを読出し
-            if (musicSetup(context, filePath, isLoop)) {
+            if (setupMusic(context, filePath, isLoop)) {
                 Log.d(TAG, "read audio file");
             } else {
                 Log.e(TAG, "Error: read audio file");
@@ -81,18 +81,17 @@ public class MusicPlayerHelper {
             @Override
             public void onCompletion(MediaPlayer mp) {
                 Log.d(TAG, "end of audio");
-                musicStop();
+                stopMusic();
             }
         });
     }
 
     /** Stop the music. */
-    public void musicStop() {
+    public void stopMusic() {
         if(mediaPlayer != null) {
             mediaPlayer.stop(); // 再生終了
             mediaPlayer.reset(); // リセット
             mediaPlayer.release(); // リソースの解放
-
             mediaPlayer = null;
         }
     }

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *
+ * Entity Room
  * @author a-hongo
  */
 public class Room {

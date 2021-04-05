@@ -117,9 +117,9 @@ public class BrushSizeSelector extends RelativeLayout implements View.OnClickLis
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                     performClick();
-                    brushSizeSelectClickSE.musicStop();
+                    brushSizeSelectClickSE.stopMusic();
                     try {
-                        brushSizeSelectClickSE.musicPlay(getContext(), "musics/se/color-click-sound.mp3", isLoop);
+                        brushSizeSelectClickSE.playMusic(getContext(), "musics/se/color-click-sound.mp3", isLoop);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -182,9 +182,9 @@ public class BrushSizeSelector extends RelativeLayout implements View.OnClickLis
 
         LineWidth lineWidth = null;
 
-        brushSizeSelectClickSE.musicStop();
+        brushSizeSelectClickSE.stopMusic();
         try {
-            brushSizeSelectClickSE.musicPlay(getContext(), "musics/se/color-click-sound.mp3", isLoop);
+            brushSizeSelectClickSE.playMusic(getContext(), "musics/se/color-click-sound.mp3", isLoop);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -320,15 +320,5 @@ public class BrushSizeSelector extends RelativeLayout implements View.OnClickLis
     public int getSelectedLineWidth() {
         return selectedLineWidth.getWidth();
     }
-
-//    public boolean isOpen() {
-//        return isOpen;
-//    }
-//
-//    public void close() {
-//        if (isOpen) {
-//            toggleBrushSelectorVisibility();
-//        }
-//    }
 
 }

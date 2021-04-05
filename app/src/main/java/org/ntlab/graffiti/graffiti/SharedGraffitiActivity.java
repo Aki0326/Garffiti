@@ -103,25 +103,11 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
     private static final String TAGANCHOR = SharedGraffitiActivity.class.getSimpleName() + "Anchor";
     private static final String TAGSTROKE = SharedGraffitiActivity.class.getSimpleName() + "Stroke";
 
-//    private static final float[] OBJECT_COLOR = new float[] {139.0f, 195.0f, 74.0f, 255.0f};
-
-//    private enum HostResolveMode {
-//        NONE,
-//        HOSTING,
-//        RESOLVING,
-//    }
-
     // Rendering. The Renderers are created here, and initialized when the GL surface is created.
     private GLSurfaceView surfaceView;
 
     private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
-//    private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
-//    private final ObjectRenderer virtualObject = new ObjectRenderer();
-//    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
-//    private final PlaneRenderer planeRenderer = new PlaneRenderer();
-//    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
     private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
-//    private final GraffitiOcclusionRenderer graffitiOcclusionRenderer = new GraffitiOcclusionRenderer();
     private Framebuffer virtualSceneFramebuffer;
     private boolean hasSetTextureNames = false;
     private boolean isFirstHasTrackingPlane = false;
@@ -132,7 +118,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
     private boolean installRequested;
 
     // Temporary matrices allocated here to reduce number of allocations for each frame.
-//    private final float[] anchorMatrix = new float[16];
     private final float[] viewMatrix = new float[16];
     private final float[] projectionMatrix = new float[16];
 
@@ -144,8 +129,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
     private final RendererHelper rendererHelper = new RendererHelper();
 
     private final TrackingStateHelper trackingStateHelper = new TrackingStateHelper(this);
-//    private Button hostButton;
-//    private Button resolveButton;
     private TextView roomCodeText;
     private SharedPreferences sharedPreferences;
     private static final String PREFERENCE_FILE_KEY = "allow_sharing_images";
@@ -156,7 +139,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
     // Cloud Anchor Components.
     private WebServiceManager webServiceManager;
     private final AnchorManager anchorManager = new AnchorManager();
-//    private HostResolveMode currentMode;
     private AnchorListener anchorListener;
 
     private AnchorMatchingManager anchorMatchingManager = new AnchorMatchingManager();
@@ -199,15 +181,10 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         planeDetectController = new PlaneDetectController(instructionsView);
 
         // Initialize UI components.
-//        hostButton = findViewById(R.id.host_button);
-//        hostButton.setOnClickListener((view) -> onHostButtonPress());
-//        resolveButton = findViewById(R.id.resolve_button);
-//        resolveButton.setOnClickListener((view) -> onResolveButtonPress());
         roomCodeText = findViewById(R.id.room_code_text);
 
         // Initialize Cloud Anchor variables.
         webServiceManager = new WebServiceManager();
-//        currentMode = HostResolveMode.NONE;
         sharedPreferences = getSharedPreferences(PREFERENCE_FILE_KEY, Context.MODE_PRIVATE);
     }
 
@@ -313,7 +290,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         Config config = session.getConfig();
 //        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
         config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
-////        config.setLightEstimationMode(Config.LightEstimationMode.AMBIENT_INTENSITY);
         if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
             config.setDepthMode(Config.DepthMode.AUTOMATIC);
         } else {
@@ -425,13 +401,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 //            planeRenderer.createOnGlThread(this, "models/trigrid.png");
 //            pointCloudRenderer.createOnGlThread(this);
 
-//            virtualObject.createOnGlThread(this, "models/andy.obj", "models/andy.png");
-//            virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f);
-
-//            virtualObjectShadow.createOnGlThread(this, "models/andy_shadow.obj", "models/andy_shadow.png");
-//            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
-//            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
-
             graffitiRenderer.createOnGlThread(this, "models/plane.png");
 //            graffitiOcclusionRenderer.createOnGlThread(this,"models/plane.png");
             // Update BackgroundRenderer state to match the depth settings.
@@ -452,7 +421,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
     @Override
     public void onDrawFrame(GL10 gl) {
         // Clear screen to notify driver it should not load any pixels from previous frame.
-//        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
         virtualSceneFramebuffer.clear();
         rendererHelper.clear(0f, 0f, 0f, 1f);
 
@@ -465,9 +433,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         // initialized during the execution of onSurfaceCreated.
         if (!hasSetTextureNames) {
             session.setCameraTextureName(backgroundRenderer.getTextureId());
-//      session.setCameraTextureNames(
-//              new int[] {backgroundOcclusionRenderer.getCameraColorTexture().getTextureId()});
-//            session.setCameraTextureName(backgroundOcclusionRenderer.getCameraColorTexture().getTextureId());
             hasSetTextureNames = true;
         }
 
@@ -535,38 +500,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
                 }
             }
         }
-
-        // Show a message based on whether tracking has failed, if planes are detected, and if the user
-        // has placed any objects.
-//        String message = null;
-//        if (camera.getTrackingState() == TrackingState.PAUSED) {
-//            if (camera.getTrackingFailureReason() == TrackingFailureReason.NONE) {
-//                message = getString(R.string.searching_plane);
-//            } else {
-//                message = TrackingStateHelper.getTrackingFailureReasonString(camera);
-//            }
-//        } else if (hasTrackingPlane()) {
-//            if (!isFirstHasTrackingPlane) {
-//                message = getString(R.string.searched_plane);
-//                isFirstHasTrackingPlane = true;
-//            }
-//            // TODO Visualize temporarily plane
-////            if (anchors.isEmpty()) {
-////                message = getString(R.string.waiting_for_tap);;
-////            }
-//        } else {
-//            message = getString(R.string.searching_plane);
-//        }
-//        if (messageSnackbarHelper.isShowing() && message == null) {
-//            messageSnackbarHelper.hide(this);
-//            planeDetectController.hide();
-//            if (roomCodeText.getText() == "") {
-//                onEnterRoom();
-//            }
-//        } else if (!messageSnackbarHelper.isShowing() && message != null) {
-//            messageSnackbarHelper.showMessage(this, message);
-//            planeDetectController.show();
-//        }
 
         // -- Draw background
 
@@ -648,7 +581,8 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
             List<PointTex2D> stroke = mergedPlane.getStroke();
             if (stroke.size() > mergedPlane.getDrawnStrokeIndex()) {
                 for (int i = mergedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
-                    graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
+                    graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.BLUE));
+//                    graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
 //                    graffitiOcclusionRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
                 }
                 mergedPlane.drawnStroke(stroke.size());
@@ -672,7 +606,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         // camera is currently tracking.
         MotionEvent tap = tapHelper.poll();
         if (tap != null && cameraTrackingState == TrackingState.TRACKING) {
-//                Preconditions.checkState(currentMode == HostResolveMode.HOSTING, "We should only be creating an anchor in hosting mode.");
             for (HitResult hit : frame.hitTest(tap)) {
                 Plane plane = getPlaneWithHit(hit);
                 if (plane != null && plane.getSubsumedBy() == null) {
@@ -681,7 +614,8 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
                     // ワールド座標系から平面のローカル座標への変換
                     float[] hitOnPlaneCoord = GeometryUtil.worldToLocal(hit.getHitPose().getTranslation(), planePose.getTranslation(), planePose.getXAxis(), planePose.getZAxis());
                     int drawerStyle = 1;
-                    int color = Color.BLUE;
+//                    int color = Color.BLUE;
+                    int color = Color.RED;
                     TextureDrawer drawer = null;
                     switch (drawerStyle) {
                         case 1:
@@ -695,10 +629,8 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
                     messageSnackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
                     if (color == Color.TRANSPARENT) {
                         graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
-//                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
                     } else {
                         graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
-//                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
                     }
                     storeStroke(plane, hit.getHitPose().getTranslation());
                     Log.d(TAGSTROKE, "hit.getHitPose().getTranslation(): " + hit.getHitPose().getTranslation());
@@ -784,50 +716,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
             messageSnackbarHelper.showMessageWithDismiss(SharedGraffitiActivity.this, "No Store Stroke.");
         }
     }
-
-    /** Callback function invoked when the Host Button is pressed. */
-//    private void onHostButtonPress() {
-//        if (currentMode == HostResolveMode.HOSTING) {
-//            resetMode();
-//            return;
-//        }
-//
-//        if (!sharedPreferences.getBoolean(ALLOW_SHARE_IMAGES_KEY, false)) {
-//            showNoticeDialog(this::onPrivacyAcceptedForHost);
-//        } else {
-//            onPrivacyAcceptedForHost();
-//        }
-//    }
-
-//    private void onPrivacyAcceptedForHost() {
-//        if (anchorListener != null) {
-//            return;
-//        }
-//        resolveButton.setEnabled(false);
-//        hostButton.setText(R.string.cancel);
-//        snackbarHelper.showMessageWithDismiss(this, getString(R.string.snackbar_on_host));
-//        anchorListener = new RoomCodeAndCloudAnchorIdListener();
-//    }
-
-    /** Callback function invoked when the Resolve Button is pressed. */
-//    private void onResolveButtonPress() {
-//        if (currentMode == HostResolveMode.RESOLVING) {
-//            resetMode();
-//            return;
-//        }
-//
-//        if (!sharedPreferences.getBoolean(ALLOW_SHARE_IMAGES_KEY, false)) {
-//            showNoticeDialog(this::onPrivacyAcceptedForResolve);
-//        } else {
-//            onPrivacyAcceptedForResolve();
-//        }
-//    }
-
-//    private void onPrivacyAcceptedForResolve() {
-//        ResolveDialogFragment dialogFragment = new ResolveDialogFragment();
-//        dialogFragment.setOkListener(this::onRoomCodeEntered);
-//        dialogFragment.show(getSupportFragmentManager(), "ResolveDialog");
-//    }
 
     /** Call method when plane find. */
     private void onEnterRoom() {

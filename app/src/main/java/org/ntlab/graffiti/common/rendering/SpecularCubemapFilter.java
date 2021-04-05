@@ -21,6 +21,7 @@ import android.util.Log;
 
 import com.google.ar.core.ArImage;
 import com.google.ar.core.ImageFormat;
+import com.google.ar.core.LightEstimate;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -41,6 +42,7 @@ import static java.lang.Math.min;
  *
  * <p>See https://google.github.io/filament/Filament.md.html#lighting/imagebasedlights for a more
  * detailed explanation.
+ * @author a-hongo
  */
 public class SpecularCubemapFilter implements Closeable {
   private static final String TAG = SpecularCubemapFilter.class.getSimpleName();
@@ -190,7 +192,6 @@ public class SpecularCubemapFilter implements Closeable {
       mesh =
           new Mesh(
               GLES30.GL_TRIANGLE_STRIP,
-//              GLES30.GL_TRIANGLE_FAN,
               /*indexBuffer=*/ null,
               new VertexBuffer[] {coordsBuffer});
     } catch (Throwable t) {
@@ -225,8 +226,8 @@ public class SpecularCubemapFilter implements Closeable {
    * Updates and filters the provided cubemap textures from ARCore.
    *
    * <p>This method should be called every frame with the result of {@link
-   * com.google.ar.core.LightEstimate.acquireEnvironmentalHdrCubeMap()} to update the filtered
-   * cubemap texture, accessible via {@link getFilteredCubemapTexture()}.
+   * LightEstimate#acquireEnvironmentalHdrCubeMap()} to update the filtered
+   * cubemap texture, accessible via {@link #getFilteredCubemapTexture()}.
    *
    * <p>The given {@link ArImage}s will be closed by this method, even if an exception occurs.
    */
