@@ -36,7 +36,6 @@ public class PhotoGalleryActivity extends AppCompatActivity {
     private static final int PERMISSON_REQUEST_CODE = 2;
     private GridView gridViewPhotos;
     private ArrayList<String> photoPathList;
-//    private View surface;
 
     @SuppressLint("ClickableViewAccessibility")
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -57,8 +56,6 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             gridViewPhotos = findViewById(R.id.gridView_photos);
             Collections.sort(photoPathList);
             Collections.reverse(photoPathList);
-//            reversePhotoPathList();
-
 
             final GridAdapter adapter = new GridAdapter(this, photoPathList);
             gridViewPhotos.setAdapter(adapter);
@@ -136,7 +133,6 @@ public class PhotoGalleryActivity extends AppCompatActivity {
                 fileExtension = filename.substring(lastDotPosition + 1);
             }
             if (fullpath.contains(fileExtension)) {
-//                System.out.println(fullpath);
                 photoFilePaths.add(fullpath);
             }
 
@@ -172,7 +168,6 @@ public class PhotoGalleryActivity extends AppCompatActivity {
                 photoPathList = getLocalPhotos(Environment.DIRECTORY_DOWNLOADS);
                 Collections.sort(photoPathList);
                 Collections.reverse(photoPathList);
-//                reversePhotoPathList();
                 gridViewPhotos = findViewById(R.id.gridView_photos);
 
                 final GridAdapter adapter = new GridAdapter(this, photoPathList);

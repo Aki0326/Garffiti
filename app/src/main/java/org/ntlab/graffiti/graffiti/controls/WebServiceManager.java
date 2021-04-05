@@ -21,6 +21,10 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+/**
+ * Manage Web Service processes.
+ * @author a-hongo
+ */
 public class WebServiceManager {
     private static final String TAG = WebServiceManager.class.getSimpleName();
 
@@ -56,9 +60,7 @@ public class WebServiceManager {
     public WebServiceManager() {
         //retrofitの処理
         retrofit = new Retrofit.Builder()
-//                .baseUrl("http://192.168.2.109:8080/garffitiserver/")
                 .baseUrl("http://localhost:8080/garffitiserver/")
-//                .baseUrl("http://nitta-lab-www.is.konan-u.ac.jp:8080/garffitiserver/")
                 .addConverterFactory(JacksonConverterFactory.create())
                 .build();
 
@@ -114,13 +116,11 @@ public class WebServiceManager {
     private class RoomWatcherTask extends TimerTask {
         @Override
         public void run() {
-//            Log.d(TAG, "Timer run!");
             final Call<Map<String, Timestamp>> getRoomCall = roomsAPI.getRoom(WebServiceManager.this.roomCode);
             Response<Map<String, Timestamp>> getRoomResponse;
             try {
                 getRoomResponse = getRoomCall.execute();
                 if (getRoomResponse.isSuccessful()) {
-//                    Log.d(TAG, "Success getRoom connection.");
                     Room room = rooms.get(WebServiceManager.this.roomCode);
                     if (room != null) {
                         Map<String, Timestamp> anchorIdToTimestamp = getRoomResponse.body();
@@ -203,7 +203,6 @@ public class WebServiceManager {
                 e.printStackTrace();
                 Log.d(TAG, "Failed getRoom.");
             }
-//            Log.d(TAG, "Timer run end.");
         }
     }
 
@@ -253,8 +252,6 @@ public class WebServiceManager {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Room room = rooms.get(WebServiceManager.this.roomCode);
-//                    room.getCloudAnchor(cloudAnchorId).setPlane(polygon);
-//                    Log.d(TAG, "Success No." + roomCode + " updatePlane!");
                 } else {
                     //onFailureでキャッチできないエラーの処理
                     Log.d(TAG, "Error updatePlane connection.");

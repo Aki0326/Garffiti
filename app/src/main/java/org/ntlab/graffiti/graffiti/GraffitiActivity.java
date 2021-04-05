@@ -114,9 +114,6 @@ public class GraffitiActivity extends ArActivity {
     private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
 //    private final PlaneRenderer planeRenderer = new PlaneRenderer();
 //    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
-//    private final ObjectRenderer virtualObject = new ObjectRenderer();
-//    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
-//    private PlaneRendererOcculusion planeRendererOcculusion;
     private final GraffitiOcclusionRenderer graffitiOcclusionRenderer = new GraffitiOcclusionRenderer();
     private Framebuffer virtualSceneFramebuffer;
     private boolean hasSetTextureNames = false;
@@ -215,7 +212,7 @@ public class GraffitiActivity extends ArActivity {
             public void onClick(View view) {
                 try {
                     isLoop = false;
-                    graffitiClickSE.musicPlay(GraffitiActivity.this, "musics/se/camera-shutter.mp3", isLoop);
+                    graffitiClickSE.playMusic(GraffitiActivity.this, "musics/se/camera-shutter.mp3", isLoop);
                     cameraButton.setClickable(false);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -335,7 +332,6 @@ public class GraffitiActivity extends ArActivity {
         Config config = session.getConfig();
 //        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
         config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
-////        config.setLightEstimationMode(Config.LightEstimationMode.AMBIENT_INTENSITY);
         if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
             config.setDepthMode(Config.DepthMode.AUTOMATIC);
         } else {
@@ -378,9 +374,7 @@ public class GraffitiActivity extends ArActivity {
                 return;
             }
             // 許可された結果を受け取る
-//            Intent intent = new Intent(this, GraffitiActivity.class);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                startForegroundService(intent);
                 setUpMediaProjection(resultCode, data);
             }
         }
@@ -456,18 +450,12 @@ public class GraffitiActivity extends ArActivity {
 
 //            planeRenderer.createOnGlThread(this, "models/trigrid.png");
 //            pointCloudRenderer.createOnGlThread(this);
-//            virtualObject.createOnGlThread(this, "models/fluid_01.obj", "models/fluid_01.png");
-//            virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f);
-//            virtualObjectShadow.createOnGlThread(this, "models/andy_shadow.obj", "models/andy_shadow.png");
-//            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
-//            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
-//            planeObjectRenderer.createOnGlThread(this, "models/nambo.png");
+
             graffitiOcclusionRenderer.createOnGlThread(this, "models/plane.png");
             // Update BackgroundRenderer state to match the depth settings.
             graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 //            graffitiRenderer.setUseOcclusion(this, false);
 
-//            planeRendererOcclusion = new PlaneRendererOcclusion(this);
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
         } catch (IOException e) {
             Log.e(TAG, "Failed to read a required asset file", e);
@@ -486,7 +474,6 @@ public class GraffitiActivity extends ArActivity {
         if (l != null) l.onDraw(gl);
 
         // Clear screen to notify driver it should not load any pixels from previous frame.
-////        clear(/*framebuffer=*/ null, 0f, 0f, 0f, 1f);
         virtualSceneFramebuffer.clear();
         rendererHelper.clear(0f, 0f, 0f, 1f);
 
@@ -494,13 +481,10 @@ public class GraffitiActivity extends ArActivity {
             return;
         }
 
-//        try {
         // Texture names should only be set once on a GL thread unless they change. This is done during
         // onDrawFrame rather than onSurfaceCreated since the session is not guaranteed to have been
         // initialized during the execution of onSurfaceCreated.
         if (!hasSetTextureNames) {
-//      session.setCameraTextureNames(
-//              new int[] {backgroundRenderer.getCameraColorTexture().getTextureId()});
             session.setCameraTextureName(backgroundOcclusionRenderer.getCameraColorTexture().getTextureId());
             hasSetTextureNames = true;
         }
@@ -572,9 +556,7 @@ public class GraffitiActivity extends ArActivity {
                 message = TrackingStateHelper.getTrackingFailureReasonString(camera);
             }
         } else if (hasTrackingPlane()) {
-//            if (anchors.isEmpty()) {
-//                message = getString(R.string.waiting_for_tap);;
-//            }
+            // TODO wating for tap.
         } else {
             message = getString(R.string.searching_plane);
         }
@@ -588,12 +570,10 @@ public class GraffitiActivity extends ArActivity {
 
         // -- Draw background
 
-//        if (frame.getTimestamp() != 0) {
         // Suppress rendering if the camera did not produce the first frame yet. This is to avoid
         // drawing possible leftover data from previous sessions if the texture is reused.
         virtualSceneFramebuffer.clear();
         backgroundOcclusionRenderer.draw(frame);
-//        }
 
         // If not tracking, don't draw 3D objects.
         if (camera.getTrackingState() == TrackingState.PAUSED) {
@@ -612,16 +592,6 @@ public class GraffitiActivity extends ArActivity {
 
         // Visualize tracked points.
         // Use try-with-resources to automatically release the point cloud.
-//      try (PointCloud pointCloud = frame.acquirePointCloud()) {
-//        if (pointCloud.getTimestamp() > lastPointCloudTimestamp) {
-//          pointCloudVertexBuffer.set(pointCloud.getPoints());
-//          lastPointCloudTimestamp = pointCloud.getTimestamp();
-//        }
-//        android.opengl.Matrix.multiplyMM(modelViewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
-//        pointCloudShader.setMat4("u_ModelViewProjection", modelViewProjectionMatrix);
-//        render.draw(pointCloudMesh, pointCloudShader);
-//      }
-
         PointCloud pointCloud = frame.acquirePointCloud();
 //        pointCloudRenderer.update(pointCloud);
 //      pointCloudRenderer.draw(viewmtx, projmtx);
@@ -631,14 +601,11 @@ public class GraffitiActivity extends ArActivity {
 
         // Visualize planes.
 //        virtualSceneFramebuffer.clear();
-//        planeRendererOcculusion.drawPlanes(
+//        planeRenderer.drawPlanes(
 //              session.getAllTrackables(Plane.class),
 //              camera.getDisplayOrientedPose(),
 //              projectionMatrix);
-
-//      planeRenderer.drawPlanes(session.getAllTrackables(PlaneJSON.class), camera.getDisplayOrientedPose(), projmtx);
-//      planeObjectRenderer.draw(session.getAllTrackables(PlaneJSON.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
-//      testRenderer.draw(session.getAllTrackables(PlaneJSON.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
+//      planeRenderer.draw(session.getAllTrackables(PlaneJSON.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
         // -- Draw occluded virtual objects
         virtualSceneFramebuffer.clear();
@@ -654,35 +621,6 @@ public class GraffitiActivity extends ArActivity {
         // The last one is the average pixel intensity in gamma space.
 //        final float[] colorCorrectionRgba = new float[4];
 //        frame.getLightEstimate().getColorCorrection(colorCorrectionRgba, 0);
-
-        // Visualize anchors created by touch.
-////      render.clear(virtualSceneFramebuffer, 0f, 0f, 0f, 0f);
-//        virtualSceneFramebuffer.use();
-//        rendererHelper.clear(0f, 0f, 0f, 0f);
-//
-//        for (Anchor anchor : anchors) {
-//            if (anchor.getTrackingState() != TrackingState.TRACKING) {
-//                continue;
-//            }
-//
-//            // Get the current pose of an Anchor in world space. The Anchor pose is updated
-//            // during calls to session.update() as ARCore refines its estimate of the world.
-//            anchor.getPose().toMatrix(modelMatrix, 0);
-//
-//            // Calculate model/view/projection matrices
-//            android.opengl.Matrix.multiplyMM(modelViewMatrix, 0, viewMatrix, 0, modelMatrix, 0);
-//            android.opengl.Matrix.multiplyMM(modelViewProjectionMatrix, 0, projectionMatrix, 0, modelViewMatrix, 0);
-//
-//            // Update shader properties and draw
-//            virtualObjectShader.setMat4("u_ModelView", modelViewMatrix);
-//            virtualObjectShader.setMat4("u_ModelViewProjection", modelViewProjectionMatrix);
-//            virtualSceneFramebuffer.use();
-//            virtualObjectShader.lowLevelUse();
-//            virtualObjectMesh.lowLevelDraw();
-//        }
-
-//        virtualObject.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color);
-//        virtualObjectShadow.draw(viewmtx, projmtx, colorCorrectionRgba, coloredAnchor.color);
 
         // Compose the virtual scene with the background. (not use)
 //        virtualSceneFramebuffer.clear();

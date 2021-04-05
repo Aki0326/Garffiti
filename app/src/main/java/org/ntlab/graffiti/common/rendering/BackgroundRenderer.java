@@ -14,26 +14,26 @@
  */
 package org.ntlab.graffiti.common.rendering;
 
-/**
- * This class renders the AR background from camera feed. It creates and hosts the texture given to
- * ARCore to be filled with the camera image.
- * Created by a-hongo on 01,4月,2021
- */
-
 import android.content.Context;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 
 import com.google.ar.core.Frame;
+import com.google.ar.core.Session;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 /**
  * This class renders the AR background from camera feed. It creates and hosts the texture given to
  * ARCore to be filled with the camera image.
+ * @author a-hongo, n-nitta
  */
 public class BackgroundRenderer {
     private static final String TAG = BackgroundRenderer.class.getSimpleName();
@@ -64,8 +64,7 @@ public class BackgroundRenderer {
 
     /**
      * Allocates and initializes OpenGL resources needed by the background renderer. Must be called on
-     * the OpenGL thread, typically in {@link GLSurfaceView.Renderer#onSurfaceCreated(GL10,
-     * EGLConfig)}.
+     * the OpenGL thread, typically in {@link GLSurfaceView.Renderer#onSurfaceCreated(GL10, EGLConfig)}.
      *
      * @param context Needed to access shader source.
      */

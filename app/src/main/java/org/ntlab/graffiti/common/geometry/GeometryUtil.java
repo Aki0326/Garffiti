@@ -2,7 +2,7 @@ package org.ntlab.graffiti.common.geometry;
 
 /**
  * Transform the coordinates of the local coordinate system and the world coordinate system
- * @author a-hongo
+ * @author a-hongo, n-nitta
  */
 public class GeometryUtil {
     public static float[] localToWorld(float localX, float localZ, float[] localCenter, float[] localXAxis, float[] localZAxis) {

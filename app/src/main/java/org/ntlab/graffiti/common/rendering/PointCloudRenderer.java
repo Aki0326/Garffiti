@@ -21,12 +21,15 @@ import android.opengl.Matrix;
 import com.google.ar.core.PointCloud;
 import java.io.IOException;
 
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 /**
  * Renders a point cloud. Not use?
  * @author a-hongo
  */
 public class PointCloudRenderer {
-  private static final String TAG = PointCloud.class.getSimpleName();
+  private static final String TAG = PointCloudRenderer.class.getSimpleName();
 
   // Shader names.
   private static final String VERTEX_SHADER_NAME = "shaders/point_cloud.vert";

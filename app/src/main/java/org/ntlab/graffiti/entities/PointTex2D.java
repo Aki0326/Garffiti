@@ -1,7 +1,7 @@
 package org.ntlab.graffiti.entities;
 
 /**
- *
+ * Entity PointTex2D
  * @author a-hongo
  */
 public class PointTex2D {

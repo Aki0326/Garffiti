@@ -30,6 +30,9 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 /**
  * This class renders the AR background from camera feed. It creates and hosts the texture given to
  * ARCore to be filled with the camera image.
@@ -40,10 +43,9 @@ public class BackgroundOcclusionRenderer {
     private static final String TAG = BackgroundOcclusionRenderer.class.getSimpleName();
 
     // Shader names
-    private static final String VERTEX_SHADER_NAME = "shaders/screenquad.vert";
-    private static final String FRAGMENT_SHADER_NAME = "shaders/screenquad.frag";
+    private static final String VERTEX_SHADER_NAME = "shaders/background_show_camera.vert";
+    private static final String FRAGMENT_SHADER_NAME = "shaders/background_show_camera.frag";
 
-    //  private static final int COORDS_PER_VERTEX = 3;
     private static final int COORDS_PER_VERTEX = 2;
     private static final int TEXCOORDS_PER_VERTEX = 2;
     private static final int FLOAT_SIZE = 4;
@@ -51,12 +53,6 @@ public class BackgroundOcclusionRenderer {
     private FloatBuffer quadVertices;
     private FloatBuffer quadTexCoord;
     private FloatBuffer quadTexCoordTransformed;
-
-//  private int quadProgram;
-
-    //  private int quadPositionParam;
-//  private int quadTexCoordParam;
-    private int textureId = -1;
 
     private Mesh mesh;
     private VertexBuffer cameraTexCoordsVertexBuffer;
@@ -87,15 +83,9 @@ public class BackgroundOcclusionRenderer {
     public BackgroundOcclusionRenderer() {
     }
 
-//    public int getTextureId() {
-//        return cameraColorTexture.getTextureId();
-////    return textureId;
-//    }
-
     /**
      * Allocates and initializes OpenGL resources needed by the background renderer. Must be called on
-     * the OpenGL thread, typically in {@link GLSurfaceView.Renderer#onSurfaceCreated(GL10,
-     * EGLConfig)}.
+     * the OpenGL thread, typically in {@link GLSurfaceView.Renderer#onSurfaceCreated(GL10, EGLConfig)}.
      *
      * @param context Needed to access shader source.
      */
@@ -112,16 +102,6 @@ public class BackgroundOcclusionRenderer {
                         GLES30.GL_TEXTURE_2D,
                         GLES30.GL_CLAMP_TO_EDGE,
                         /*useMipmaps=*/ false);
-
-//    int[] textures = new int[1];
-//    GLES30.glGenTextures(1, textures, 0);
-//    textureId = textures[0];
-//    int textureTarget = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
-//    GLES30.glBindTexture(textureTarget, textureId);
-//    GLES30.glTexParameteri(textureTarget, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE);
-//    GLES30.glTexParameteri(textureTarget, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE);
-//    GLES30.glTexParameteri(textureTarget, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST);
-//    GLES30.glTexParameteri(textureTarget, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST);
 
         int numVertices = 4;
         if (numVertices != QUAD_COORDS.length / COORDS_PER_VERTEX) {
@@ -165,28 +145,12 @@ public class BackgroundOcclusionRenderer {
         backgroundShader =
                 Shader.createFromAssets(
                         context,
-                        "shaders/background_show_camera.vert",
-                        "shaders/background_show_camera.frag",
+                        VERTEX_SHADER_NAME,
+                        FRAGMENT_SHADER_NAME,
                         /*defines=*/ null)
                         .setTexture("u_CameraColorTexture", cameraColorTexture)
                         .setDepthTest(false)
                         .setDepthWrite(false);
-
-//    int vertexShader =
-//        ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
-//    int fragmentShader =
-//        ShaderUtil.loadGLShader(TAG, context, GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME);
-
-//    quadProgram = GLES30.glCreateProgram();
-//    GLES30.glAttachShader(quadProgram, vertexShader);
-//    GLES30.glAttachShader(quadProgram, fragmentShader);
-//    GLES30.glLinkProgram(quadProgram);
-//    GLES30.glUseProgram(quadProgram);
-//    ShaderUtil.checkGLError(TAG, "Program creation");
-
-//    quadPositionParam = GLES30.glGetAttribLocation(quadProgram, "a_Position");
-//    quadTexCoordParam = GLES30.glGetAttribLocation(quadProgram, "a_TexCoord");
-//    ShaderUtil.checkGLError(TAG, "Program parameters");
     }
 
     /**
@@ -270,13 +234,6 @@ public class BackgroundOcclusionRenderer {
      */
     public void draw(Frame frame) {
         if (frame != null) {
-            // If display rotation changed (also includes view size change), we need to re-query the uv
-            // coordinates for the screen rect, as they may have changed as well.
-//            updateDisplayGeometry(frame);
-//        if (frame.hasDisplayGeometryChanged()) {
-//        frame.transformDisplayUvCoords(quadTexCoord, quadTexCoordTransformed);
-//      }
-
             if (frame.getTimestamp() == 0) {
                 // Suppress rendering if the camera did not produce the first frame yet. This is to avoid
                 // drawing possible leftover data from previous sessions if the texture is reused.
@@ -284,48 +241,8 @@ public class BackgroundOcclusionRenderer {
             }
         }
 
-//    draw(mesh, shader, /*framebuffer=*/ null);
-//    useFramebuffer(framebuffer);
         backgroundShader.lowLevelUse();
         mesh.lowLevelDraw();
-
-        // No need to test or write depth, the screen quad has arbitrary depth, and is expected
-        // to be drawn first.
-//    GLES30.glDisable(GLES30.GL_DEPTH_TEST);
-//    GLES30.glDepthMask(false);
-
-//    GLES30.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
-
-//    GLES30.glUseProgram(quadProgram);
-
-        // Set the vertex positions.
-//    GLES30.glVertexAttribPointer(
-//        quadPositionParam, COORDS_PER_VERTEX, GLES30.GL_FLOAT, false, 0, quadVertices);
-
-        // Set the texture coordinates.
-//    GLES30.glVertexAttribPointer(
-//        quadTexCoordParam,
-//        TEXCOORDS_PER_VERTEX,
-//        GLES30.GL_FLOAT,
-//        false,
-//        0,
-//        quadTexCoordTransformed);
-
-        // Enable vertex arrays
-//    GLES30.glEnableVertexAttribArray(quadPositionParam);
-//    GLES30.glEnableVertexAttribArray(quadTexCoordParam);
-
-//    GLES30.glDrawArrays(GLES30.GL_TRIANGLE_STRIP, 0, 4);
-
-        // Disable vertex arrays
-//    GLES30.glDisableVertexAttribArray(quadPositionParam);
-//    GLES30.glDisableVertexAttribArray(quadTexCoordParam);
-
-        // Restore the depth state for further drawing.
-//    GLES30.glDepthMask(true);
-//    GLES30.glEnable(GLES30.GL_DEPTH_TEST);
-
-//    ShaderUtil.checkGLError(TAG, "Draw");
     }
 
     /**
@@ -346,8 +263,6 @@ public class BackgroundOcclusionRenderer {
                     .setFloat("u_ZFar", zFar);
         }
 
-//    draw(mesh, shader, /*framebuffer=*/ null);
-//    useFramebuffer(framebuffer);
         occlusionShader.lowLevelUse();
         mesh.lowLevelDraw();
     }

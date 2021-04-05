@@ -34,39 +34,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Represents a GPU shader, the state of its associated uniforms, and some additional draw state.
+ * @author a-hongo
  */
 public class Shader implements Closeable {
   private static final String TAG = Shader.class.getSimpleName();
-
-  /**
-   * A factor to be used in a blend function.
-   *
-   * @see <a
-   *     href="https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glBlendFunc.xhtml">glBlendFunc</a>
-   */
-//  public static enum BlendFactor {
-//    ZERO(GLES30.GL_ZERO),
-//    ONE(GLES30.GL_ONE),
-//    SRC_COLOR(GLES30.GL_SRC_COLOR),
-//    ONE_MINUS_SRC_COLOR(GLES30.GL_ONE_MINUS_SRC_COLOR),
-//    DST_COLOR(GLES30.GL_DST_COLOR),
-//    ONE_MINUS_DST_COLOR(GLES30.GL_ONE_MINUS_DST_COLOR),
-//    SRC_ALPHA(GLES30.GL_SRC_ALPHA),
-//    ONE_MINUS_SRC_ALPHA(GLES30.GL_ONE_MINUS_SRC_ALPHA),
-//    DST_ALPHA(GLES30.GL_DST_ALPHA),
-//    ONE_MINUS_DST_ALPHA(GLES30.GL_ONE_MINUS_DST_ALPHA),
-//    CONSTANT_COLOR(GLES30.GL_CONSTANT_COLOR),
-//    ONE_MINUS_CONSTANT_COLOR(GLES30.GL_ONE_MINUS_CONSTANT_COLOR),
-//    CONSTANT_ALPHA(GLES30.GL_CONSTANT_ALPHA),
-//    ONE_MINUS_CONSTANT_ALPHA(GLES30.GL_ONE_MINUS_CONSTANT_ALPHA);
-//
-//    /* package-private */
-//    final int glesEnum;
-//
-//    private BlendFactor(int glesEnum) {
-//      this.glesEnum = glesEnum;
-//    }
-//  }
 
   private int programId = 0;
   private final Map<Integer, Uniform> uniforms = new HashMap<>();

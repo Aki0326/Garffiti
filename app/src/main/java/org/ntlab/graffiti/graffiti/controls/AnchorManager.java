@@ -31,6 +31,7 @@ import java.util.Map;
 /**
  * A helper class to handle all the Cloud Anchors logic, and add a callback-like mechanism on top of
  * the existing ARCore API.
+ * @author a-hongo
  */
 public class AnchorManager {
     private static final String TAG = AnchorManager.class.getSimpleName();

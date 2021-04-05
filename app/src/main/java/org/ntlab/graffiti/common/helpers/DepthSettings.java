@@ -20,7 +20,7 @@ import android.content.SharedPreferences;
 
 /**
  * Manages the Occlusion option setting and shared preferences.
- * Created by a-hongo on 08,2月,2021
+ * @author a-hongo
  */
 public class DepthSettings {
     public static final String SHARED_PREFERENCES_ID = "SHARED_PREFERENCES_OCCLUSION_OPTIONS";

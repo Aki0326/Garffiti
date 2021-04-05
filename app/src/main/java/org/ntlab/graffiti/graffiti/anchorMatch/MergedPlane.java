@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- *
+ * MergedPlane Model
  * @author a-hongo
  */
 public class MergedPlane extends Plane {

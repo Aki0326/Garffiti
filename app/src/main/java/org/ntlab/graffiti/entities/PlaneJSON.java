@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- *
+ * Entity PlaneJSON
  * @author a-hongo
  */
 public class PlaneJSON {

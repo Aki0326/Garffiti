@@ -40,10 +40,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 /**
  * This class renders the AR Graffiti.
  *
- * @author n-nitta, a-hongo
+ * @author a-hongo
  */
 public class GraffitiOcclusionRenderer {
     private static final String TAG = GraffitiOcclusionRenderer.class.getSimpleName();
@@ -69,11 +72,6 @@ public class GraffitiOcclusionRenderer {
                     * INDICES_PER_BOUNDARY_VERT
                     * INDICES_PER_BOUNDARY_VERT
                     * INITIAL_BUFFER_BOUNDARY_VERTS;
-//    private static final int INITIAL_INDEX_BUFFER_SIZE_BYTES =
-//            BYTES_PER_SHORT
-//                    * INDICES_PER_BOUNDARY_VERT
-//                    * INDICES_PER_BOUNDARY_VERT
-//                    * INITIAL_BUFFER_BOUNDARY_VERTS;
 
     private static final float FADE_RADIUS_M = 0.25f;
     // texture size
@@ -90,8 +88,6 @@ public class GraffitiOcclusionRenderer {
     private Mesh mesh;
     private IndexBuffer indexBufferObject;
     private VertexBuffer vertexBufferObject;
-//    private Shader shader;
-//    private Texture cameraDepthTexture;
 
     private int planeObjectProgram;
 
@@ -100,9 +96,6 @@ public class GraffitiOcclusionRenderer {
     private int planeObjectModelViewUniform;
     private int planeObjectModelViewProjectionUniform;
     private int textureUniform;
-//    private int lineColorUniform;
-//    private int dotColorUniform;
-//    private int gridControlUniform;
     private int planeObjectUvMatrixUniform;
 
     private int cubeMapUniform;
@@ -128,23 +121,12 @@ public class GraffitiOcclusionRenderer {
             ByteBuffer.allocateDirect(INITIAL_INDEX_BUFFER_SIZE_BYTES)
                     .order(ByteOrder.nativeOrder())
                     .asIntBuffer();
-//    private ShortBuffer indexBuffer =
-//            ByteBuffer.allocateDirect(INITIAL_INDEX_BUFFER_SIZE_BYTES)
-//                    .order(ByteOrder.nativeOrder())
-//                    .asShortBuffer();
-
-    // Plane Object vertex buffer variables.
-//    private int vertexBufferId;
-//    private int verticesBaseAddress;
-//    private int indexBufferId;
-//    private int indexCount;
 
     // Environmental HDR
     private Texture dfgTexture;
     private SpecularCubemapFilter cubemapFilter;
 
     // Temporary lists/matrices allocated here to reduce number of allocations for each frame.
-//    private final float[] viewMatrix = new float[16];
     private final float[] modelMatrix = new float[16];
     private final float[] modelViewMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
@@ -206,68 +188,41 @@ public class GraffitiOcclusionRenderer {
         textureBitmap = BitmapFactory.decodeStream(context.getAssets().open(planeTextureName));
         textureBitmapToRecycle = textureBitmap.copy(textureBitmap.getConfig(), true);
 //        textureBitmapToRecycle.eraseColor(backgroundColor);
-//        ShaderUtil.checkGLError(TAG, "Failed to load texture");
 
-        // Generate the background texture.
-//        cameraDepthTexture =
-//                new Texture(
-//                        GLES30.GL_TEXTURE_2D,
-//                        GLES30.GL_CLAMP_TO_EDGE,
-//                        /*useMipmaps=*/ false);
+        cubemapFilter =
+                new SpecularCubemapFilter(
+                        context, CUBEMAP_RESOLUTION, CUBEMAP_NUMBER_OF_IMPORTANCE_SAMPLES);
+        // Load DFG lookup table for environmental lighting
+        dfgTexture =
+                new Texture(
+                        GLES30.GL_TEXTURE_2D,
+                        GLES30.GL_CLAMP_TO_EDGE,
+                        /*useMipmaps=*/ false);
+        // The dfg.raw file is a raw half-float texture with two channels.
+        final int dfgResolution = 64;
+        final int dfgChannels = 2;
+        final int halfFloatSize = 2;
 
-            cubemapFilter =
-                    new SpecularCubemapFilter(
-                            context, CUBEMAP_RESOLUTION, CUBEMAP_NUMBER_OF_IMPORTANCE_SAMPLES);
-            // Load DFG lookup table for environmental lighting
-            dfgTexture =
-                    new Texture(
-                            GLES30.GL_TEXTURE_2D,
-                            GLES30.GL_CLAMP_TO_EDGE,
-                            /*useMipmaps=*/ false);
-            // The dfg.raw file is a raw half-float texture with two channels.
-            final int dfgResolution = 64;
-            final int dfgChannels = 2;
-            final int halfFloatSize = 2;
+        ByteBuffer buffer =
+                ByteBuffer.allocateDirect(dfgResolution * dfgResolution * dfgChannels * halfFloatSize);
+        try (InputStream is = context.getAssets().open("models/dfg.raw")) {
+            is.read(buffer.array());
+        }
+        // Render abstraction leaks here.
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dfgTexture.getTextureId());
+        GLError.maybeThrowGLException("Failed to bind DFG texture", "glBindTexture");
+        GLES30.glTexImage2D(
+                GLES30.GL_TEXTURE_2D,
+                /*level=*/ 0,
+                GLES30.GL_RG16F,
+                /*width=*/ dfgResolution,
+                /*height=*/ dfgResolution,
+                /*border=*/ 0,
+                GLES30.GL_RG,
+                GLES30.GL_HALF_FLOAT,
+                buffer);
+        GLError.maybeThrowGLException("Failed to populate DFG texture", "glTexImage2D");
 
-            ByteBuffer buffer =
-                    ByteBuffer.allocateDirect(dfgResolution * dfgResolution * dfgChannels * halfFloatSize);
-            try (InputStream is = context.getAssets().open("models/dfg.raw")) {
-                is.read(buffer.array());
-            }
-            // Render abstraction leaks here.
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dfgTexture.getTextureId());
-            GLError.maybeThrowGLException("Failed to bind DFG texture", "glBindTexture");
-            GLES30.glTexImage2D(
-                    GLES30.GL_TEXTURE_2D,
-                    /*level=*/ 0,
-                    GLES30.GL_RG16F,
-                    /*width=*/ dfgResolution,
-                    /*height=*/ dfgResolution,
-                    /*border=*/ 0,
-                    GLES30.GL_RG,
-                    GLES30.GL_HALF_FLOAT,
-                    buffer);
-            GLError.maybeThrowGLException("Failed to populate DFG texture", "glTexImage2D");
-
-//        HashMap<String, String> defines = new HashMap<>();
-//        defines.put("USE_OCCLUSION", useOcclusion ? "1" : "0");
-        // This loads the shader code, and must be called on the GL thread.
-//        shader =
-//                Shader.createFromAssets(context, VERTEX_SHADER_NAME, FRAGMENT_SHADER_NAME, /*defines=*/ defines)
-////                        .setTexture("u_Texture", texture)
-////                        .setVec4("u_gridControl", GRID_CONTROL)
-////                        .setBlend(
-////                                GLES30.GL_DST_ALPHA, // RGB (src)
-////                                GLES30.GL_ONE, // RGB (dest)
-////                                GLES30.GL_ZERO, // ALPHA (src)
-////                                GLES30.GL_ONE_MINUS_SRC_ALPHA) // ALPHA (dest)
-////                        .setBlend(
-////                                GLES30.GL_SRC_ALPHA, // RGBA (src)
-////                                GLES30.GL_ONE_MINUS_SRC_ALPHA) // RGBA (dest)
-//                        .setBlend(
-//                                GLES30.GL_ONE, // RGBA (src)
-//                                GLES30.GL_ONE_MINUS_SRC_ALPHA); // RGBA (dest)
-////                        .setDepthWrite(false);
         HashMap<String, Integer> defines = new HashMap<>();
         defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
         defines.put("NUMBER_OF_MIPMAP_LEVELS", cubemapFilter.getNumberOfMipmapLevels());
@@ -293,9 +248,6 @@ public class GraffitiOcclusionRenderer {
         planeObjectUvMatrixUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_PlaneUvMatrix");
 
         textureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_Texture");
-//        lineColorUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_lineColor");
-//        dotColorUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_dotColor");
-//        gridControlUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_gridControl");
 
         lightIntensityUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_LightIntensity");
         viewInverseUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_ViewInverse");
@@ -310,11 +262,6 @@ public class GraffitiOcclusionRenderer {
         vertexBufferObject = new VertexBuffer(COORDS_PER_VERTEX, /*entries=*/ null);
         VertexBuffer[] vertexBuffers = {vertexBufferObject};
         mesh = new Mesh(GLES30.GL_TRIANGLE_FAN, indexBufferObject, vertexBuffers);
-
-//        int[] buffers = new int[2];
-//        GLES30.glGenBuffers(2, buffers, 0);
-//        vertexBufferId = buffers[0];
-//        indexBufferId = buffers[1];
     }
 
     /**
@@ -322,30 +269,10 @@ public class GraffitiOcclusionRenderer {
      * #define}s, and must be called on the GL thread.
      */
     public void setUseOcclusion(Context context, boolean useOcclusion) throws IOException {
-//        if (shader != null) {
         if (this.useOcclusion == useOcclusion) {
             return;
         }
-//            shader.close();
-//            shader = null;
-//        }
-//        HashMap<String, String> defines = new HashMap<>();
-//        defines.put("USE_OCCLUSION", useOcclusion ? "1" : "0");
-//        // This loads the shader code, and must be called on the GL thread.
-//        shader =
-//                Shader.createFromAssets(context, VERTEX_SHADER_NAME, FRAGMENT_SHADER_NAME, /*defines=*/ defines)
-////                        .setBlend(
-////                                GLES30.GL_SRC_ALPHA, // RGBA (src)
-////                                GLES30.GL_ONE_MINUS_SRC_ALPHA); // RGBA (dest)
-////                        .setBlend(
-////                                GLES30.GL_ONE, // RGBA (src)
-////                                GLES30.GL_ONE_MINUS_SRC_ALPHA); // RGBA (dest)
-//                        .setBlend(
-//                                GLES30.GL_ONE, // RGB (src)
-//                                GLES30.GL_ONE_MINUS_SRC_ALPHA, // RGB (dest)
-//                                GLES30.GL_ONE, // ALPHA (src)
-//                                GLES30.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (dest)
-////                        .setDepthWrite(false);
+
         HashMap<String, Integer> defines = new HashMap<>();
         defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
         defines.put("NUMBER_OF_MIPMAP_LEVELS", cubemapFilter.getNumberOfMipmapLevels());
@@ -381,9 +308,6 @@ public class GraffitiOcclusionRenderer {
         isLightEstimateUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_LightEstimateIsValid");
         ShaderUtil.checkGLError(TAG, "Program parameters");
         if (useOcclusion) {
-//            shader
-//                    .setTexture("u_CameraDepthTexture", cameraDepthTexture)
-//                    .setFloat("u_DepthAspectRatio", aspectRatio);
             depthTextureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_CameraDepthTexture");
             depthUvTransformUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_DepthUvTransform");
             depthAspectRatioUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_DepthAspectRatio");
@@ -513,28 +437,6 @@ public class GraffitiOcclusionRenderer {
     }
 
     /**
-     * Update depth texture with Image contents.
-     */
-//    public void updateCameraDepthTexture(Image image) {
-//        // SampleRender abstraction leaks here
-//        GLES30.glActiveTexture(GLES30.GL_TEXTURE1);
-//        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, cameraDepthTexture.getTextureId());
-//        GLES30.glTexImage2D(
-//                GLES30.GL_TEXTURE_2D,
-//                0,
-//                GLES30.GL_RG8,
-//                image.getWidth(),
-//                image.getHeight(),
-//                0,
-//                GLES30.GL_RG,
-//                GLES30.GL_UNSIGNED_BYTE,
-//                image.getPlanes()[0].getBuffer());
-//        if (useOcclusion) {
-//            aspectRatio = (float) image.getWidth() / (float) image.getHeight();
-//        }
-//    }
-
-    /**
      * Updates the plane model transform matrix and extents.
      */
     public void updatePlaneObjectParamaters(
@@ -573,23 +475,11 @@ public class GraffitiOcclusionRenderer {
         vertexBuffer.rewind();
         vertexBuffer.limit(numVertices * COORDS_PER_VERTEX);
 
-//        // Load vertex buffer
-//        verticesBaseAddress = 0;
-//        final int totalBytes = verticesBaseAddress + 4 * vertexBuffer.limit();
-
-//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vertexBufferId);
-//        GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, totalBytes, null, GLES30.GL_STATIC_DRAW);
-//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
-
         if (indexBuffer.capacity() < numIndices) {
             int size = indexBuffer.capacity();
             while (size < numIndices) {
                 size *= 2;
             }
-//            indexBuffer =
-//                    ByteBuffer.allocateDirect(BYTES_PER_SHORT * size)
-//                            .order(ByteOrder.nativeOrder())
-//                            .asShortBuffer();
             indexBuffer =
                     ByteBuffer.allocateDirect(BYTES_PER_INT * size)
                             .order(ByteOrder.nativeOrder())
@@ -598,18 +488,9 @@ public class GraffitiOcclusionRenderer {
         indexBuffer.rewind();
         indexBuffer.limit(numIndices);
 
-//        // Load index buffer
-//        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
-//        indexCount = indexBuffer.limit();
-//        GLES30.glBufferData(
-//                GLES30.GL_ELEMENT_ARRAY_BUFFER, 2 * indexCount, indexBuffer, GLES30.GL_STATIC_DRAW);
-//        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, 0);
-
         // Note: when either dimension of the bounding box is smaller than 2*FADE_RADIUS_M we
         // generate a bunch of 0-area triangles.  These don't get rendered though so it works
         // out ok.
-//        float xScale = Math.max((extentX - 2 * FADE_RADIUS_M) / extentX, 0.0f);
-//        float zScale = Math.max((extentZ - 2 * FADE_RADIUS_M) / extentZ, 0.0f);
         float xScale = Math.max((extentX - 2 * FADE_RADIUS_M) / extentX, 1.0f);
         float zScale = Math.max((extentZ - 2 * FADE_RADIUS_M) / extentZ, 1.0f);
 
@@ -625,23 +506,12 @@ public class GraffitiOcclusionRenderer {
         }
 
         // step 1, perimeter（外部）
-//        indexBuffer.put((short) ((boundaryVertices - 1) * 2));
         for (int i = 0; i < boundaryVertices; ++i) {
-//            indexBuffer.put((short) (i * 2));
             indexBuffer.put((short) (i * 2 + 1));
         }
         indexBuffer.put((short) 1);
         // This leaves us on the interior edge of the perimeter between the inset vertices
         // for boundary verts n-1 and 0.
-
-        // step 2, interior:（内部）
-//        for (int i = 1; i < boundaryVertices / 2; ++i) {
-//            indexBuffer.put((short) ((boundaryVertices - 1 - i) * 2 + 1));
-//            indexBuffer.put((short) (i * 2 + 1));
-//        }
-//        if (boundaryVertices % 2 != 0) {
-//            indexBuffer.put((short) ((boundaryVertices / 2) * 2 + 1));
-//        }
     }
 
     /**
@@ -674,16 +544,6 @@ public class GraffitiOcclusionRenderer {
 
             drawer.draw(pixelX, pixelY, r, canvas);
 
-//            if(color == Color.TRANSPARENT) {
-////                paint.setColor(Color.TRANSPARENT);
-//                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-//                paint.setStyle(Paint.Style.FILL);
-//                canvas.drawCircle(pixelX, pixelY, r, paint);
-//            } else {
-//                paint.setColor(color);
-//                paint.setStyle(Paint.Style.FILL);
-//                canvas.drawCircle(pixelX, pixelY, r, paint);
-//            }
             miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
             diffColoredPxs = diffColoredPixels(-1, preBitmap, miniBitmap);
 
@@ -705,17 +565,10 @@ public class GraffitiOcclusionRenderer {
     public void adjustTextureAxis(Frame frame, Camera camera) {
         Pose cameraPose = camera.getPose();
         Pose worldToCameraLocal = cameraPose.inverse();
-//        Log.d("pose","camera:" + cameraPose.tx() + "," + cameraPose.ty() + "," + cameraPose.tz() + ","
-//                + cameraPose.getXAxis()[0] +","  + cameraPose.getXAxis()[1] +","  + cameraPose.getXAxis()[2] +","
-//                + cameraPose.getYAxis()[0] +","  + cameraPose.getYAxis()[1] +","  + cameraPose.getYAxis()[2]);
 
         for (Plane p : frame.getUpdatedTrackables(Plane.class)) {
             Pose newPose = p.getCenterPose();
             Pose oldPose = planePose.get(p);
-
-//            Log.d("pose","plane:" + p + "," + newPose.tx() + "," + newPose.ty() + "," + newPose.tz() + ","
-//                    + newPose.getXAxis()[0] +","  + newPose.getXAxis()[1] +","  + newPose.getXAxis()[2] +","
-//                    + newPose.getYAxis()[0] +","  + newPose.getYAxis()[1] +","  + newPose.getYAxis()[2]);
 
             // 1. テクスチャを平面上で回転＆移動させるための行列の作成
             if (!planeNo.containsKey(p)) return;
@@ -739,8 +592,6 @@ public class GraffitiOcclusionRenderer {
             float pixelTransX = (Vector.dot(newToOld, newAxisX) * DOTS_PER_METER) * bitmap.getWidth();
             float pixelTransY = (-Vector.dot(newToOld, newAxisZ) * DOTS_PER_METER) * bitmap.getHeight();
             adjustMatrix.postTranslate(pixelTransX, pixelTransY);
-
-//            Log.d("pose","adjust:" + theta + "," + pixelTransX + "," + pixelTransY);
 
             // 2. 適用
             canvas.drawBitmap(bitmap, adjustMatrix, new Paint());
@@ -784,44 +635,11 @@ public class GraffitiOcclusionRenderer {
     private void draw(float[] cameraView, float[] cameraPerspective, float[] planeNormal) {
         // Build the ModelView and ModelViewProjection matrices
         // for calculating cube position and light.
-//        Matrix.multiplyMM(modelViewMatrix, 0, viewMatrix, 0, modelMatrix, 0);
         Matrix.multiplyMM(modelViewMatrix, 0, cameraView, 0, modelMatrix, 0);
         Matrix.multiplyMM(modelViewProjectionMatrix, 0, cameraPerspective, 0, modelViewMatrix, 0);
 
-        // Populate the shader uniforms for this frame.
-//        shader.setMat4("u_ModelView", modelViewMatrix);
-//        shader.setMat4("u_ModelViewProjection", modelViewProjectionMatrix);
-//        shader.setMat2("u_PlaneUvMatrix", planeObjectAngleUvMatrix);
-//        shader.setVec3("u_Normal", normalVector);
-
-//        // Set the vertex attributes.
-//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vertexBufferId);
-
-        // Enable vertex arrays
-//        GLES30.glEnableVertexAttribArray(planeObjectXZPositionAlphaAttribute);
-//        GLError.maybeThrowGLException("Failed to enable vertex attribute array", "glEnableVertexAttribArray");
-
         // Set the position of the plane
         vertexBuffer.rewind();
-
-//        GLES30.glVertexAttribPointer(
-//                planeObjectXZPositionAlphaAttribute,
-//                COORDS_PER_VERTEX,
-//                GLES30.GL_FLOAT,
-//                false,
-//                BYTES_PER_FLOAT * COORDS_PER_VERTEX,
-//                vertexBuffer);
-//        GLES30.glVertexAttribPointer(
-//                planeObjectXZPositionAlphaAttribute,
-//                COORDS_PER_VERTEX,
-//                GLES30.GL_FLOAT,
-//                false,
-//                BYTES_PER_FLOAT * COORDS_PER_VERTEX,
-//                verticesBaseAddress);
-//        GLError.maybeThrowGLException("Failed to glVertexAttribPointer", "glVertexAttribPointer");
-
-//        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, 0);
-//        GLError.maybeThrowGLException("Failed to glBindBuffer", "glBindBuffer");
 
         // Set the Model and ModelViewProjection matrices in the shader.
         GLES30.glUniformMatrix4fv(planeObjectModelViewUniform, 1, false, modelViewMatrix, 0);
@@ -832,25 +650,12 @@ public class GraffitiOcclusionRenderer {
 
         // Draw the Model.
         indexBuffer.rewind();
-////        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, indexBufferId);
-////        GLES30.glDrawElements(
-////                GLES30.GL_TRIANGLE_FAN, indexCount, GLES30.GL_UNSIGNED_SHORT, 0);
-//        GLES30.glDrawElements(
-//                GLES30.GL_TRIANGLE_FAN, indexBuffer.limit(), GLES30.GL_UNSIGNED_INT, indexBuffer);
-//        GLError.maybeThrowGLException("Failed to glDrawElements", "glDrawElements");
-////        GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, 0);
-//        ShaderUtil.checkGLError(TAG, "Drawing plane");
 
         // Set the position of the plane
         vertexBufferObject.set(vertexBuffer);
         indexBufferObject.set(indexBuffer);
 
-//        shader.lowLevelUse();
         mesh.lowLevelDraw();
-
-//        GLES30.glDisableVertexAttribArray(planeObjectXZPositionAlphaAttribute);
-//        GLError.maybeThrowGLException("Failed to disable vertex attribute array", "glDisableVertexAttribArray");
-
     }
 
     static class SortablePlane {
@@ -901,10 +706,7 @@ public class GraffitiOcclusionRenderer {
 
         // Planes are drawn with additive blending, masked by the alpha channel for occlusion.
 
-//        if (!sortedPlaneObjects.isEmpty()) {
         // Start by clearing the alpha channel of the color buffer to 1.0.
-//        GLES30.glClearColor(1, 1, 1, 1);
-//        GLError.maybeThrowGLException("Failed to set clear color", "glClearColor");
         GLES30.glColorMask(false, false, false, true);
         GLError.maybeThrowGLException("Failed to set color mask", "glColorMask");
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT);
@@ -912,33 +714,19 @@ public class GraffitiOcclusionRenderer {
         GLES30.glColorMask(true, true, true, true);
         GLError.maybeThrowGLException("Failed to set color mask", "glColorMask");
 
-        // Disable depth write.
-//        GLES30.glDepthMask(false);
-//        GLError.maybeThrowGLException("Failed to set depth write mask", "glDepthMask");
-
+        // enable depth write.
         GLES30.glDepthMask(true);
         GLError.maybeThrowGLException("Failed to set depth write mask", "glDepthMask");
 
 //         Additive blending, masked by alpha channel, clearing alpha channel.
         GLES30.glEnable(GLES30.GL_BLEND);
         GLError.maybeThrowGLException("Failed to enable blending", "glEnable");
-//        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
         GLES30.glBlendFunc(GLES30.GL_ONE, GLES30.GL_ONE_MINUS_SRC_ALPHA);
         GLError.maybeThrowGLException("Failed to set blend mode", "glBlendFunc");
-
-//        GLES30.glBlendFuncSeparate(
-//                GLES30.GL_DST_ALPHA, GLES30.GL_ONE, // RGB (src, dest)
-//                GLES30.GL_ZERO, GLES30.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
 
         // Set up the shader.
         GLES30.glUseProgram(planeObjectProgram);
         GLError.maybeThrowGLException("Failed to use program", "glUseProgram");
-
-//        drawCircle((int)(Math.random() * textureBitmap.getWidth()), (int)(Math.random() * textureBitmap.getHeight()), Color.BLUE);
-
-        // Shared fragment uniforms.
-//            GLES30.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
-//            GLError.maybeThrowGLException("Failed to set shader uniform 4f", "glUniform4fv");
 
         for (SortablePlane sortedPlaneObject : sortedPlanes) {
             Plane plane = sortedPlaneObject.plane;
@@ -993,15 +781,6 @@ public class GraffitiOcclusionRenderer {
                     GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE1", "glActiveTexture");
                     GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, depthTextureId);
                     GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
-
-//                    GLES30.glActiveTexture(GLES30.GL_TEXTURE2);
-//                    GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE2", "glActiveTexture");
-//                    GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, cubemapFilter.getFilteredCubemapTexture().getTextureId());
-//                    GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
-//                    GLES30.glActiveTexture(GLES30.GL_TEXTURE3);
-//                    GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE3", "glActiveTexture");
-//                    GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dfgTexture.getTextureId());
-//                    GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
                 }
             }
 
@@ -1028,26 +807,11 @@ public class GraffitiOcclusionRenderer {
                 GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1f");
                 GLES30.glUniformMatrix3fv(depthUvTransformUniform, 1, false, uvTransform, 0);
                 GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniformMatrix3fv");
-
-//                GLES30.glActiveTexture(GLES30.GL_TEXTURE2);
-//                GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE2", "glActiveTexture");
-//                GLES30.glBindTexture(GLES30.GL_TEXTURE_CUBE_MAP, cubemapFilter.getFilteredCubemapTexture().getTextureId());
-//                GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
-//                GLES30.glUniform1i(cubeMapUniform, 1);
-//                GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1i");
-//                GLES30.glActiveTexture(GLES30.GL_TEXTURE3);
-//                GLError.maybeThrowGLException("Failed to active texture GL_TEXTURE3", "glActiveTexture");
-//                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, dfgTexture.getTextureId());
-//                GLError.maybeThrowGLException("Failed to bind texture", "glBindTexture");
-//                GLES30.glUniform1i(dfgTextureUniform, 1);
-//                GLError.maybeThrowGLException("Failed to set shader texture uniform", "glUniform1i");
             }
 
             // Set plane color. Computed deterministically from the PlaneJSON index.
             int colorIndex = planeobjectIndex % PLANE_COLORS_RGBA.length;
             colorRgbaToFloat(planeObjectColor, PLANE_COLORS_RGBA[colorIndex]);
-//                GLES30.glUniform4fv(lineColorUniform, 1, planeObjectColor, 0);
-//                GLES30.glUniform4fv(dotColorUniform, 1, planeObjectColor, 0);
 
             // Each plane will have its own angle offset from others, to make them easier to
             // distinguish. Compute a 2x2 rotation matrix from the angle.
@@ -1065,14 +829,6 @@ public class GraffitiOcclusionRenderer {
 
         GLES30.glDisable(GLES30.GL_BLEND);
         GLError.maybeThrowGLException("Failed to disable blending", "glDisable");
-
-//        GLES30.glDepthMask(true);
-//        GLError.maybeThrowGLException("Failed to set depth write mask", "glDepthMask");
-
-        // Clean up the state we set
-//        GLES30.glClearColor(0f, 0f, 0f, 1f);
-//        GLError.maybeThrowGLException("Failed to set clear color", "glClearColor");
-//        }
     }
 
     // Calculate the normal distance to plane from cameraPose, the given planePose should have y axis

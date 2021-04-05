@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * CloudAnchor Entity
  * @author a-hongo
  */
 public class CloudAnchor {

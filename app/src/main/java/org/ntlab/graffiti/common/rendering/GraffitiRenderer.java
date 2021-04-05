@@ -37,6 +37,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
+
 /**
  * This class renders the AR Graffiti.
  * Created by a-hongo on 01,4月,2021
@@ -68,7 +71,6 @@ public class GraffitiRenderer {
     private static final float FADE_RADIUS_M = 0.25f;
 
     // texture size
-//    private static final float DOTS_PER_METER = 20.0f;
     private static final float DOTS_PER_METER = 0.2f;
 
     // Using the "signed distance field" approach to render sharp lines and circles.
@@ -121,7 +123,7 @@ public class GraffitiRenderer {
 
     /**
      * Allocates and initializes OpenGL resources needed by the plane renderer. Must be called on the
-     * OpenGL thread, typically in {@link GLSurfaceView.Renderer#onSurfaceCreated(GL10, EGLConfig)}.
+     * OpenGL thread, typically in {@link android.opengl.GLSurfaceView.Renderer#onSurfaceCreated(GL10, EGLConfig)}.
      *
      * @param context Needed to access shader source and texture PNG.
      * @param gridDistanceTextureName Name of the PNG file containing the grid texture.
@@ -288,23 +290,12 @@ public class GraffitiRenderer {
         }
 
         // step 1, perimeter（外部）
-//        indexBuffer.put((short) ((boundaryVertices - 1) * 2));
         for (int i = 0; i < boundaryVertices; ++i) {
-//            indexBuffer.put((short) (i * 2));
             indexBuffer.put((short) (i * 2 + 1));
         }
         indexBuffer.put((short) 1);
         // This leaves us on the interior edge of the perimeter between the inset vertices
         // for boundary verts n-1 and 0.
-
-        // step 2, interior:（内部）
-//        for (int i = 1; i < boundaryVertices / 2; ++i) {
-//            indexBuffer.put((short) ((boundaryVertices - 1 - i) * 2 + 1));
-//            indexBuffer.put((short) (i * 2 + 1));
-//        }
-//        if (boundaryVertices % 2 != 0) {
-//            indexBuffer.put((short) ((boundaryVertices / 2) * 2 + 1));
-//        }
     }
 
     /**
@@ -336,16 +327,6 @@ public class GraffitiRenderer {
 
             drawer.draw(pixelX, pixelY, r, canvas);
 
-//            if(color == Color.TRANSPARENT) {
-////                paint.setColor(Color.TRANSPARENT);
-//                paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-//                paint.setStyle(Paint.Style.FILL);
-//                canvas.drawCircle(pixelX, pixelY, r, paint);
-//            } else {
-//                paint.setColor(color);
-//                paint.setStyle(Paint.Style.FILL);
-//                canvas.drawCircle(pixelX, pixelY, r, paint);
-//            }
             miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
             diffColoredPxs = diffColoredPixels(-1, preBitmap, miniBitmap);
 
@@ -367,17 +348,10 @@ public class GraffitiRenderer {
     public void adjustTextureAxis(Frame frame, Camera camera) {
         Pose cameraPose = camera.getPose();
         Pose worldToCameraLocal = cameraPose.inverse();
-//        Log.d("pose","camera:" + cameraPose.tx() + "," + cameraPose.ty() + "," + cameraPose.tz() + ","
-//                + cameraPose.getXAxis()[0] +","  + cameraPose.getXAxis()[1] +","  + cameraPose.getXAxis()[2] +","
-//                + cameraPose.getYAxis()[0] +","  + cameraPose.getYAxis()[1] +","  + cameraPose.getYAxis()[2]);
 
         for (Plane p: frame.getUpdatedTrackables(Plane.class)) {
             Pose newPose = p.getCenterPose();
             Pose oldPose = planePose.get(p);
-
-//            Log.d("pose","plane:" + p + "," + newPose.tx() + "," + newPose.ty() + "," + newPose.tz() + ","
-//                    + newPose.getXAxis()[0] +","  + newPose.getXAxis()[1] +","  + newPose.getXAxis()[2] +","
-//                    + newPose.getYAxis()[0] +","  + newPose.getYAxis()[1] +","  + newPose.getYAxis()[2]);
 
             if (!planeNo.containsKey(p)) return;
 
@@ -402,8 +376,6 @@ public class GraffitiRenderer {
             float pixelTransX = (Vector.dot(newToOld, newAxisX) * DOTS_PER_METER) * bitmap.getWidth();
             float pixelTransY = (-Vector.dot(newToOld, newAxisZ) * DOTS_PER_METER) * bitmap.getHeight();
             adjustMatrix.postTranslate(pixelTransX, pixelTransY);
-
-//            Log.d("pose","adjust:" + theta + "," + pixelTransX + "," + pixelTransY);
 
             // 2. 適用
             canvas.drawBitmap(bitmap, adjustMatrix, new Paint());
@@ -532,14 +504,8 @@ public class GraffitiRenderer {
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
-//        GLES20.glBlendFuncSeparate(
-//                GLES20.GL_DST_ALPHA, GLES20.GL_ONE, // RGB (src, dest)
-//                GLES20.GL_ZERO, GLES20.GL_ONE_MINUS_SRC_ALPHA); // ALPHA (src, dest)
-
         // Set up the shader.
         GLES20.glUseProgram(planeobjectProgram);
-
-//        drawCircle((int)(Math.random() * textureBitmap.getWidth()), (int)(Math.random() * textureBitmap.getHeight()), Color.BLUE);
 
         // Shared fragment uniforms.
         GLES20.glUniform4fv(gridControlUniform, 1, GRID_CONTROL, 0);
