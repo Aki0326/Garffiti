@@ -15,6 +15,7 @@ import java.util.Queue;
 
 /**
  * Created by a-hongo on 28,2月,2021
+ * @author a-hongo
  * 参考: https://akira-watson.com/android/canvas-animation.html
  */
 public class Arc extends View {
@@ -81,7 +82,6 @@ public class Arc extends View {
 
         // 背景、透明
         canvas.drawColor(Color.argb(0, 0, 0, 0));
-//        canvas.drawColor(Color.BLACK);
         // Canvas 中心点
         float x = getWidth() / 2;
         float y = getHeight() / 2;

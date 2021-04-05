@@ -88,12 +88,6 @@ public class GridAdapter extends BaseAdapter {
     }
 
     public void isSelected(View view){
-//        GradientDrawable gradientDrawable = new GradientDrawable();
-//        gradientDrawable.setStroke(5, Color.BLUE);
-//        gradientDrawable.setCornerRadius(2);
-//        gradientDrawable.setColor(Color.WHITE);
-//        view.setBackground(gradientDrawable);
-
         if(((ImageView) view).getDrawable() != null) {
             Bitmap bmp = ((BitmapDrawable) ((ImageView) view).getDrawable()).getBitmap();
             if (bmp != null) {

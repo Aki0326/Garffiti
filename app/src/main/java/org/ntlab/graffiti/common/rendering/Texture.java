@@ -18,7 +18,6 @@ package org.ntlab.graffiti.common.rendering;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 import android.util.Log;
 
@@ -37,64 +36,10 @@ public class Texture implements Closeable {
   private int textureTarget;
 
   /**
-   * Describes the way the texture's edges are rendered.
-   *
-   * @see <a
-   *     href="https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glTexParameter.xhtml">GL_TEXTURE_WRAP_S</a>.
-   */
-//  public enum WrapMode {
-//    CLAMP_TO_EDGE(GLES30.GL_CLAMP_TO_EDGE),
-//    MIRRORED_REPEAT(GLES30.GL_MIRRORED_REPEAT),
-//    REPEAT(GLES30.GL_REPEAT);
-//
-//    /* package-private */
-//    final int glesEnum;
-//
-//    private WrapMode(int glesEnum) {
-//      this.glesEnum = glesEnum;
-//    }
-//  }
-
-  /**
-   * Describes the target this texture is bound to.
-   *
-   * @see <a
-   *     href="https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glBindTexture.xhtml">glBindTexture</a>.
-   */
-//  public enum TextureTarget {
-//    TEXTURE_2D(GLES30.GL_TEXTURE_2D),
-//    TEXTURE_EXTERNAL_OES(GLES11Ext.GL_TEXTURE_EXTERNAL_OES),
-//    TEXTURE_CUBE_MAP(GLES30.GL_TEXTURE_CUBE_MAP);
-//
-//    final int glesEnum;
-//
-//    private TextureTarget(int glesEnum) {
-//      this.glesEnum = glesEnum;
-//    }
-//  }
-
-  /**
-   * Describes the color format of the texture.
-   *
-   * @see <a
-   *     href="https://www.khronos.org/registry/OpenGL-Refpages/es3.0/html/glTexImage2D.xhtml">glTexImage2d</a>.
-   */
-//  public enum ColorFormat {
-//    LINEAR(GLES30.GL_RGBA8),
-//    SRGB(GLES30.GL_SRGB8_ALPHA8);
-//
-//    final int glesEnum;
-//
-//    private ColorFormat(int glesEnum) {
-//      this.glesEnum = glesEnum;
-//    }
-//  }
-
-  /**
    * Construct an empty {@link Texture}.
    *
    * <p>Since {@link Texture}s created in this way are not populated with data, this method is
-   * mostly only useful for creating {@link GLES11Ext.GL_TEXTURE_EXTERNAL_OES} textures. See {@link
+   * mostly only useful for creating {@link android.opengl.GLES11Ext#GL_TEXTURE_EXTERNAL_OES} textures. See {@link
    * #createFromAsset} if you want a texture with data.
    */
   public Texture(int textureTarget, int wrapMode) {

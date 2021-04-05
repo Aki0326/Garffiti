@@ -19,7 +19,6 @@ public class RectangleDrawer extends TextureDrawer {
     public void draw(int pixelX, int pixelY, int r, Canvas canvas) {
         Paint paint = new Paint();
         if (color == Color.TRANSPARENT) {
-//                paint.setColor(Color.TRANSPARENT);
             paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         } else {
             paint.setColor(color);

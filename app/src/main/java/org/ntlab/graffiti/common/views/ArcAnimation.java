@@ -5,6 +5,7 @@ import android.view.animation.Transformation;
 
 /**
  * Created by a-hongo on 28,2月,2021
+ * @author a-hongo
  * 参考: https://akira-watson.com/android/canvas-animation.html
  */
 public class ArcAnimation extends Animation {

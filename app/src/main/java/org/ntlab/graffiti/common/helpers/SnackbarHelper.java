@@ -24,6 +24,7 @@ import com.google.android.material.snackbar.Snackbar;
 /**
  * Helper to manage the sample snackbar. Hides the Android boilerplate code, and exposes simpler
  * methods.
+ * @author a-hongo
  */
 public final class SnackbarHelper {
     private static final int BACKGROUND_COLOR = 0xbf323232;
@@ -88,7 +89,7 @@ public final class SnackbarHelper {
      * <p>To use the root layout ({@link android.R.id.content}), pass in {@code null}.
      *
      * @param snackbarView the view to pass to {@link
-     *     com.google.android.material.snackbar.Snackbar#make(…)} which will be used to find a
+     *     com.google.android.material.snackbar.Snackbar#make(View, CharSequence, int)} (View, int, int)} which will be used to find a
      *     suitable parent, which is a {@link androidx.coordinatorlayout.widget.CoordinatorLayout}, or
      *     the window decor's content view, whichever comes first.
      */

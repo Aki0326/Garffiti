@@ -5,7 +5,8 @@ import android.opengl.GLES30;
 import org.ntlab.graffiti.common.rendering.GLError;
 
 /**
- * Created by a-hongo on 11,2月,2021
+ * Helper common to renderer.
+ * @author a-hongo
  */
 public final class RendererHelper {
 

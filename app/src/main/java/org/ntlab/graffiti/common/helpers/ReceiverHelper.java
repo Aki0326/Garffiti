@@ -12,8 +12,8 @@ import org.ntlab.graffiti.graffiti.ModeSelectActivity;
  */
 public class ReceiverHelper extends BroadcastReceiver {
 
-    // BroadcastIntentを受信した場合の処理
     /**
+     * Broadcast Intentを受信した場合の処理を行う
      * Receive the broadcast intent.
      * @param context the application's context.
      * @param intent the application's next intent.

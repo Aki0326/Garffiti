@@ -77,16 +77,15 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 /**
+ * GraffitiTimeAttack Game Activity.
  * Created by a-hongo on 25,2月,2021
+ * @author a-hongo
  */
 public class GraffitiTimeAttackActivity extends GameActivity {
     private static final String TAG = GraffitiTimeAttackActivity.class.getSimpleName();
 
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 100f;
-
-    // Rendering. The Renderers are created here, and initialized when the GL surface is created.
-//    private GLSurfaceView surfaceView;
 
     private boolean installRequested;
 
@@ -99,11 +98,6 @@ public class GraffitiTimeAttackActivity extends GameActivity {
 
     private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
 //    private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
-    //    private final PlaneRenderer planeRenderer = new PlaneRenderer();
-//    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
-//    private final ObjectRenderer virtualObject = new ObjectRenderer();
-//    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
-//    private PlaneRendererOcculusion planeRendererOcculusion;
     private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
     private Framebuffer virtualSceneFramebuffer;
     private boolean hasSetTextureNames = false;
@@ -332,7 +326,6 @@ public class GraffitiTimeAttackActivity extends GameActivity {
         Config config = session.getConfig();
 //        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
         config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
-////        config.setLightEstimationMode(Config.LightEstimationMode.AMBIENT_INTENSITY);
         if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
             config.setDepthMode(Config.DepthMode.AUTOMATIC);
         } else {
@@ -409,22 +402,12 @@ public class GraffitiTimeAttackActivity extends GameActivity {
             // Update backgroundOcclusionRenderer state to match the depth settings.
 //            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 
-//            planeRenderer.createOnGlThread(this, "models/trigrid.png");
-//            pointCloudRenderer.createOnGlThread(this);
-//            virtualObject.createOnGlThread(this, "models/fluid_01.obj", "models/fluid_01.png");
-//            virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f);
-//            virtualObjectShadow.createOnGlThread(this, "models/andy_shadow.obj", "models/andy_shadow.png");
-//            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
-//            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
-//            planeObjectRenderer.createOnGlThread(this, "models/nambo.png");
-
             graffitiRenderer.createOnGlThread(this, "models/plane.png");
 //            graffitiOcclusionRenderer.createOnGlThread(this, "models/plane.png");
             // Update backgroundOcclusionRenderer state to match the depth settings.
 //            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 //            graffitiOcclusionRenderer.setUseOcclusion(this, false);
 
-//            planeRendererOcculusion = new PlaneRendererOcculusion(this);
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
         } catch (IOException e) {
             Log.e(TAG, "Failed to read a required asset file", e);
@@ -451,7 +434,6 @@ public class GraffitiTimeAttackActivity extends GameActivity {
             return;
         }
 
-//        try {
         // Texture names should only be set once on a GL thread unless they change. This is done during
         // onDrawFrame rather than onSurfaceCreated since the session is not guaranteed to have been
         // initialized during the execution of onSurfaceCreated.

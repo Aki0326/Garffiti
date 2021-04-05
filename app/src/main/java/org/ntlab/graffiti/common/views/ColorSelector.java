@@ -82,9 +82,9 @@ public class ColorSelector extends RelativeLayout implements View.OnClickListene
 
     @Override
     public void onClick(View view) {
-        colorSelectClickSE.musicStop();
+        colorSelectClickSE.stopMusic();
         try {
-            colorSelectClickSE.musicPlay(getContext(), "musics/se/color-click-sound.mp3", isLoop);
+            colorSelectClickSE.playMusic(getContext(), "musics/se/color-click-sound.mp3", isLoop);
         } catch (IOException e) {
             e.printStackTrace();
         }

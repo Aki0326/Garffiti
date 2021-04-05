@@ -61,7 +61,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         super.onRestart();
 
         if(modeSelectClickSE != null) {
-            modeSelectClickSE.musicStop();
+            modeSelectClickSE.stopMusic();
         }
     }
 
@@ -79,7 +79,7 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
 
         try {
             isLoop = true;
-            modeSelectBGM.musicPlay(this, "musics/bgm/title.ogg", isLoop);
+            modeSelectBGM.playMusic(this, "musics/bgm/title.ogg", isLoop);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -90,16 +90,16 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         super.onPause();
 
         wakeLock.release();
-        modeSelectBGM.musicStop();
+        modeSelectBGM.stopMusic();
     }
 
     @Override
     public void onClick(View view) {
-        modeSelectClickSE.musicStop();
-        modeSelectBGM.musicStop();
+        modeSelectClickSE.stopMusic();
+        modeSelectBGM.stopMusic();
         try {
             isLoop = false;
-            modeSelectClickSE.musicPlay(this, "musics/se/click-sound.mp3", isLoop);
+            modeSelectClickSE.playMusic(this, "musics/se/click-sound.mp3", isLoop);
         } catch (IOException e) {
             e.printStackTrace();
         }

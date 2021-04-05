@@ -20,7 +20,7 @@ import android.content.SharedPreferences;
 
 /**
  * Manages the Instant Placement option setting and shared preferences.
- * Created by a-hongo on 08,2月,2021
+ * @author a-hongo
  */
 public class InstantPlacementSettings {
     public static final String SHARED_PREFERENCES_ID = "SHARED_PREFERENCES_INSTANT_PLACEMENT_OPTIONS";

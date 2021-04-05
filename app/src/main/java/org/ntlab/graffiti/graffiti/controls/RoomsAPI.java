@@ -18,6 +18,10 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
+/**
+ * Rooms API
+ * @author a-hongo
+ */
 public interface RoomsAPI {
     @GET("rooms")
     Call<Collection<Room>> getRooms();
