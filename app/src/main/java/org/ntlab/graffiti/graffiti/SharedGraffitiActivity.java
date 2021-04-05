@@ -18,7 +18,6 @@ package org.ntlab.graffiti.graffiti;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.media.Image;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
@@ -32,6 +31,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Anchor.CloudAnchorState;
@@ -42,13 +42,11 @@ import com.google.ar.core.Frame;
 import com.google.ar.core.HitResult;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Point;
-import com.google.ar.core.PointCloud;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
 import com.google.ar.core.TrackingState;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
-import com.google.ar.core.exceptions.NotYetAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
@@ -69,13 +67,9 @@ import org.ntlab.graffiti.common.helpers.RendererHelper;
 import org.ntlab.graffiti.common.helpers.SnackbarHelper;
 import org.ntlab.graffiti.common.helpers.TapHelper;
 import org.ntlab.graffiti.common.helpers.TrackingStateHelper;
-import org.ntlab.graffiti.common.rendering.BackgroundOcclusionRenderer;
+import org.ntlab.graffiti.common.rendering.BackgroundRenderer;
 import org.ntlab.graffiti.common.rendering.Framebuffer;
-import org.ntlab.graffiti.common.rendering.GraffitiOcclusionRenderer;
-import org.ntlab.graffiti.common.rendering.ObjectRenderer;
-import org.ntlab.graffiti.common.rendering.ObjectRenderer.BlendMode;
-import org.ntlab.graffiti.common.rendering.PlaneRenderer;
-import org.ntlab.graffiti.common.rendering.PointCloudRenderer;
+import org.ntlab.graffiti.common.rendering.GraffitiRenderer;
 import org.ntlab.graffiti.common.views.PlaneDetectController;
 import org.ntlab.graffiti.entities.CloudAnchor;
 import org.ntlab.graffiti.entities.PointTex2D;
@@ -119,14 +113,18 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
     // Rendering. The Renderers are created here, and initialized when the GL surface is created.
     private GLSurfaceView surfaceView;
-    private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
-    private final ObjectRenderer virtualObject = new ObjectRenderer();
-    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
-    private final PlaneRenderer planeRenderer = new PlaneRenderer();
-    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
-    private final GraffitiOcclusionRenderer graffitiOcclusionRenderer = new GraffitiOcclusionRenderer();
+
+    private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
+//    private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
+//    private final ObjectRenderer virtualObject = new ObjectRenderer();
+//    private final ObjectRenderer virtualObjectShadow = new ObjectRenderer();
+//    private final PlaneRenderer planeRenderer = new PlaneRenderer();
+//    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
+    private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
+//    private final GraffitiOcclusionRenderer graffitiOcclusionRenderer = new GraffitiOcclusionRenderer();
     private Framebuffer virtualSceneFramebuffer;
     private boolean hasSetTextureNames = false;
+    private boolean isFirstHasTrackingPlane = false;
 
     private final DepthSettings depthSettings = new DepthSettings();
     private final InstantPlacementSettings instantPlacementSettings = new InstantPlacementSettings();
@@ -164,6 +162,9 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
     private AnchorMatchingManager anchorMatchingManager = new AnchorMatchingManager();
 
     private PlaneDetectController planeDetectController;
+
+    FragmentManager fragmentManager;
+    EnterRoomDialogFragment dialogFragment = new EnterRoomDialogFragment();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -215,14 +216,14 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         super.onResume();
         Log.d(TAG, "onResume()");
 
-        if (sharedPreferences.getBoolean(ALLOW_SHARE_IMAGES_KEY, false)) {
+//        if (sharedPreferences.getBoolean(ALLOW_SHARE_IMAGES_KEY, false)) {
             createSession();
             planeDetectController.show();
             planeDiscoverySnackbarHelper.showMessage(this, getString(R.string.searching_plane));
-        } else {
-            messageSnackbarHelper.showMessage(this, getString(R.string.unavailable_mode));
-            finish();
-        }
+//        } else {
+//            messageSnackbarHelper.showMessage(this, getString(R.string.unavailable_mode));
+//            finish();
+//        }
     }
 
     private void createSession() {
@@ -237,6 +238,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
                     case INSTALLED:
                         break;
                 }
+
                 // ARCore requires camera permissions to operate. If we did not yet obtain runtime
                 // permission on Android M and above, now is a good time to ask the user for it.
                 if (!CameraPermissionHelper.hasCameraPermission(this)) {
@@ -270,7 +272,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
             }
 
             // Enable depth-based occlusion.
-            boolean isDepthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
+//            boolean isDepthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
 //            if (isDepthSupported) {
                 depthSettings.setUseDepthForOcclusion(false);
                 depthSettings.setDepthColorVisualizationEnabled(false);
@@ -407,7 +409,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         FullScreenHelper.setFullScreenOnWindowFocusChanged(this, hasFocus);
     }
 
-
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         rendererHelper.enableBlend();
@@ -416,23 +417,25 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         // Prepare the rendering objects. This involves reading shaders, so may throw an IOException.
         try {
             // Create the texture and pass it to ARCore session to be filled during update().
-            backgroundOcclusionRenderer.createOnGlThread(this);
+            backgroundRenderer.createOnGlThread(this);
+//            backgroundOcclusionRenderer.createOnGlThread(this);
             // Update BackgroundRenderer state to match the depth settings.
-            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+//            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 
-            planeRenderer.createOnGlThread(this, "models/trigrid.png");
-            pointCloudRenderer.createOnGlThread(this);
+//            planeRenderer.createOnGlThread(this, "models/trigrid.png");
+//            pointCloudRenderer.createOnGlThread(this);
 
-            virtualObject.createOnGlThread(this, "models/andy.obj", "models/andy.png");
-            virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f);
+//            virtualObject.createOnGlThread(this, "models/andy.obj", "models/andy.png");
+//            virtualObject.setMaterialProperties(0.0f, 2.0f, 0.5f, 6.0f);
 
-            virtualObjectShadow.createOnGlThread(this, "models/andy_shadow.obj", "models/andy_shadow.png");
-            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
-            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
+//            virtualObjectShadow.createOnGlThread(this, "models/andy_shadow.obj", "models/andy_shadow.png");
+//            virtualObjectShadow.setBlendMode(BlendMode.Shadow);
+//            virtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
 
-            graffitiOcclusionRenderer.createOnGlThread(this,"models/plane.png");
+            graffitiRenderer.createOnGlThread(this, "models/plane.png");
+//            graffitiOcclusionRenderer.createOnGlThread(this,"models/plane.png");
             // Update BackgroundRenderer state to match the depth settings.
-            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+//            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
         } catch (IOException ex) {
@@ -449,7 +452,7 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
     @Override
     public void onDrawFrame(GL10 gl) {
         // Clear screen to notify driver it should not load any pixels from previous frame.
-        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
+//        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT);
         virtualSceneFramebuffer.clear();
         rendererHelper.clear(0f, 0f, 0f, 1f);
 
@@ -461,9 +464,10 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
         // onDrawFrame rather than onSurfaceCreated since the session is not guaranteed to have been
         // initialized during the execution of onSurfaceCreated.
         if (!hasSetTextureNames) {
+            session.setCameraTextureName(backgroundRenderer.getTextureId());
 //      session.setCameraTextureNames(
-//              new int[] {backgroundRenderer.getCameraColorTexture().getTextureId()});
-            session.setCameraTextureName(backgroundOcclusionRenderer.getCameraColorTexture().getTextureId());
+//              new int[] {backgroundOcclusionRenderer.getCameraColorTexture().getTextureId()});
+//            session.setCameraTextureName(backgroundOcclusionRenderer.getCameraColorTexture().getTextureId());
             hasSetTextureNames = true;
         }
 
@@ -492,26 +496,26 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
         // BackgroundRenderer.updateDisplayGeometry must be called every frame to update the coordinates
         // used to draw the background camera image.
-        backgroundOcclusionRenderer.updateDisplayGeometry(frame);
-        graffitiOcclusionRenderer.updateDisplayGeometry(frame);
+//        backgroundOcclusionRenderer.updateDisplayGeometry(frame);
+//        graffitiOcclusionRenderer.updateDisplayGeometry(frame);
 
         if (cameraTrackingState == TrackingState.TRACKING
                 && (depthSettings.useDepthForOcclusion()
                 /*|| depthSettings.depthColorVisualizationEnabled()*/)) {
             // Retrieve the depth map for the current frame, if available.
-            try {
-                Image depthImage = frame.acquireDepthImage();
-                backgroundOcclusionRenderer.updateCameraDepthTexture(depthImage);
-//                graffitiRenderer.updateCameraDepthTexture(depthImage);
-                graffitiOcclusionRenderer.setDepthTexture(backgroundOcclusionRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
-            } catch (NotYetAvailableException e) {
+//            try {
+//                Image depthImage = frame.acquireDepthImage();
+//                backgroundOcclusionRenderer.updateCameraDepthTexture(depthImage);
+////                graffitiRenderer.updateCameraDepthTexture(depthImage);
+//                graffitiOcclusionRenderer.setDepthTexture(backgroundOcclusionRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
+//            } catch (NotYetAvailableException e) {
                 // This means that depth data is not available yet.
                 // Depth data will not be available if there are no tracked
                 // feature points. This can happen when there is no motion, or when the
                 // camera loses its ability to track objects in the surrounding
                 // environment.
 //                Log.e(TAG, "NotYetAvailableException", e);
-            }
+//            }
         }
 
         // Handle user input.
@@ -532,12 +536,45 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
             }
         }
 
+        // Show a message based on whether tracking has failed, if planes are detected, and if the user
+        // has placed any objects.
+//        String message = null;
+//        if (camera.getTrackingState() == TrackingState.PAUSED) {
+//            if (camera.getTrackingFailureReason() == TrackingFailureReason.NONE) {
+//                message = getString(R.string.searching_plane);
+//            } else {
+//                message = TrackingStateHelper.getTrackingFailureReasonString(camera);
+//            }
+//        } else if (hasTrackingPlane()) {
+//            if (!isFirstHasTrackingPlane) {
+//                message = getString(R.string.searched_plane);
+//                isFirstHasTrackingPlane = true;
+//            }
+//            // TODO Visualize temporarily plane
+////            if (anchors.isEmpty()) {
+////                message = getString(R.string.waiting_for_tap);;
+////            }
+//        } else {
+//            message = getString(R.string.searching_plane);
+//        }
+//        if (messageSnackbarHelper.isShowing() && message == null) {
+//            messageSnackbarHelper.hide(this);
+//            planeDetectController.hide();
+//            if (roomCodeText.getText() == "") {
+//                onEnterRoom();
+//            }
+//        } else if (!messageSnackbarHelper.isShowing() && message != null) {
+//            messageSnackbarHelper.showMessage(this, message);
+//            planeDetectController.show();
+//        }
+
         // -- Draw background
 
         // Suppress rendering if the camera did not produce the first frame yet. This is to avoid
         // drawing possible leftover data from previous sessions if the texture is reused.
         virtualSceneFramebuffer.clear();
-        backgroundOcclusionRenderer.draw(frame);
+        backgroundRenderer.draw(frame);
+//        backgroundOcclusionRenderer.draw(frame);
 
         // If not tracking, don't draw 3d objects.
         if (cameraTrackingState == TrackingState.PAUSED) {
@@ -586,30 +623,33 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
         // Visualize tracked points.
         // Use try-with-resources to automatically release the point cloud.
-        try (PointCloud pointCloud = frame.acquirePointCloud()) {
-            pointCloudRenderer.update(pointCloud);
-            pointCloudRenderer.draw(viewMatrix, projectionMatrix);
+//        try (PointCloud pointCloud = frame.acquirePointCloud()) {
+//            pointCloudRenderer.update(pointCloud);
+//            pointCloudRenderer.draw(viewMatrix, projectionMatrix);
             // Application is responsible for releasing the point cloud resources after
             // using it.
-            pointCloud.release();
-        }
+//            pointCloud.release();
+//        }
 
         // Visualize planes.
-        virtualSceneFramebuffer.clear();
-        planeRenderer.drawPlanes(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
+//        virtualSceneFramebuffer.clear();
+//        planeRenderer.drawPlanes(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
 
         // -- Draw occluded virtual objects
 
         // Visualize graffiti.
         virtualSceneFramebuffer.clear();
-        graffitiOcclusionRenderer.adjustTextureAxis(frame, camera);
-        graffitiOcclusionRenderer.draw(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
+        graffitiRenderer.adjustTextureAxis(frame, camera);
+//        graffitiOcclusionRenderer.adjustTextureAxis(frame, camera);
+        graffitiRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projectionMatrix);
+//        graffitiOcclusionRenderer.draw(session.getAllTrackables(Plane.class), camera.getDisplayOrientedPose(), projectionMatrix);
 
         for (MergedPlane mergedPlane : anchorMatchingManager.getDrawnPlanes()) {
             List<PointTex2D> stroke = mergedPlane.getStroke();
             if (stroke.size() > mergedPlane.getDrawnStrokeIndex()) {
                 for (int i = mergedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
-                    graffitiOcclusionRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
+                    graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
+//                    graffitiOcclusionRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
                 }
                 mergedPlane.drawnStroke(stroke.size());
             }
@@ -654,9 +694,11 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
                     Preconditions.checkNotNull(anchorListener, "The anchorlistener cannot be null.");
                     messageSnackbarHelper.showMessage(this, getString(R.string.snackbar_anchor_placed));
                     if (color == Color.TRANSPARENT) {
-                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
+                        graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
+//                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 9, plane, drawer);
                     } else {
-                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
+                        graffitiRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
+//                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoord[0], -hitOnPlaneCoord[1], 4, plane, drawer);
                     }
                     storeStroke(plane, hit.getHitPose().getTranslation());
                     Log.d(TAGSTROKE, "hit.getHitPose().getTranslation(): " + hit.getHitPose().getTranslation());
@@ -665,6 +707,18 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
                 }
             }
         }
+    }
+
+    /**
+     * Checks if we detected at least one plane.
+     */
+    private boolean hasTrackingPlane() {
+        for (Plane plane : session.getAllTrackables(Plane.class)) {
+            if (plane.getTrackingState() == TrackingState.TRACKING) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Returns {@code Plane} if and only if the hit can be used to create an Anchor reliably. */
@@ -785,14 +839,15 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
     }
 
     private void onPrivacyAcceptedForEnterRoom() {
-        EnterRoomDialogFragment dialogFragment = new EnterRoomDialogFragment();
-        dialogFragment.setOkListener(this::onRoomCodeEntered);
-        dialogFragment.show(getSupportFragmentManager(), "EnterRoomDialog");
+        if (!dialogFragment.isAdded()) {
+            dialogFragment.setOkListener(this::onRoomCodeEntered);
+            dialogFragment.show(getSupportFragmentManager(), "EnterRoomDialog");
+        }
     }
 
     /** Resets the mode of the app to its initial state and removes the anchors. */
     private void resetMode() {
-        roomCodeText.setText(null);
+        roomCodeText.setText("");
         webServiceManager.clearRoomListener();
         anchorManager.clearListeners();
         anchorListener = null;

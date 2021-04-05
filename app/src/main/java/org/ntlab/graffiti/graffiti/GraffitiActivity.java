@@ -467,7 +467,7 @@ public class GraffitiActivity extends ArActivity {
             graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
 //            graffitiRenderer.setUseOcclusion(this, false);
 
-//            planeRendererOcculusion = new PlaneRendererOcculusion(this);
+//            planeRendererOcclusion = new PlaneRendererOcclusion(this);
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
         } catch (IOException e) {
             Log.e(TAG, "Failed to read a required asset file", e);

@@ -4,7 +4,7 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
-        applicationId "org.ntlab.graffiti"
+        applicationId "org.ntlab.garffiti"
 
         // AR Optional apps must declare minSdkVersion >= 14.
         // AR Required apps must declare minSdkVersion >= 24.
@@ -17,6 +17,15 @@ android {
                 arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
             }
         }
+        // Set the properties within `local.properties` into a `Properties` class so that values
+        // within `local.properties` (e.g. ARCore Cloud Anchor API key) are accessible in this file.
+        Properties properties = new Properties()
+        if (rootProject.file("local.properties").exists()) {
+            properties.load(rootProject.file("local.properties").newDataInputStream())
+        }
+
+        // Inject the ARCore Cloud Anchor API key into the manifest
+        manifestPlaceholders = [ arcoreApiKey : properties.getProperty("ARCORE_API_KEY", "") ]
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -32,7 +41,7 @@ android {
 
 dependencies {
     // ARCore library
-    implementation 'com.google.ar:core:1.22.0'
+    implementation 'com.google.ar:core:1.23.0'
 
     // Alternatively, use ArSceneView without the UX dependency.
 //    implementation "com.google.ar.sceneform:core:1.17.1"
@@ -54,9 +63,6 @@ dependencies {
     //Jackson
     implementation 'com.squareup.retrofit2:converter-jackson:2.5.0'
 
-    //firebase
-    implementation 'com.google.firebase:firebase-database:16.0.5'
-//    implementation 'com.google.firebase:firebase-core:17.2.2'
     // Override conflicting Firebase support-media-compat:26.1.0 dependency.
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
@@ -76,5 +82,3 @@ dependencies {
     // optional - Test helpers
     testImplementation "androidx.room:room-testing:$room_version"
 }
-
-apply plugin: 'com.google.gms.google-services'
