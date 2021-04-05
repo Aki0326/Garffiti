@@ -25,7 +25,6 @@ import com.google.ar.core.TrackingState;
 
 import org.ntlab.graffiti.common.drawer.TextureDrawer;
 import org.ntlab.graffiti.common.geometry.Vector;
-import org.ntlab.graffiti.common.rendering.arcore.SpecularCubemapFilter;
 
 import java.io.IOException;
 import java.io.InputStream;

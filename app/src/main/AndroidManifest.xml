@@ -87,6 +87,10 @@
     <!-- This tag indicates that this application requires ARCore.  This results in the Google Play
          Store downloading and installing ARCore along with the application. -->
     <meta-data android:name="com.google.ar.core" android:value="required" />
+    <!-- ARCore Cloud Anchor API -->
+    <meta-data
+        android:name="com.google.android.ar.API_KEY"
+        android:value="${arcoreApiKey}" />
     <!-- BroadcastReceiverの登録 -->
     <receiver
         android:name="org.ntlab.graffiti.common.helpers.ReceiverHelper">

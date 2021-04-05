@@ -23,7 +23,7 @@ public class PlaneDetectController {
 
     /** Show the plane discovery UX instructions for finding a plane. */
     public void show() {
-        if (planeDiscoveryView == null) {
+        if (planeDiscoveryView == null || planeDiscoveryView.isShown()) {
             return;
         }
 
@@ -32,7 +32,7 @@ public class PlaneDetectController {
 
     /** Hide the plane discovery UX instructions. */
     public void hide() {
-        if (planeDiscoveryView == null) {
+        if (planeDiscoveryView == null || !planeDiscoveryView.isShown()) {
             return;
         }
 

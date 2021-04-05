@@ -5,6 +5,7 @@ import android.util.Log;
 import com.google.ar.core.Anchor;
 import com.google.ar.core.Plane;
 import com.google.ar.core.Pose;
+import com.google.ar.core.TrackingState;
 
 import org.ntlab.graffiti.common.geometry.GeometryUtil;
 import org.ntlab.graffiti.common.geometry.Vector;
@@ -89,7 +90,7 @@ public class AnchorMatchingManager {
     public void updateState(Collection<Plane> updatePlanes, UpdateAnchorListener updateAnchorListener, UpdatePlaneListener updatePlaneListener) {
         for (Plane newPlane : updatePlanes) {
             Log.d(TAGTEST,  "UpdatePlane:" + newPlane + ", " + newPlane.getCenterPose() + ", " + newPlane.getSubsumedBy());
-            if (newPlane.getSubsumedBy() == null) {
+            if (newPlane.getTrackingState() == TrackingState.TRACKING && newPlane.getSubsumedBy() == null) {
                 // newPlane 一番外側のPlaneのみ
                 boolean flag = false;
                 Plane oldPlane = null;
@@ -191,31 +192,35 @@ public class AnchorMatchingManager {
             }
         }
 
-        for (Anchor myAnchor: myAnchors.keySet()) {
-            for (Anchor partnerAnchor : partnerAnchors) {
-                Pose myPose = myAnchor.getPose();
-                Pose patnerPose = partnerAnchor.getPose();
+        synchronized (myAnchors) {
+            for (Anchor myAnchor : myAnchors.keySet()) {
+                synchronized (partnerAnchors) {
+                    for (Anchor partnerAnchor : partnerAnchors) {
+                        Pose myPose = myAnchor.getPose();
+                        Pose patnerPose = partnerAnchor.getPose();
 //                        Log.d(TAGTEST, "?matchedAnchors?" + Vector.dot(myPose.getYAxis(), patnerPose.getYAxis()));
-                if (Vector.dot(myPose.getYAxis(), patnerPose.getYAxis()) > 0.95) {
-                    float[] sub = Vector.minus(patnerPose.getTranslation(), myPose.getTranslation());
+                        if (Vector.dot(myPose.getYAxis(), patnerPose.getYAxis()) > 0.95) {
+                            float[] sub = Vector.minus(patnerPose.getTranslation(), myPose.getTranslation());
 //                            Log.d(TAGTEST, "?matchedAnchors?" + Math.abs(Vector.dot(sub, myPose.getYAxis())) + ", " + Vector.length(sub));
-                    if (Math.abs(Vector.dot(sub, myPose.getYAxis())) < 0.15 && Vector.length(sub) < 1.0) {
-                        Plane myPlane = myAnchors.get(myAnchor);
-                        String partnerAnchorId = partnerAnchor.getCloudAnchorId();
-                        MatchedAnchor matchedAnchor = new MatchedAnchor(myAnchor, partnerAnchor, myPlane);
-                        matchedAnchors.put(partnerAnchorId, matchedAnchor);
-                        Log.d(TAGTEST, "matchedAnchors.put:" + partnerAnchorId);
-                        if (!(myPlane instanceof MergedPlane)) {
-                            planeAnchors.put(myPlane, matchedAnchor);
-                        } else {
-                            planeAnchors.put(((MergedPlane) myPlane).getCurrentPlane(), matchedAnchor);
+                            if (Math.abs(Vector.dot(sub, myPose.getYAxis())) < 0.15 && Vector.length(sub) < 1.0) {
+                                Plane myPlane = myAnchors.get(myAnchor);
+                                String partnerAnchorId = partnerAnchor.getCloudAnchorId();
+                                MatchedAnchor matchedAnchor = new MatchedAnchor(myAnchor, partnerAnchor, myPlane);
+                                matchedAnchors.put(partnerAnchorId, matchedAnchor);
+                                Log.d(TAGTEST, "matchedAnchors.put:" + partnerAnchorId);
+                                if (!(myPlane instanceof MergedPlane)) {
+                                    planeAnchors.put(myPlane, matchedAnchor);
+                                } else {
+                                    planeAnchors.put(((MergedPlane) myPlane).getCurrentPlane(), matchedAnchor);
+                                }
+                                Log.d(TAGTEST, "planeAnchors.put:" + myAnchor.getCloudAnchorId());
+                                myAnchors.remove(myAnchor);
+                                partnerAnchors.remove(partnerAnchor);
+                                updateAnchorListener.onAnchorMatched(matchedAnchor);
+                                updatePlaneListener.onUpdatePlaneAfterMatched(matchedAnchor, myPlane);
+                                matchedAnchors.get(partnerAnchorId).setPrevPolygon(myPlane.getPolygon());
+                            }
                         }
-                        Log.d(TAGTEST, "planeAnchors.put:" + myAnchor.getCloudAnchorId());
-                        myAnchors.remove(myAnchor);
-                        partnerAnchors.remove(partnerAnchor);
-                        updateAnchorListener.onAnchorMatched(matchedAnchor);
-                        updatePlaneListener.onUpdatePlaneAfterMatched(matchedAnchor, myPlane);
-                        matchedAnchors.get(partnerAnchorId).setPrevPolygon(myPlane.getPolygon());
                     }
                 }
             }
