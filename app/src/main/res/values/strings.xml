@@ -30,6 +30,7 @@
 
   <!-- Searching for surfaces -->
   <string name="searching_plane">Searching for surfaces...</string>
+  <string name="searched_plane">Searching for surfaces is complete!</string>
   <string name="waiting_for_tap">Tap on a surface to place an object.</string>
   <string name="tracking_indicator_text_looking">Looking for a place for your line</string>
   <string name="tracking_indicator_text_cant_find">Can\'t find a place for your line</string>

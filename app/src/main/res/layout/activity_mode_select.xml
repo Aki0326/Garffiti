@@ -28,7 +28,7 @@
         android:background="@drawable/button_bg_yellowgreen"
         android:fontFamily="@font/mplus_rounded1c_bold"
         android:text="@string/shared_graffiti_mode"
-        android:textColor="@color/disable"
+        android:textColor="@color/white"
         android:textSize="35sp" />
     <!--        android:background="@drawable/button_bg_disable"-->
 
