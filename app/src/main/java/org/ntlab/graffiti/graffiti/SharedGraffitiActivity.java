@@ -583,7 +583,6 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
                 for (int i = mergedPlane.getDrawnStrokeIndex(); i < stroke.size(); i++) {
                     graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.BLUE));
 //                    graffitiRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
-//                    graffitiOcclusionRenderer.drawTexture(stroke.get(i).getX(), stroke.get(i).getY(), 4, mergedPlane, new CircleDrawer(Color.RED));
                 }
                 mergedPlane.drawnStroke(stroke.size());
             }
@@ -674,8 +673,13 @@ public class SharedGraffitiActivity extends AppCompatActivity implements GLSurfa
 
     private void storePolygon(Anchor anchor, Plane plane) {
         String cloudAnchorId = anchor.getCloudAnchorId();
-        FloatBuffer polygon = plane.getPolygon();
-        if (cloudAnchorId == null) {
+        FloatBuffer polygon = null;
+        try {
+            polygon = plane.getPolygon();
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+        if (cloudAnchorId == null || polygon == null) {
             return;
         }
         float[] planePolygon = polygon.array();
