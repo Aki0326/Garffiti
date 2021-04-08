@@ -255,12 +255,17 @@ public class GameRankingState extends State {
             return rank;
         }
 
-        for (int i = topGameResults.size() - 1; i >= 0; i--) {
-            GameResult gameResult = topGameResults.get(i);
-            if (gameResult.getScore() <= score) {
-                rank = i;
-                if (gameResult.getScore() == score) break;
+        for (int i = top - 1; i >= 0; i--) {
+            if (i < topGameResults.size()) {
+                GameResult gameResult = topGameResults.get(i);
+                if (gameResult.getScore() <= score) {
+                    rank = i;
+                    if (gameResult.getScore() == score) break;
+                } else {
+                    break;
+                }
             } else {
+                rank = i;
                 break;
             }
         }
@@ -284,10 +289,23 @@ public class GameRankingState extends State {
         }
         gameRankingLayout.setVisibility(View.VISIBLE);
         gameRankingLayout.startAnimation(animation);
+        if (myRank <= top) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    db.gameResultDao().insert(myGameResult);
+                }
+            }).start();
+        }
+    }
+
+    private void storeDB(GameResult gameResult) {
+        db.gameResultDao().insert(gameResult);
     }
 
     private void replaceTopGameResults(int topNumber, GameResult gameResult) {
-        if (!topGameResults.isEmpty()) topGameResults.remove(topNumber);
+        if (topNumber == -1) return;
+        if (!topGameResults.isEmpty() && topGameResults.size() >= top) topGameResults.remove(topGameResults.size()-1);
         topGameResults.add(topNumber, gameResult);
     }
 

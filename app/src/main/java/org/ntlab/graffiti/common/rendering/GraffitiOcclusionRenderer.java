@@ -187,7 +187,7 @@ public class GraffitiOcclusionRenderer {
         // Read the texture.
         textureBitmap = BitmapFactory.decodeStream(context.getAssets().open(planeTextureName));
         textureBitmapToRecycle = textureBitmap.copy(textureBitmap.getConfig(), true);
-//        textureBitmapToRecycle.eraseColor(backgroundColor);
+        textureBitmapToRecycle.eraseColor(backgroundColor);
 
         cubemapFilter =
                 new SpecularCubemapFilter(
@@ -573,7 +573,7 @@ public class GraffitiOcclusionRenderer {
             // 1. テクスチャを平面上で回転＆移動させるための行列の作成
             if (!planeNo.containsKey(p)) return;
             Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
-//            textureBitmapToRecycle.eraseColor(backgroundColor);
+            textureBitmapToRecycle.eraseColor(backgroundColor);
             Canvas canvas = new Canvas(textureBitmapToRecycle);
 
             //  回転成分
@@ -765,7 +765,7 @@ public class GraffitiOcclusionRenderer {
                 GLError.maybeThrowGLException("Failed to set texture parameter", "glTexParameteri");
 
                 Bitmap tmp = textureBitmap.copy(textureBitmap.getConfig(), true);
-//                tmp.eraseColor(backgroundColor);
+                tmp.eraseColor(backgroundColor);
                 textureBitmaps.add(tmp);
                 GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, textureBitmaps.get(planeobjectIndex), 0);
                 GLError.maybeThrowGLException("Failed to specify color texture format", "glTexImage2D");
