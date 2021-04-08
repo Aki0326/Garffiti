@@ -12,8 +12,7 @@ import android.widget.TextView;
  * @author a-hongo
  */
 public class CountDownState extends State {
-    //    private static final long START_TIME = 61000; //61s
-    private static final long START_TIME = 6100; //61s
+    private static final long START_TIME = 61000; //61s
     private static final long COUNT_DOWN_INTERVAL = 1000;
     private long timeLeftInMillis = START_TIME;
 

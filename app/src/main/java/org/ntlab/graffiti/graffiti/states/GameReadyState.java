@@ -52,7 +52,7 @@ public class GameReadyState extends State {
         slideinAnim.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
-                if (arcView instanceof Arc) {
+                if (arcView != null && arcView instanceof Arc) {
                     ((Arc) arcView).startAnimation(360);
                 }
             }
@@ -139,7 +139,7 @@ public class GameReadyState extends State {
     }
 
     public void startAnimation() {
-        if (arcView instanceof Arc) {
+        if (arcView != null && arcView instanceof Arc) {
             ((Arc) arcView).setAnimationPeriod(3500);
         }
         readyText.setVisibility(View.VISIBLE);

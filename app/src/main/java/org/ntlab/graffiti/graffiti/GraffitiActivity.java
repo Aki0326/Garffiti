@@ -112,8 +112,6 @@ public class GraffitiActivity extends ArActivity {
     private final RendererHelper rendererHelper = new RendererHelper();
 
     private final BackgroundOcclusionRenderer backgroundOcclusionRenderer = new BackgroundOcclusionRenderer();
-//    private final PlaneRenderer planeRenderer = new PlaneRenderer();
-//    private final PointCloudRenderer pointCloudRenderer = new PointCloudRenderer();
     private final GraffitiOcclusionRenderer graffitiOcclusionRenderer = new GraffitiOcclusionRenderer();
     private Framebuffer virtualSceneFramebuffer;
     private boolean hasSetTextureNames = false;
@@ -330,7 +328,6 @@ public class GraffitiActivity extends ArActivity {
      */
     private void configureSession() {
         Config config = session.getConfig();
-//        config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
         config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
         if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
             config.setDepthMode(Config.DepthMode.AUTOMATIC);
@@ -446,15 +443,13 @@ public class GraffitiActivity extends ArActivity {
             // Create the texture and pass it to ARCore session to be filled during update().
             backgroundOcclusionRenderer.createOnGlThread(this);
             // Update BackgroundRenderer state to match the depth settings.
-            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
-
-//            planeRenderer.createOnGlThread(this, "models/trigrid.png");
-//            pointCloudRenderer.createOnGlThread(this);
+//            backgroundOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+            backgroundOcclusionRenderer.setUseOcclusion(this, false);
 
             graffitiOcclusionRenderer.createOnGlThread(this, "models/plane.png");
             // Update BackgroundRenderer state to match the depth settings.
-            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
-//            graffitiRenderer.setUseOcclusion(this, false);
+//            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
+            backgroundOcclusionRenderer.setUseOcclusion(this, false);
 
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
         } catch (IOException e) {
@@ -508,27 +503,17 @@ public class GraffitiActivity extends ArActivity {
 
         Camera camera = frame.getCamera();
 
-        // Update BackgroundRenderer state to match the depth settings. Call onSurfaceCreated().
-//      try {
-//          backgroundRenderer.setUseOcclusion(depthSettings.useDepthForOcclusion());
-//      } catch (IOException e) {
-//          Log.e(TAG, "Failed to read a required asset file", e);
-//          return;
-//      }
-
         // BackgroundRenderer.updateDisplayGeometry must be called every frame to update the coordinates
         // used to draw the background camera image.
         backgroundOcclusionRenderer.updateDisplayGeometry(frame);
         graffitiOcclusionRenderer.updateDisplayGeometry(frame);
 
         if (camera.getTrackingState() == TrackingState.TRACKING
-                && (depthSettings.useDepthForOcclusion()
-                /*|| depthSettings.depthColorVisualizationEnabled()*/)) {
+                && (depthSettings.useDepthForOcclusion())) {
             // Retrieve the depth map for the current frame, if available.
             try {
                 Image depthImage = frame.acquireDepthImage();
                 backgroundOcclusionRenderer.updateCameraDepthTexture(depthImage);
-//                graffitiRenderer.updateCameraDepthTexture(depthImage);
                 graffitiOcclusionRenderer.setDepthTexture(backgroundOcclusionRenderer.getCameraDepthTexture().getTextureId(), depthImage.getWidth(), depthImage.getHeight());
             } catch (NotYetAvailableException e) {
                 // This means that depth data is not available yet.
@@ -536,7 +521,6 @@ public class GraffitiActivity extends ArActivity {
                 // feature points. This can happen when there is no motion, or when the
                 // camera loses its ability to track objects in the surrounding
                 // environment.
-//                Log.e(TAG, "NotYetAvailableException", e);
             }
         }
 
@@ -556,7 +540,7 @@ public class GraffitiActivity extends ArActivity {
                 message = TrackingStateHelper.getTrackingFailureReasonString(camera);
             }
         } else if (hasTrackingPlane()) {
-            // TODO wating for tap.
+            // TODO waiting for tap.
         } else {
             message = getString(R.string.searching_plane);
         }
@@ -593,19 +577,9 @@ public class GraffitiActivity extends ArActivity {
         // Visualize tracked points.
         // Use try-with-resources to automatically release the point cloud.
         PointCloud pointCloud = frame.acquirePointCloud();
-//        pointCloudRenderer.update(pointCloud);
-//      pointCloudRenderer.draw(viewmtx, projmtx);
         // Application is responsible for releasing the point cloud resources after
         // using it.
         pointCloud.release();
-
-        // Visualize planes.
-//        virtualSceneFramebuffer.clear();
-//        planeRenderer.drawPlanes(
-//              session.getAllTrackables(Plane.class),
-//              camera.getDisplayOrientedPose(),
-//              projectionMatrix);
-//      planeRenderer.draw(session.getAllTrackables(PlaneJSON.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
 
         // -- Draw occluded virtual objects
         virtualSceneFramebuffer.clear();
@@ -615,33 +589,12 @@ public class GraffitiActivity extends ArActivity {
         graffitiOcclusionRenderer.updateLightEstimation(frame.getLightEstimate(), viewmtx);
 
         graffitiOcclusionRenderer.draw(session.getAllTrackables(Plane.class)/*session.update().getUpdatedTrackables(PlaneJSON.class)*/, camera.getDisplayOrientedPose(), projmtx);
-
-        // Compute lighting from average intensity of the image.
-        // The first three components are color scaling factors.
-        // The last one is the average pixel intensity in gamma space.
-//        final float[] colorCorrectionRgba = new float[4];
-//        frame.getLightEstimate().getColorCorrection(colorCorrectionRgba, 0);
-
-        // Compose the virtual scene with the background. (not use)
-//        virtualSceneFramebuffer.clear();
-//        backgroundRenderer.drawVirtualScene(virtualSceneFramebuffer, Z_NEAR, Z_FAR);
-//        } catch (Throwable t) {
-////             Avoid crashing the application due to unhandled exceptions.
-//            Log.e(TAG, "Exception on the OpenGL thread", t);
-//        }
     }
 
     // Handle only one tap per frame, as taps are usually low frequency compared to frame rate.
     private void handleTap(Frame frame, Camera camera) {
         MotionEvent tap = tapHelper.poll();
         if (tap != null && camera.getTrackingState() == TrackingState.TRACKING) {
-//            List<HitResult> hitResultList;
-//            if (instantPlacementSettings.isInstantPlacementEnabled()) {
-//                hitResultList =
-//                        frame.hitTestInstantPlacement(tap.getX(), tap.getY(), APPROXIMATE_DISTANCE_METERS);
-//            } else {
-//                hitResultList = frame.hitTest(tap);
-//            }
 
             for (HitResult hit : frame.hitTest(tap)) {
                 // If any plane, Oriented Point, or Instant Placement Point was hit, create an anchor.
@@ -651,10 +604,6 @@ public class GraffitiActivity extends ArActivity {
                         && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
                         && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0)
                         && ((Plane) trackable).getSubsumedBy() == null) {
-//                        || (trackable instanceof Point
-//                        && ((Point) trackable).getOrientationMode()
-//                        == Point.OrientationMode.ESTIMATED_SURFACE_NORMAL)
-//                        || (trackable instanceof InstantPlacementPoint)) {
 
                     Pose planePose = ((Plane) trackable).getCenterPose();
                     float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
