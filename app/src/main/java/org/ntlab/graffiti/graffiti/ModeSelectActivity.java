@@ -1,12 +1,14 @@
 package org.ntlab.graffiti.graffiti;
 
 import android.content.Intent;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -26,6 +28,8 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
     private MusicPlayerHelper modeSelectClickSE = new MusicPlayerHelper();
     private Boolean isLoop; // true:BGMをループする
 
+    private AnimationDrawable bgAnimation;
+
     private Button graffitiModeButton;
     private Button sharedGraffitiModeButton;
     private Button graffitiTimeAttackModeButton;
@@ -39,6 +43,8 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mode_select);
 
+        LinearLayout modeSelectLayout = findViewById(R.id.mode_select_layout);
+        bgAnimation = (AnimationDrawable) modeSelectLayout.getBackground();
         graffitiModeButton = findViewById(R.id.graffiti_mode_button);
         graffitiModeButton.setOnClickListener(this);
         graffitiModeButton.setOnTouchListener(this);
@@ -54,6 +60,16 @@ public class ModeSelectActivity extends AppCompatActivity implements View.OnClic
         photoGalleryButton = findViewById(R.id.photo_gallery_mode_button);
         photoGalleryButton.setOnClickListener(this);
         photoGalleryButton.setOnTouchListener(this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(bgAnimation.isRunning()){
+            // 一度stopしないと再スタートしない
+            bgAnimation.stop();
+        }
+        bgAnimation.start();
     }
 
     @Override
