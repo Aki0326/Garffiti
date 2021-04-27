@@ -84,7 +84,7 @@ GitHub, Google Playストアでも公開しています．
 ## Usage
 1. プロジェクトをビルドするには, ダウンロードしてAndroid Studioで開きます. 
 
-  `$ $ git clone https://github.com/Aki0326/Garffiti.git`
+  `$ git clone https://github.com/Aki0326/Garffiti.git`
 
 2. 端末にアプリをインストールして起動すると, ARCoreがまだインストールされていない場合はGoogle Playストアでインストールするように求められます. [対応機種について](https://developers.google.com/ar/discover/supported-devices)
 
@@ -92,18 +92,15 @@ GitHub, Google Playストアでも公開しています．
 
 ## References
 - ARCore
-  (https://developers.google.com/ar)
+  https://developers.google.com/ar
 
 - Aki0326/Garffiti/app/src/main/res/drawable-xxhdpi/
 
-  photoAC (https://www.photo-ac.com/)
+  photoAC https://www.photo-ac.com/
   
-  justaline-android (https://github.com/googlecreativelab/justaline-android)
+  justaline-android https://github.com/googlecreativelab/justaline-android
   
 - Garffiti/app/src/main/assets/musics/
 
 - ARCore Sample
-  (https://github.com/google-ar/arcore-android-sdk)
-  
-- FuriganaView
-  (https://github.com/sh0/furigana-view)
+  https://github.com/google-ar/arcore-android-sdk

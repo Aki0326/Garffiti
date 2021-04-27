@@ -453,9 +453,7 @@ public class GraffitiActivity extends ArActivity {
 
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
         } catch (IOException e) {
-            String message = getString(R.string.snackbar_asset_error);
-            Log.e(TAG, message, e);
-            messageSnackbarHelper.showError(this, message + ": " + e);
+            Log.e(TAG, "Failed to read a required asset file", e);
         }
     }
 
@@ -546,10 +544,10 @@ public class GraffitiActivity extends ArActivity {
         } else {
             message = getString(R.string.searching_plane);
         }
-        if (message == null) {
+        if (messageSnackbarHelper.isShowing() && message == null) {
             messageSnackbarHelper.hide(this);
             planeDetectController.hide();
-        } else {
+        } else if (!messageSnackbarHelper.isShowing() && message != null) {
             messageSnackbarHelper.showMessage(this, message);
             planeDetectController.show();
         }

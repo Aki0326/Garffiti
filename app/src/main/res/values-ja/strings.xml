@@ -29,20 +29,13 @@
   <string name="content_description_white_brush">White Brush</string>
 
   <!-- Searching for surfaces -->
-  <string name="searching_plane">{端末;たんまつ}を{持;も}ち{上;あ}げて、{壁;かべ}や{床;ゆか}をカメラに{映;うつ}してください。</string>
-  <string name="searched_plane">{平面;へいめん}の{検出;けんしゅつ}が{完了;かんりょう}しました！</string>
-  <string name="waiting_for_tap">カメラに{映;うつ}った{壁;かべ}や{床;ゆか}にタッチして、らくがきしてください。</string>
+  <string name="searching_plane">端末を持ち上げて、壁や床をカメラに映して下さい。</string>
+  <string name="searched_plane">平面の検出が完了しました！</string>
+  <string name="waiting_for_tap">カメラに映った壁や床にタッチしてらくがきして下さい。</string>
   <string name="tracking_indicator_text_looking">Looking for a place for your line</string>
   <string name="tracking_indicator_text_cant_find">Can\'t find a place for your line</string>
   <string name="tracking_indicator_text_anchor_not_tracking">Hmm… We can\'t find your\ndrawings.
         Try going back to\nwhere you started.</string>
-
-  <!--  Tracking State Helper-->
-  <string name="insufficient_features">{何;なに}も{見;み}つけることができません。より{質感;しつかん}や{色;いろ}のある{平面;へいめん}をカメラに{映;うつ}してください。</string>
-  <string name="excessive_motion">{動;うご}かすのが{早;はや}すぎます。{端末;たんまつ}をゆっくり{動;うご}かしてください。</string>
-  <string name="insufficient_light">{暗;くら}すぎます。{明;あか}るい{場所;ばしょ}をカメラに{映;うつ}してください。</string>
-  <string name="bad_state">{検出平面;けんしゅつへいめん}の{情報;じょうほう}が{壊;こわ}れました。モードを{最初;さいしょ}からやり{直;なお}してください。</string>
-  <string name="camera_unavailable">{別;べつ}のアプリがカメラを{使用;しよう}しています。このアプリをタップするか、{他;ほか}のアプリを{閉;と}じてみてください。</string>
 
   <!-- Image and ImageButton Content Descriptions for Accessibility-->
   <string name="content_description_select_brush">Change Brush Size</string>
@@ -72,7 +65,6 @@
   <string name="snackbar_arcore_sdk_too_old">Please update the app with a newer version of the ARCore SDK.</string>
   <string name="snackbar_arcore_not_compatible">This device does not support ARCore.</string>
   <string name="snackbar_arcore_exception">Failed to create AR session.</string>
-  <string name="snackbar_asset_error">{必要;ひつよう}なアセットファイルを{読;よ}み{込;こ}むのに{失敗;しっぱい}</string>
   <string name="snackbar_firebase_error">There was a Firebase Error. Please check Logcat for more details.</string>
   <string name="snackbar_host_error">Hosting Error: %1$s</string>
   <string name="snackbar_initial_message">Please select Host or Resolve to continue.</string>
