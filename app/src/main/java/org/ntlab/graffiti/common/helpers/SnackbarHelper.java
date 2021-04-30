@@ -18,8 +18,13 @@ package org.ntlab.graffiti.common.helpers;
 import android.app.Activity;
 import android.view.View;
 import android.widget.TextView;
+
 import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
+
+import org.ntlab.graffiti.common.views.FuriganaView;
+
+import java.util.Locale;
 
 /**
  * Helper to manage the sample snackbar. Hides the Android boilerplate code, and exposes simpler
@@ -33,6 +38,7 @@ public final class SnackbarHelper {
     private int maxLines = 2;
     private String lastMessage = "";
     private View snackbarView;
+    private Locale locale = Locale.getDefault();
 
     public boolean isShowing() {
         return messageSnackbar != null;
@@ -131,11 +137,25 @@ public final class SnackbarHelper {
                                         });
                             }
                         }
-                        ((TextView)
-                                messageSnackbar
-                                        .getView()
-                                        .findViewById(com.google.android.material.R.id.snackbar_text))
-                                .setMaxLines(maxLines);
+
+                        if (locale.equals(Locale.JAPAN)) {
+                            // Get the Snackbar's layout view
+                            Snackbar.SnackbarLayout layout = (Snackbar.SnackbarLayout) messageSnackbar.getView();
+                            // Hide the text
+                            TextView textView = layout.findViewById(com.google.android.material.R.id.snackbar_text);
+                            textView.setVisibility(View.INVISIBLE);
+                            FuriganaView furiganaView = new FuriganaView(activity);
+                            furiganaView.setText(message);
+                            furiganaView.setMaxLines(maxLines);
+                            // Add the view to the Snackbar's layout
+                            layout.addView(furiganaView, 0);
+                        } else {
+                            ((TextView)
+                                    messageSnackbar
+                                            .getView()
+                                            .findViewById(com.google.android.material.R.id.snackbar_text))
+                                    .setMaxLines(maxLines);
+                        }
                         messageSnackbar.show();
                     }
                 });
