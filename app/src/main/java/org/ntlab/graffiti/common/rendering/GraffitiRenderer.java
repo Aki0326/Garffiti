@@ -9,7 +9,6 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.opengl.GLES20;
-import android.opengl.GLES30;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
@@ -119,6 +118,8 @@ public class GraffitiRenderer {
 
     private int diffColoredPxs;
 
+    private boolean isVisibility = false;
+
     public GraffitiRenderer() {}
 
     /**
@@ -166,10 +167,70 @@ public class GraffitiRenderer {
     }
 
     /**
-     * Sum up colored pixels.
+     * Sum up part of colored pixels.
      *
      * @param color 集計する色
      */
+    public long getPartColoredPixels(Plane plane, int x, int y, int r, int color) {
+        long colorPixels = 0; // color色pixelの総計
+        if (textureBitmap != null) {
+            Integer coloredPlaneObjectTextureNo = planeNo.get(plane);
+            Log.d(TAG, "no: " + coloredPlaneObjectTextureNo);
+            if (coloredPlaneObjectTextureNo != null && coloredPlaneObjectTextureNo < textureBitmaps.size()) {
+                Bitmap bitmap = textureBitmaps.get(coloredPlaneObjectTextureNo);
+                int w = bitmap.getWidth();
+                int h = bitmap.getHeight();
+                int[] pixels = new int[w * h];
+                bitmap.getPixels(pixels, 0, w, 0, 0, w, h);
+                int pixelX = (int)((x * DOTS_PER_METER + 0.5) * w);
+                int pixelY = (int)((y * DOTS_PER_METER + 0.5) * h);
+                pixelX = Math.floorMod(pixelX, w);
+                pixelY = Math.floorMod(pixelY, h);
+                for (int i = pixelX - r; i < pixelX + r; i++) {
+                    for (int j = pixelY - r; j < pixelY + r; j++) {
+                        if (pixels[i + (j * w)] == color) {
+                            colorPixels++;
+                        }
+                    }
+                }
+            }
+        }
+        Log.d(TAG, "partColor: " + colorPixels);
+        return colorPixels;
+    }
+
+    /**
+     * Sum up part of colored pixels.
+     *
+     * @param color 集計する色
+     */
+    public long getColoredPixels(Plane plane, int color) {
+        long colorPixels = 0; // color色pixelの総計
+        if (textureBitmap != null) {
+            Integer coloredPlaneObjectTextureNo = planeNo.get(plane);
+            Log.d(TAG, "no: " + coloredPlaneObjectTextureNo);
+            if (coloredPlaneObjectTextureNo != null && coloredPlaneObjectTextureNo < textureBitmaps.size()) {
+                Bitmap bitmap = textureBitmaps.get(coloredPlaneObjectTextureNo);
+                int w = bitmap.getWidth();
+                int h = bitmap.getHeight();
+                int[] pixels = new int[w * h];
+                bitmap.getPixels(pixels, 0, w, 0, 0, w, h);
+                for (int j = 0; j < w * h; j++) {
+                    if (pixels[j] == color) {
+                        colorPixels++;
+                    }
+                }
+            }
+        }
+        Log.d(TAG, "color: " + colorPixels);
+        return colorPixels;
+    }
+
+    /**
+         * Sum up colored pixels.
+         *
+         * @param color 集計する色
+         */
     public long getTotalColoredPixels(int color) {
         long colorPixels = 0; // color色pixelの総計
         for (int i = 0; i < textureBitmaps.size(); i++) {
@@ -393,19 +454,27 @@ public class GraffitiRenderer {
     }
 
     /**
-     * Clear textureBitmap.
+     * Clear one textureBitmap.
      */
-    public void clearTexture() {
+    public void clearTexture(Plane plane) {
+        if (textureBitmap != null) {
+            Integer coloredPlaneObjectTextureNo = planeNo.get(plane);
+            if (coloredPlaneObjectTextureNo != null && textureBitmaps.size() > coloredPlaneObjectTextureNo) {
+                Bitmap bitmap = textureBitmaps.get(coloredPlaneObjectTextureNo);
+                Canvas canvas = new Canvas(bitmap);
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            }
+        }
+    }
+
+    /**
+     * Clear all textureBitmap.
+     */
+    public void clearAllTexture() {
         for (Plane p: planeNo.keySet()) {
             Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
             Canvas canvas = new Canvas(bitmap);
             canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-
-            // 転送
-            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeNo.get(p)));
-            GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
         }
     }
 
@@ -604,13 +673,30 @@ public class GraffitiRenderer {
                 + (cameraZ - planePose.tz()) * normal[2];
     }
 
+    public boolean isTotalColoredPixels(int up, int color) {
+        long colorPixels = 0; // color色pixelの総計
+        for (int i = 0; i < textureBitmaps.size(); i++) {
+            Bitmap bitmap = textureBitmaps.get(i);
+            int w = bitmap.getWidth();
+            int h = bitmap.getHeight();
+            int[] pixels = new int[w * h];
+            bitmap.getPixels(pixels, 0, w, 0, 0, w, h);
+            for (int j = 0; j < w * h; j++) {
+                if (pixels[j] == color) {
+                    colorPixels++;
+                }
+                if (colorPixels >= up) return true;
+            }
+        }
+        return false;
+    }
+
     private static void colorRgbaToFloat(float[] planeColor, int colorRgba) {
         planeColor[0] = ((float) ((colorRgba >> 24) & 0xff)) / 255.0f;
         planeColor[1] = ((float) ((colorRgba >> 16) & 0xff)) / 255.0f;
         planeColor[2] = ((float) ((colorRgba >> 8) & 0xff)) / 255.0f;
         planeColor[3] = ((float) ((colorRgba >> 0) & 0xff)) / 255.0f;
     }
-
     private static final int[] PLANE_COLORS_RGBA = {
             0xFFFFFFFF,
             0xF44336FF,

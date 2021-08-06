@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.graphics.PorterDuff;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
@@ -166,6 +167,7 @@ public class GraffitiOcclusionRenderer {
 
     private boolean calculateUVTransform = true;
     private boolean useOcclusion = false;
+    private boolean visibility = true;
     private int depthTextureId;
     private float aspectRatio = 0.0f;
     private float[] uvTransform = null;
@@ -226,6 +228,7 @@ public class GraffitiOcclusionRenderer {
         HashMap<String, Integer> defines = new HashMap<>();
         defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
         defines.put("NUMBER_OF_MIPMAP_LEVELS", cubemapFilter.getNumberOfMipmapLevels());
+        defines.put("VISIBILITY", visibility ? 1 : 0);
 
         int vertexShader =
                 ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
@@ -276,6 +279,7 @@ public class GraffitiOcclusionRenderer {
         HashMap<String, Integer> defines = new HashMap<>();
         defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
         defines.put("NUMBER_OF_MIPMAP_LEVELS", cubemapFilter.getNumberOfMipmapLevels());
+        defines.put("VISIBILITY", visibility ? 1 : 0);
 
         int vertexShader =
                 ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
@@ -327,6 +331,50 @@ public class GraffitiOcclusionRenderer {
         }
     }
 
+    public void setVisibility(Context context, boolean visibility) throws IOException {
+            if (this.visibility == visibility) {
+                return;
+            }
+
+        HashMap<String, Integer> defines = new HashMap<>();
+        defines.put("USE_OCCLUSION", useOcclusion ? 1 : 0);
+        defines.put("NUMBER_OF_MIPMAP_LEVELS", cubemapFilter.getNumberOfMipmapLevels());
+        defines.put("VISIBILITY", visibility ? 1 : 0);
+
+        int vertexShader =
+                ShaderUtil.loadGLShader(TAG, context, GLES30.GL_VERTEX_SHADER, VERTEX_SHADER_NAME);
+        int fragmentSahder =
+                ShaderUtil.loadGLShader(TAG, context, GLES30.GL_FRAGMENT_SHADER, FRAGMENT_SHADER_NAME, defines);
+
+        planeObjectProgram = GLES30.glCreateProgram();
+        GLES30.glAttachShader(planeObjectProgram, vertexShader);
+        GLES30.glAttachShader(planeObjectProgram, fragmentSahder);
+        GLES30.glLinkProgram(planeObjectProgram);
+        GLES30.glUseProgram(planeObjectProgram);
+        ShaderUtil.checkGLError(TAG, "Program creation");
+
+        planeObjectXZPositionAlphaAttribute = GLES30.glGetAttribLocation(planeObjectProgram, "a_XZPositionAlpha");
+
+        planeObjectModelViewUniform =
+                GLES30.glGetUniformLocation(planeObjectProgram, "u_ModelView");
+        planeObjectModelViewProjectionUniform =
+                GLES30.glGetUniformLocation(planeObjectProgram, "u_ModelViewProjection");
+        planeObjectUvMatrixUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_PlaneUvMatrix");
+
+        textureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_Texture");
+
+        lightIntensityUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_LightIntensity");
+        viewInverseUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_ViewInverse");
+        viewLightDirectionUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_ViewLightDirection");
+        sphericalHarmonicsCoefficientsUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_SphericalHarmonicsCoefficients");
+        cubeMapUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_Cubemap");
+        dfgTextureUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_DfgTexture");
+        isLightEstimateUniform = GLES30.glGetUniformLocation(planeObjectProgram, "u_LightEstimateIsValid");
+        ShaderUtil.checkGLError(TAG, "Program parameters");
+
+        this.visibility = visibility;
+    }
+
     /**
      * Returns a transformation matrix that when applied to screen space uvs makes them match
      * correctly with the quad texture coords used to render the camera feed. It takes into account
@@ -361,6 +409,39 @@ public class GraffitiOcclusionRenderer {
         uvTransform[8] = 1;
 
         return uvTransform;
+    }
+
+    /**
+     * Sum up part of colored pixels.
+     *
+     * @param color 集計する色
+     */
+    public long getPartColoredPixels(Plane plane, int x, int y, int r, int color) {
+        long colorPixels = 0; // color色pixelの総計
+        if (textureBitmap != null) {
+            Integer coloredPlaneObjectTextureNo = planeNo.get(plane);
+            Log.d(TAG, "no: " + coloredPlaneObjectTextureNo);
+            if (coloredPlaneObjectTextureNo != null && coloredPlaneObjectTextureNo < textureBitmaps.size()) {
+                Bitmap bitmap = textureBitmaps.get(coloredPlaneObjectTextureNo);
+                int w = bitmap.getWidth();
+                int h = bitmap.getHeight();
+                int[] pixels = new int[w * h];
+                bitmap.getPixels(pixels, 0, w, 0, 0, w, h);
+                int pixelX = (int)((x * DOTS_PER_METER + 0.5) * w);
+                int pixelY = (int)((y * DOTS_PER_METER + 0.5) * h);
+                pixelX = Math.floorMod(pixelX, w);
+                pixelY = Math.floorMod(pixelY, h);
+                for (int i = pixelX - r; i < pixelX + r; i++) {
+                    for (int j = pixelY - r; j < pixelY + r; j++) {
+                        if (pixels[i + (j * w)] == color) {
+                            colorPixels++;
+                        }
+                    }
+                }
+            }
+        }
+        Log.d(TAG, "partColor: " + colorPixels);
+        return colorPixels;
     }
 
     /**
@@ -539,19 +620,21 @@ public class GraffitiOcclusionRenderer {
 
             Bitmap bitmap = textureBitmaps.get(hitPlaneObjectTextureNo);
             Canvas canvas = new Canvas(bitmap);
-            Bitmap preBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
-            Bitmap miniBitmap;
+            if (pixelX - r >= 0 && pixelY - r >= 0) {
+                Bitmap preBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
+                Bitmap miniBitmap;
 
-            drawer.draw(pixelX, pixelY, r, canvas);
+                drawer.draw(pixelX, pixelY, r, canvas);
 
-            miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
-            diffColoredPxs = diffColoredPixels(-1, preBitmap, miniBitmap);
+                miniBitmap = Bitmap.createBitmap(bitmap, pixelX - r, pixelY - r, r * 2, r * 2);
+                diffColoredPxs = diffColoredPixels(-1, preBitmap, miniBitmap);
 
-            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(hitPlaneObjectTextureNo));
-            GLUtils.texSubImage2D(GLES30.GL_TEXTURE_2D, 0, pixelX - r, pixelY - r, miniBitmap, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
-            return new PointF(pixelX, pixelY);
+                GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(hitPlaneObjectTextureNo));
+                GLUtils.texSubImage2D(GLES30.GL_TEXTURE_2D, 0, pixelX - r, pixelY - r, miniBitmap, GLES30.GL_RGBA, GLES30.GL_UNSIGNED_BYTE);
+                GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+                return new PointF(pixelX, pixelY);
+            }
         }
         return null;
     }
@@ -609,19 +692,27 @@ public class GraffitiOcclusionRenderer {
     }
 
     /**
-     * Clear textureBitmap.
+     * Clear one textureBitmap.
      */
-    public void clearTexture() {
+    public void clearTexture(Plane plane) {
+        if (textureBitmap != null) {
+            Integer coloredPlaneObjectTextureNo = planeNo.get(plane);
+            if (coloredPlaneObjectTextureNo != null && textureBitmaps.size() > coloredPlaneObjectTextureNo) {
+                Bitmap bitmap = textureBitmaps.get(coloredPlaneObjectTextureNo);
+                Canvas canvas = new Canvas(bitmap);
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            }
+        }
+    }
+
+    /**
+     * Clear all textureBitmap.
+     */
+    public void clearAllTexture() {
         for (Plane p: planeNo.keySet()) {
             Bitmap bitmap = textureBitmaps.get(planeNo.get(p));
             Canvas canvas = new Canvas(bitmap);
-            canvas.drawColor(Color.WHITE);
-
-            // 転送
-            GLES30.glActiveTexture(GLES30.GL_TEXTURE0);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textures.get(planeNo.get(p)));
-            GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, bitmap, 0);
-            GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0);
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         }
     }
 

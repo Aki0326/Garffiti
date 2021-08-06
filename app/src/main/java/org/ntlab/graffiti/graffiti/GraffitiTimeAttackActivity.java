@@ -1,6 +1,10 @@
 package org.ntlab.graffiti.graffiti;
 
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.opengl.GLES30;
@@ -69,6 +73,8 @@ import org.ntlab.graffiti.graffiti.states.State;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Queue;
 
@@ -90,11 +96,13 @@ public class GraffitiTimeAttackActivity extends GameActivity {
 
     private Session session;
     private final SnackbarHelper messageSnackbarHelper = new SnackbarHelper();
+    private final SnackbarHelper gameSnackbarHelper = new SnackbarHelper();
     private DisplayRotationHelper displayRotationHelper;
     private final TrackingStateHelper trackingStateHelper = new TrackingStateHelper(this);
     private TapHelper tapHelper;
     private final RendererHelper rendererHelper = new RendererHelper();
 
+    // Renderer
     private final BackgroundRenderer backgroundRenderer = new BackgroundRenderer();
     private final GraffitiRenderer graffitiRenderer = new GraffitiRenderer();
     private Framebuffer virtualSceneFramebuffer;
@@ -104,6 +112,13 @@ public class GraffitiTimeAttackActivity extends GameActivity {
     private final InstantPlacementSettings instantPlacementSettings = new InstantPlacementSettings();
 
     private Queue<IGLDrawListener> glDrawListenerQueue = new ArrayDeque<>();
+
+    // For game
+    private long score = 0;
+    private long drawn = 0;
+
+    private HashSet<Plane> drawPlanes = new LinkedHashSet<>();
+    private boolean filled = true;
 
     private PlaneDetectState planeDetectState;
     private GameReadyState gameReadyState;
@@ -199,7 +214,10 @@ public class GraffitiTimeAttackActivity extends GameActivity {
                 quitButton.setVisibility(View.INVISIBLE);
                 myResultText.clearAnimation();
                 myResultText.setVisibility(View.INVISIBLE);
-                graffitiRenderer.clearTexture();
+                score = 0;
+                graffitiRenderer.clearAllTexture();
+                drawPlanes.clear();
+                filled = true;
 //                graffitiOcclusionRenderer.clearTexture();
                 changeState(gameReadyState);
             }
@@ -435,6 +453,44 @@ public class GraffitiTimeAttackActivity extends GameActivity {
         // Handle user input.
         handleTap(frame, camera);
 
+        // Draw rectangle.
+        if (getCurState() instanceof CountDownState) {
+            if (filled) {
+                for (Plane plane : session.getAllTrackables(Plane.class)) {
+                    if (!drawPlanes.contains(plane)) {
+                        filled = false;
+                        drawPlanes.add(plane);
+                        graffitiRenderer.drawTexture(0, 0, 50, plane, new TextureDrawer(Color.RED) {
+                            @Override
+                            public void draw(int pixelX, int pixelY, int r, Canvas canvas) {
+                                Paint paint = new Paint();
+                                if (color == Color.TRANSPARENT) {
+                                    paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                                } else {
+                                    paint.setColor(color);
+                                }
+                                paint.setStyle(Paint.Style.STROKE);
+                                canvas.drawRect(pixelX - r, pixelY - r, pixelX + r, pixelY + r, paint);
+                            }
+                        });
+                        break;
+                    }
+                }
+            } else {
+                Plane plane = (Plane) drawPlanes.toArray()[drawPlanes.size() - 1];
+                long tmpScore = graffitiRenderer.getPartColoredPixels(plane, 0, 0, 50, Color.BLUE);
+                if (tmpScore >= 5500) {
+                    score += tmpScore;
+                    graffitiRenderer.clearAllTexture();
+                    filled = true;
+                } else if (drawn >= 11000) {
+                    score += drawn;
+                    graffitiRenderer.clearAllTexture();
+                    filled = true;
+                }
+            }
+        }
+
         // Keep the screen unlocked while tracking, but allow it to lock when tracking stops.
         trackingStateHelper.updateKeepScreenOnFlag(camera.getTrackingState());
 
@@ -501,16 +557,17 @@ public class GraffitiTimeAttackActivity extends GameActivity {
         MotionEvent tap = tapHelper.poll();
         if (tap != null && camera.getTrackingState() == TrackingState.TRACKING) {
 
-//            if (arcView.getAngle() > 0.0f) {
-                for (HitResult hit : frame.hitTest(tap)) {
-                    // If any plane, Oriented Point, or Instant Placement Point was hit, create an anchor.
-                    Trackable trackable = hit.getTrackable();
-                    // If a plane was hit, check that it was hit inside the plane polygon.
-                    if (trackable instanceof Plane
-                            && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
-                            && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0)
-                            && ((Plane) trackable).getSubsumedBy() == null) {
-
+            // If contains in drawPlanes
+            for (HitResult hit : frame.hitTest(tap)) {
+                // If any plane, Oriented Point, or Instant Placement Point was hit, create an anchor.
+                Trackable trackable = hit.getTrackable();
+                // If a plane was hit, check that it was hit inside the plane polygon.
+                if (trackable instanceof Plane
+                        && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
+                        && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0)
+                        && ((Plane) trackable).getSubsumedBy() == null) {
+                    if (((Plane) trackable).equals((Plane) drawPlanes.toArray()[drawPlanes.size() - 1])) {
+                        Log.d(TAG, "contains in drawPlanes");
                         Pose planePose = ((Plane) trackable).getCenterPose();
                         float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
                         float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
@@ -534,14 +591,59 @@ public class GraffitiTimeAttackActivity extends GameActivity {
                         } else {
                             graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
                         }
+                        drawn = graffitiRenderer.getColoredPixels((Plane) trackable, Color.BLUE);
+
+                        return;
+                    }
+                }
+            }
+
+//            if (arcView.getAngle() > 0.0f) {
+            for (HitResult hit : frame.hitTest(tap)) {
+                // If any plane, Oriented Point, or Instant Placement Point was hit, create an anchor.
+                Trackable trackable = hit.getTrackable();
+                // If a plane was hit, check that it was hit inside the plane polygon.
+                if (trackable instanceof Plane
+                        && ((Plane) trackable).isPoseInPolygon(hit.getHitPose())
+                        && (PlaneRenderer.calculateDistanceToPlane(hit.getHitPose(), camera.getPose()) > 0)
+                        && ((Plane) trackable).getSubsumedBy() == null) {
+                    Pose planePose = ((Plane) trackable).getCenterPose();
+                    float hitMinusCenterX = hit.getHitPose().tx() - planePose.tx();
+                    float hitMinusCenterY = hit.getHitPose().ty() - planePose.ty();
+                    float hitMinusCenterZ = hit.getHitPose().tz() - planePose.tz();
+                    float hitOnPlaneCoordX = planePose.getXAxis()[0] * hitMinusCenterX + planePose.getXAxis()[1] * hitMinusCenterY + planePose.getXAxis()[2] * hitMinusCenterZ;
+                    float hitOnPlaneCoordZ = planePose.getZAxis()[0] * hitMinusCenterX + planePose.getZAxis()[1] * hitMinusCenterY + planePose.getZAxis()[2] * hitMinusCenterZ;
+                    int drawerStyle = 1;
+                    int color = Color.BLUE;
+                    TextureDrawer drawer = null;
+                    switch (drawerStyle) {
+                        case 1:
+                            drawer = new CircleDrawer(color);
+                            break;
+                        case 2:
+                            drawer = new RectangleDrawer(color);
+                            break;
+                    }
+
+                    if (color == Color.TRANSPARENT) {
+                        graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
+                    } else {
+                        graffitiRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 4, trackable, drawer);
+                    }
+                    drawn = graffitiRenderer.getColoredPixels((Plane) trackable, Color.BLUE);
 //                        int diffColoredPxs = graffitiRenderer.getDiffColoredPixels();
 //                        Log.d(TAG, "angle " + arcView.getAngle() + ", diffColoredPxs " + diffColoredPxs);
 //                        if (diffColoredPxs > 0) {
 //                            arcView.addAngleQueue(diffColoredPxs / 10);
 //                        }
-                    }
+
+                    // Hits are sorted by depth. Consider only closest hit on a plane, Oriented Point, or
+                    // Instant Placement Point.
+                    break;
+
                 }
 //            }
+            }
         }
     }
 
@@ -563,13 +665,16 @@ public class GraffitiTimeAttackActivity extends GameActivity {
             surfaceView.setEnabled(false);
             arcView.setArcColor(Color.BLUE);
             changeState(gameReadyState);
+            String message = getString(R.string.game_description);
+            gameSnackbarHelper.showMessage(this, message);
         } else if (state instanceof GameReadyState) {
             changeState(countDownState);
+            gameSnackbarHelper.hide(this);
             surfaceView.setEnabled(true);
         } else if (state instanceof CountDownState) {
             surfaceView.setEnabled(false);
-            long score = graffitiRenderer.getTotalColoredPixels(Color.BLUE);
 //            long score = graffitiOcclusionRenderer.getTotalColoredPixels(Color.BLUE);
+            score += graffitiRenderer.getTotalColoredPixels(Color.BLUE);
             Log.d(TAG, "Point: " + score + "p");
             gameResultState.setScore(score);
             gameRankingState.setScore(score);

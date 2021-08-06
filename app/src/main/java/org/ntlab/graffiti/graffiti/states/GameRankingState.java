@@ -306,6 +306,7 @@ public class GameRankingState extends State {
     private void replaceTopGameResults(int topNumber, GameResult gameResult) {
         if (topNumber == -1) return;
         if (!topGameResults.isEmpty() && topGameResults.size() >= top) topGameResults.remove(topGameResults.size()-1);
+        if (topNumber > topGameResults.size()) return;
         topGameResults.add(topNumber, gameResult);
     }
 
