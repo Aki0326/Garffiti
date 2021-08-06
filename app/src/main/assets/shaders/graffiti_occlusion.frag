@@ -413,4 +413,11 @@ if (u_LightEstimateIsValid) {
 //  o_FragColor *= DepthGetBlurredVisibilityAroundUV(u_CameraDepthTexture, depth_uvs, asset_depth_mm);
 
 #endif  // USE_OCCLUSION
+
+#if VISIBILITY
+    if (o_FragColor.rgb == vec3(0.0f, 0.0f, 0.0f)) {
+        o_FragColor.a = 0.15f;
+    }
+#endif  // VISIBILITY
+
 }

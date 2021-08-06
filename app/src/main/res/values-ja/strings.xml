@@ -41,6 +41,9 @@
   <string name="bad_state">{検出平面;けんしゅつへいめん}の{情報;じょうほう}が{壊;こわ}れました。モードを{最初;さいしょ}からやり{直;なお}してください。</string>
   <string name="camera_unavailable">{別;べつ}のアプリがカメラを{使用;しよう}しています。このアプリをタップするか、{他;ほか}のアプリを{閉;と}じてみてください。</string>
 
+  <!-- For TimeAttackMode -->
+  <string name="game_description">{出現;しゅつげん}する{赤;あか}い{四角形;しかくけい}の{中;なか}を{塗;ぬ}りつぶそう！</string>
+
   <!-- Image and ImageButton Content Descriptions for Accessibility-->
   <string name="content_description_select_brush">Change Brush Size</string>
   <string name="content_description_large_brush">Large Brush</string>

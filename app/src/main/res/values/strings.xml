@@ -41,6 +41,9 @@
   <string name="bad_state">Tracking lost due to bad internal state. Please try restarting this mode.</string>
   <string name="camera_unavailable">Another app is using the camera. Tap on this app or try closing the other one.</string>
 
+  <!-- For TimeAttackMode -->
+  <string name="game_description">Let\'s fill in the red square!</string>
+
   <!-- Image and ImageButton Content Descriptions for Accessibility-->
   <string name="content_description_select_brush">Change Brush Size</string>
   <string name="content_description_large_brush">Large Brush</string>

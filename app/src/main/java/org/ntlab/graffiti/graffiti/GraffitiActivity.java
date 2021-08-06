@@ -5,7 +5,6 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
@@ -130,6 +129,8 @@ public class GraffitiActivity extends ArActivity {
     private Queue<IGLDrawListener> glDrawListenerQueue = new ArrayDeque<>();
 
     private PlaneDetectController planeDetectController;
+    private boolean isPlaneDetected = false;
+    private boolean planeVisibility = false;
 
     private ColorSelector colorSelector;
     private BrushSizeSelector brushSizeSelector;
@@ -449,7 +450,7 @@ public class GraffitiActivity extends ArActivity {
             graffitiOcclusionRenderer.createOnGlThread(this, "models/plane.png");
             // Update BackgroundRenderer state to match the depth settings.
 //            graffitiOcclusionRenderer.setUseOcclusion(this, depthSettings.useDepthForOcclusion());
-            backgroundOcclusionRenderer.setUseOcclusion(this, false);
+            graffitiOcclusionRenderer.setUseOcclusion(this, false);
 
             virtualSceneFramebuffer = new Framebuffer(/*width=*/ 1, /*height=*/ 1);
         } catch (IOException e) {
@@ -547,11 +548,39 @@ public class GraffitiActivity extends ArActivity {
             message = getString(R.string.searching_plane);
         }
         if (message == null) {
-            messageSnackbarHelper.hide(this);
+            if (!isPlaneDetected) {
+                messageSnackbarHelper.showMessageWithDuration(this, getString(R.string.searched_plane) + '\n' + getString(R.string.waiting_for_tap), 5000);
+                planeVisibility = true;
+                isPlaneDetected = true;
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.post(new Runnable() {
+                    int count = 0;
+                    @Override
+                    public void run() {
+                        // In ui thread
+                        count++;
+                        if (count > 5) { // 5回実行したら終了
+                            planeVisibility = false;
+                            return;
+                        }
+                        handler.postDelayed(this, 1000);
+                    }
+                });
+            }
             planeDetectController.hide();
         } else {
+            if (isPlaneDetected) {
+                // TODO Fix bug running handler
+                isPlaneDetected = false;
+            }
             messageSnackbarHelper.showMessage(this, message);
             planeDetectController.show();
+        }
+
+        try {
+            graffitiOcclusionRenderer.setVisibility(this, planeVisibility);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         // -- Draw background
@@ -624,12 +653,11 @@ public class GraffitiActivity extends ArActivity {
                             drawer = new RectangleDrawer(color);
                             break;
                     }
+                    graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, brushSizeSelector.getSelectedLineWidth(), trackable, drawer);
 
-                    if (color == Color.TRANSPARENT) {
-                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, 9, trackable, drawer);
-                    } else {
-                        graffitiOcclusionRenderer.drawTexture(hitOnPlaneCoordX, -hitOnPlaneCoordZ, brushSizeSelector.getSelectedLineWidth(), trackable, drawer);
-                    }
+                    // Hits are sorted by depth. Consider only closest hit on a plane, Oriented Point, or
+                    // Instant Placement Point.
+                    break;
                 }
             }
         }

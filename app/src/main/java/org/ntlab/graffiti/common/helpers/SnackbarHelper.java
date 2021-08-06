@@ -48,13 +48,18 @@ public final class SnackbarHelper {
     public void showMessage(Activity activity, String message) {
         if (!message.isEmpty() && (!isShowing() || !lastMessage.equals(message))) {
             lastMessage = message;
-            show(activity, message, DismissBehavior.HIDE);
+            show(activity, message, DismissBehavior.HIDE, 0);
         }
     }
 
     /** Shows a snackbar with a given message, and a dismiss button. */
     public void showMessageWithDismiss(Activity activity, String message) {
-        show(activity, message, DismissBehavior.SHOW);
+        show(activity, message, DismissBehavior.SHOW, 0);
+    }
+
+    /** Shows a snackbar with a given message, and a dismiss button. */
+    public void showMessageWithDuration(Activity activity, String message, int duration) {
+        show(activity, message, DismissBehavior.HIDE, duration);
     }
 
     /**
@@ -62,7 +67,7 @@ public final class SnackbarHelper {
      * for notifying errors, where no further interaction with the activity is possible.
      */
     public void showError(Activity activity, String errorMessage) {
-        show(activity, errorMessage, DismissBehavior.FINISH);
+        show(activity, errorMessage, DismissBehavior.FINISH, 0);
     }
 
     /**
@@ -104,7 +109,7 @@ public final class SnackbarHelper {
     }
 
     private void show(
-            final Activity activity, final String message, final DismissBehavior dismissBehavior) {
+            final Activity activity, final String message, final DismissBehavior dismissBehavior, int duration) {
         activity.runOnUiThread(
                 new Runnable() {
                     @Override
@@ -155,6 +160,9 @@ public final class SnackbarHelper {
                                             .getView()
                                             .findViewById(com.google.android.material.R.id.snackbar_text))
                                     .setMaxLines(maxLines);
+                        }
+                        if (duration > 0) {
+                            messageSnackbar.setDuration(duration);
                         }
                         messageSnackbar.show();
                     }
